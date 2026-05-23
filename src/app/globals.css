@@ -1,0 +1,644 @@
+@import "tailwindcss";
+
+/* ============================================
+   TECHWING AI TUTOR — DESIGN SYSTEM v2
+   Matched to Reference Image:
+   - Deep steel-blue background gradient
+   - Blue-tinted frosted glass (dark cards)
+   - White/cream frosted glass (light cards)
+   - Teal bars, gradient area charts
+   - Green/coral pill badges
+   ============================================ */
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-fg);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-fg);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-fg);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-fg);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-fg);
+
+  /* Brand Palette — matched to reference */
+  --color-teal: #00C9A7;
+  --color-teal-dark: #00A88A;
+  --color-cyan: #22B8CF;
+  --color-coral: #FF6B6B;
+  --color-amber: #FFC078;
+  --color-purple: #9775FA;
+  --color-emerald: #51CF66;
+  --color-green-badge: #00C48C;
+  --color-red-badge: #FF5252;
+
+  /* Navy palette — closer to reference */
+  --color-navy-900: #0B1929;
+  --color-navy-800: #0F2236;
+  --color-navy-700: #152E45;
+  --color-navy-600: #1B3A56;
+  --color-navy-500: #214868;
+  --color-navy-400: #2A5A7E;
+  --color-navy-300: #3A7CA5;
+
+  /* Glass */
+  --color-glass: var(--glass);
+  --color-glass-border: var(--glass-border);
+  --color-glass-hover: var(--glass-hover);
+
+  /* Typography */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
+
+  /* Animations */
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-glow: glow 2s ease-in-out infinite alternate;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-slide-up: slideUp 0.5s ease-out;
+  --animate-slide-down: slideDown 0.5s ease-out;
+  --animate-fade-in: fadeIn 0.5s ease-out;
+  --animate-scale-in: scaleIn 0.3s ease-out;
+  --animate-pulse-soft: pulseSoft 2s ease-in-out infinite;
+  --animate-gradient: gradient 8s ease infinite;
+}
+
+/* ═══════════════════════════════════
+   LIGHT MODE (Default)
+   ═══════════════════════════════════ */
+:root {
+  --bg: #F8FAFC;
+  --fg: #0F172A;
+  --primary: #00A88A;
+  --primary-fg: #ffffff;
+  --secondary: #E2E8F0;
+  --secondary-fg: #0F172A;
+  --muted: #F1F5F9;
+  --muted-fg: #64748B;
+  --accent: #0284C7;
+  --accent-fg: #ffffff;
+  --destructive: #EF4444;
+  --border: rgba(0, 0, 0, 0.08);
+  --ring: #00A88A;
+  --card: rgba(255, 255, 255, 0.7);
+  --card-fg: #0F172A;
+
+  /* Glass tokens for white bg */
+  --glass: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 1);
+  --glass-hover: rgba(255, 255, 255, 0.85);
+  --glass-light: rgba(255, 255, 255, 0.9);
+  --glass-light-border: rgba(255, 255, 255, 1);
+
+  --sidebar-bg: rgba(255, 255, 255, 0.65);
+  --sidebar-border: rgba(255, 255, 255, 0.8);
+  
+  /* Very subtle gradient for background so white cards pop */
+  --gradient-start: #F8FAFC;
+  --gradient-mid: #E2E8F0;
+  --gradient-end: #F1F5F9;
+}
+
+/* ═══════════════════════════════════
+   DARK MODE
+   ═══════════════════════════════════ */
+[data-theme="dark"] {
+  --bg: #0B1929;
+  --fg: #E8EDF3;
+  --primary: #00C9A7;
+  --primary-fg: #0B1929;
+  --secondary: #152E45;
+  --secondary-fg: #E8EDF3;
+  --muted: #1B3A56;
+  --muted-fg: #8899AA;
+  --accent: #22B8CF;
+  --accent-fg: #ffffff;
+  --destructive: #FF6B6B;
+  --border: rgba(255, 255, 255, 0.07);
+  --ring: #00C9A7;
+  --card: rgba(21, 46, 69, 0.55);
+  --card-fg: #E8EDF3;
+
+  /* Glass tokens — bluer tint matching ref */
+  --glass: rgba(21, 46, 69, 0.5);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-hover: rgba(21, 46, 69, 0.65);
+  --glass-light: rgba(220, 233, 245, 0.85);
+  --glass-light-border: rgba(255, 255, 255, 0.6);
+
+  --sidebar-bg: rgba(11, 25, 41, 0.85);
+  --sidebar-border: rgba(255, 255, 255, 0.05);
+  --gradient-start: #0B1929;
+  --gradient-mid: #0F2A3E;
+  --gradient-end: #153545;
+}
+
+/* ═══════════════════════
+   BASE STYLES
+   ═══════════════════════ */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: linear-gradient(160deg, var(--gradient-start) 0%, var(--gradient-mid) 40%, var(--gradient-end) 100%);
+  background-attachment: fixed;
+  color: var(--fg);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ═══════════════════════════════════
+   GLASS CARDS (White frosted glass)
+   ═══════════════════════════════════ */
+.glass-card {
+  background: var(--glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: var(--glass-hover);
+  border-color: rgba(0, 168, 138, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 0 40px rgba(0, 168, 138, 0.04);
+  transform: translateY(-2px);
+}
+
+.glass-card-static {
+  background: var(--glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+}
+
+/* ═══════════════════════════════════
+   LIGHTER/SOLID GLASS CARDS
+   ═══════════════════════════════════ */
+.glass-card-light {
+  background: var(--glass-light);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-light-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
+}
+
+.glass-card-light:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .glass-card-light {
+  background: rgba(220, 233, 245, 0.85);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #1A202C;
+}
+
+/* ═══════════════════════════════════
+   SIDEBAR & NAVBAR GLASS
+   ═══════════════════════════════════ */
+.glass-sidebar {
+  background: var(--sidebar-bg);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-right: 1px solid var(--sidebar-border);
+}
+
+.glass-navbar {
+  background: var(--sidebar-bg);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+/* ═══════════════════════════════════
+   INPUT GLASS
+   ═══════════════════════════════════ */
+.glass-input {
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  color: var(--fg);
+  transition: all 0.3s ease;
+}
+
+.glass-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 168, 138, 0.12);
+  outline: none;
+}
+
+[data-theme="dark"] .glass-input {
+  background: rgba(21, 46, 69, 0.4);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ═══════════════════════════════════
+   BUTTONS — matched to ref "Analize" btn
+   ═══════════════════════════════════ */
+.glass-button {
+  background: linear-gradient(135deg, #00A88A, #0284C7);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 0.875rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 168, 138, 0.25);
+}
+
+.glass-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 168, 138, 0.35);
+}
+
+.glass-button:active {
+  transform: translateY(0);
+}
+
+.glass-button-dark {
+  background: var(--glass);
+  color: var(--fg);
+  font-weight: 600;
+  border-radius: 50px;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.glass-button-dark:hover {
+  background: var(--glass-hover);
+}
+
+.glass-button-secondary {
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  color: var(--fg);
+  font-weight: 500;
+  border-radius: 0.875rem;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.glass-button-secondary:hover {
+  background: var(--glass-hover);
+  border-color: var(--primary);
+}
+
+/* ═══════════════════════════════════
+   STAT CARDS — light frosted background
+   ═══════════════════════════════════ */
+.stat-card {
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--stat-color, #00A88A), transparent);
+  border-radius: 1.25rem 1.25rem 0 0;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 168, 138, 0.15);
+}
+
+/* Light stat card (like Reports section in ref) */
+.stat-card-light {
+  background: var(--glass-light);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-light-border);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  color: var(--fg);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+}
+
+.stat-card-light:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* ═══════════════════════════════════
+   BADGE PILLS — matched to ref
+   Small rounded pills like +20% / -9.22%
+   ═══════════════════════════════════ */
+.badge-green {
+  background: #00C48C;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-red {
+  background: #FF5252;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-teal {
+  background: rgba(0, 201, 167, 0.15);
+  color: #00C9A7;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+}
+
+.badge-coral {
+  background: rgba(255, 107, 107, 0.15);
+  color: #FF6B6B;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+}
+
+.badge-cyan {
+  background: rgba(34, 184, 207, 0.15);
+  color: #22B8CF;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+}
+
+.badge-amber {
+  background: rgba(255, 192, 120, 0.15);
+  color: #FFC078;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+}
+
+.badge-purple {
+  background: rgba(151, 117, 250, 0.15);
+  color: #9775FA;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+}
+
+/* ═══════════════════════════════════
+   PROGRESS BAR
+   ═══════════════════════════════════ */
+.progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 1s ease;
+  background: linear-gradient(90deg, #00C9A7, #22B8CF);
+}
+
+/* ═══════════════════════════════════
+   ICON CIRCLE — like ref's colored circles
+   with subtle pattern inside
+   ═══════════════════════════════════ */
+.icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.icon-circle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), transparent 60%);
+  border-radius: 50%;
+}
+
+.icon-circle-coral {
+  background: linear-gradient(135deg, #FF8A65, #FF6B6B);
+}
+
+.icon-circle-teal {
+  background: linear-gradient(135deg, #00C9A7, #22B8CF);
+}
+
+.icon-circle-purple {
+  background: linear-gradient(135deg, #9775FA, #7C5CE7);
+}
+
+.icon-circle-amber {
+  background: linear-gradient(135deg, #FFC078, #FFA94D);
+}
+
+/* ═══════════════════════════════════
+   SCROLLBAR
+   ═══════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ═══════════════════════════════════
+   KEYFRAME ANIMATIONS
+   ═══════════════════════════════════ */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 20px rgba(0, 201, 167, 0.1); }
+  to { box-shadow: 0 0 40px rgba(0, 201, 167, 0.25); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulseSoft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════
+   GRADIENT TEXT
+   ═══════════════════════════════════ */
+.gradient-text {
+  background: linear-gradient(135deg, #00C9A7, #22B8CF, #9775FA);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-warm {
+  background: linear-gradient(135deg, #FFC078, #FF6B6B, #9775FA);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ═══════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════ */
+.animate-gradient-bg {
+  background-size: 200% 200%;
+  animation: gradient 8s ease infinite;
+}
+
+.backdrop-blur-glass {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ═══════════════════════════════════
+   CHART OVERRIDES
+   ═══════════════════════════════════ */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: rgba(15, 34, 54, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 0.875rem !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ═══════════════════════════════════
+   SELECTION & FOCUS
+   ═══════════════════════════════════ */
+::selection {
+  background: rgba(0, 201, 167, 0.25);
+  color: #ffffff;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+/* ═══════════════════════════════════
+   BOTTOM NAV — like reference image
+   ═══════════════════════════════════ */
+.bottom-nav-item-active {
+  background: rgba(0, 201, 167, 0.1);
+  border-radius: 1rem;
+}
