@@ -1,4 +1,4 @@
-// Comprehensive Mock Data for TechWing AI Tutor
+// Comprehensive Mock Data for AI Tutor
 
 // Helper to generate IDs
 const generateId = () => Math.random().toString(36).substring(2, 9);

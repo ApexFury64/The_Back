@@ -1,19 +1,24 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, CheckCircle, Clock, AlertCircle, PlayCircle, X, Check, ChevronRight } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { cn } from "@/lib/utils";
-
-const USER_EMAIL = 'arjun@techwing.com'; // Hardcoded for prototype
+import { useAppStore } from "@/lib/store";
+import CustomDropdown from "@/components/ui/CustomDropdown";
 
 export default function StudentQuizzesPage() {
-  const [quizzes, setQuizzes] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  
+  const userEmail = useAppStore(s => s.userEmail);
+  const userName = useAppStore(s => s.userName);
+  const schoolName = useAppStore(s => s.schoolName);
+  const userStandard = useAppStore(s => s.userStandard);
   
   const [activeSubject, setActiveSubject] = useState("All");
+  const [selectedStandard, setSelectedStandard] = useState<string>(userStandard || "8");
   
   // Quiz Modal State
   const [activeQuiz, setActiveQuiz] = useState<any | null>(null);
@@ -25,23 +30,16 @@ export default function StudentQuizzesPage() {
   const [quizSuccess, setQuizSuccess] = useState<any | null>(null); // Contains score info
 
   // Fetch initial data
-  useEffect(() => {
-    // For this prototype, we'll fetch the user by email just to get the ID, 
-    // or we can hardcode the ID. Let's assume we fetch quizzes without user ID first, 
-    // or we use a known user ID. We'll use a mock userId or fetch it.
-    // For simplicity, let's fetch quizzes and assume any attempt by 'arjun' is ours.
-    
-    // We didn't make a /api/user route, so we will just fetch quizzes without userId 
-    // and let the submit fail if we don't have a user, OR we add a hack to get the user ID.
-    // Actually, let's fetch the first user from the DB.
-    
-    fetch('/api/quizzes?userEmail=' + USER_EMAIL) // Fetch all quizzes for the user
-      .then(res => res.json())
-      .then(data => {
-        setQuizzes(data);
-        setLoading(false);
-      });
-  }, []);
+  const { data: quizzes = [], isLoading: loading, refetch } = useQuery<any[]>({
+    queryKey: ['studentQuizzes', userEmail],
+    queryFn: async () => {
+      const res = await fetch(`/api/quizzes`);
+      if (!res.ok) throw new Error('Unauthorized');
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
+    refetchInterval: 10000,
+  });
 
   const handleStartQuiz = async (quiz: any) => {
     setActiveQuiz(quiz);
@@ -83,8 +81,8 @@ export default function StudentQuizzesPage() {
         body: JSON.stringify({
           quizId: activeQuiz.id,
           answers,
-          timeTaken: 120, // 2 mins mock
-          userEmail: USER_EMAIL // We will modify API to accept this
+          timeTaken: 120,
+          userEmail: userEmail || 'arjun@dps.edu'
         })
       });
       
@@ -93,9 +91,9 @@ export default function StudentQuizzesPage() {
       setQuizSuccess(result);
       
       // Refresh quizzes
-      const qRes = await fetch('/api/quizzes?userEmail=' + USER_EMAIL);
-      const qData = await qRes.json();
-      setQuizzes(qData);
+      const email = userEmail || 'arjun@dps.edu';
+      await fetch(`/api/quizzes?userEmail=${email}`);
+      refetch(); // Refresh list via React Query
       
       setTimeout(() => {
         setActiveQuiz(null);
@@ -106,8 +104,11 @@ export default function StudentQuizzesPage() {
     }
   };
 
-  const subjects = ["All", ...Array.from(new Set(quizzes.map(q => q.subject?.name).filter(Boolean)))];
-  const filteredQuizzes = activeSubject === "All" ? quizzes : quizzes.filter(q => q.subject?.name === activeSubject);
+  const classes = ["All", ...Array.from(new Set(quizzes.map(q => q.class || 'Other'))).sort((a: any, b: any) => b.toString().localeCompare(a.toString()))];
+  const filteredByClass = selectedStandard === "All" ? quizzes : quizzes.filter(q => (q.class || 'Other') === selectedStandard);
+
+  const subjects = ["All", ...Array.from(new Set(filteredByClass.map(q => q.subject?.name).filter(Boolean)))];
+  const filteredQuizzes = activeSubject === "All" ? filteredByClass : filteredByClass.filter(q => q.subject?.name === activeSubject);
   
   // A quiz is pending if it has 0 attempts (or we can just check attempts array)
   // Since we didn't pass userId in GET /api/quizzes, attempts will be empty for all quizzes unless we change that.
@@ -117,7 +118,7 @@ export default function StudentQuizzesPage() {
   const completed = filteredQuizzes.filter(q => q.attempts && q.attempts.length > 0);
 
   if (loading) return (
-    <DashboardLayout role="student" userName="Arjun Reddy" schoolName="Class 7-B" pageTitle="AI Quizzes" pageSubtitle="Loading...">
+    <DashboardLayout role="student" userName={userName || "Student"} schoolName={schoolName || "AI Tutor"} pageTitle="AI Quizzes" pageSubtitle="Loading...">
       <div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-teal rounded-full animate-spin border-t-transparent" /></div>
     </DashboardLayout>
   );
@@ -127,29 +128,42 @@ export default function StudentQuizzesPage() {
   return (
     <DashboardLayout
       role="student"
-      userName="Arjun Reddy"
-      schoolName="Class 7-B • Delhi Public School"
+      userName={userName || "Student"}
+      schoolName={schoolName || "AI Tutor"}
       pageTitle="AI Quizzes"
       pageSubtitle="Test your knowledge with real database-backed quizzes"
     >
       <div className="space-y-8">
         
-        {/* Subject Filter */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-          {subjects.map(subject => (
-            <button
-              key={subject}
-              onClick={() => setActiveSubject(subject as string)}
-              className={cn(
-                "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors",
-                activeSubject === subject 
-                  ? "bg-white text-navy-900" 
-                  : "bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white border border-white/5"
-              )}
-            >
-              {subject}
-            </button>
-          ))}
+        {/* Header with Filters */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 w-full sm:w-auto flex-1">
+            {subjects.map(subject => (
+              <button
+                key={subject}
+                onClick={() => setActiveSubject(subject as string)}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors",
+                  activeSubject === subject 
+                    ? "bg-white text-navy-900 shadow-sm" 
+                    : "bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-navy-900/60 dark:text-muted-foreground hover:text-navy-900 dark:hover:text-white border border-black/5 dark:border-white/5"
+                )}
+              >
+                {subject}
+              </button>
+            ))}
+          </div>
+
+          <CustomDropdown 
+            options={classes}
+            value={selectedStandard}
+            onChange={(val) => {
+              setSelectedStandard(val);
+              setActiveSubject("All");
+            }}
+            labelPrefix="Standard"
+            currentStandard={userStandard || "8"}
+          />
         </div>
         
         {/* Pending Quizzes */}
@@ -157,42 +171,56 @@ export default function StudentQuizzesPage() {
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             <AlertCircle size={20} className="text-coral" /> Action Required ({pending.length})
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {pending.map((quiz, i) => (
-              <motion.div
-                key={quiz.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="glass-card p-5 border-l-4 border-l-coral flex flex-col sm:flex-row gap-4 justify-between"
-              >
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-coral bg-coral/10 px-2 py-0.5 rounded-full">
-                      {quiz.subject?.name}
-                    </span>
-                    <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
-                      <Clock size={12} /> Due {quiz.due || 'Soon'}
-                    </span>
-                  </div>
-                  <h4 className="font-semibold text-lg">{quiz.title}</h4>
-                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
-                    <span>{quiz._count?.questions} Questions</span>
-                    <span className="w-1 h-1 rounded-full bg-white/20" />
-                    <span>{quiz.timeLimit}m</span>
-                    <span className="w-1 h-1 rounded-full bg-white/20" />
-                    <span className={quiz.difficulty === 'Hard' ? 'text-coral' : 'text-amber'}>{quiz.difficulty}</span>
-                  </p>
+          <div className="space-y-6">
+            {Object.entries(
+              pending.reduce((acc, q) => {
+                const c = q.class || 'Other';
+                if (!acc[c]) acc[c] = [];
+                acc[c].push(q);
+                return acc;
+              }, {} as Record<string, any[]>)
+            ).sort((a, b) => b[0].localeCompare(a[0])).map(([className, classQuizzes]) => (
+              <div key={className} className="space-y-4">
+                <h4 className="text-sm font-bold text-navy-900/70 dark:text-muted-foreground uppercase tracking-wider pl-2 border-l-2 border-coral">{className}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {classQuizzes.map((quiz: any, i: number) => (
+                    <motion.div
+                      key={quiz.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="glass-card p-5 border-l-4 border-l-coral flex flex-col sm:flex-row gap-4 justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[10px] uppercase tracking-wider font-bold text-red-700 dark:text-coral bg-red-50 dark:bg-coral/10 px-2 py-0.5 rounded-full">
+                            {quiz.subject?.name}
+                          </span>
+                          <span className="text-[10px] font-medium text-navy-900/70 dark:text-muted-foreground flex items-center gap-1">
+                            <Clock size={12} /> Due {quiz.due || 'Soon'}
+                          </span>
+                        </div>
+                        <h4 className="font-semibold text-lg text-navy-900 dark:text-white">{quiz.title}</h4>
+                        <p className="text-xs text-navy-900/70 dark:text-muted-foreground mt-1 flex items-center gap-3">
+                          <span>{quiz._count?.questions} Questions</span>
+                          <span className="w-1 h-1 rounded-full bg-navy-900/20 dark:bg-white/20" />
+                          <span>{quiz.timeLimit}m</span>
+                          <span className="w-1 h-1 rounded-full bg-navy-900/20 dark:bg-white/20" />
+                          <span className={quiz.difficulty === 'Hard' ? 'text-red-700 dark:text-coral font-bold' : 'text-amber-800 dark:text-amber font-bold'}>{quiz.difficulty}</span>
+                        </p>
+                      </div>
+                      <div className="flex items-center sm:items-end">
+                        <button 
+                          onClick={() => handleStartQuiz(quiz)}
+                          className="glass-button w-full sm:w-auto flex items-center justify-center gap-2 bg-red-700 hover:bg-red-800 dark:bg-coral dark:hover:bg-coral/90 text-white border-0"
+                        >
+                          <PlayCircle size={16} /> Start Quiz
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-                <div className="flex items-center sm:items-end">
-                  <button 
-                    onClick={() => handleStartQuiz(quiz)}
-                    className="glass-button w-full sm:w-auto flex items-center justify-center gap-2 bg-coral hover:bg-coral/90 text-white"
-                  >
-                    <PlayCircle size={16} /> Start Quiz
-                  </button>
-                </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </section>
@@ -201,48 +229,62 @@ export default function StudentQuizzesPage() {
         {completed.length > 0 && (
           <section>
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <CheckCircle size={20} className="text-teal" /> Completed Quizzes
+              <CheckCircle size={20} className="text-teal-800 dark:text-teal" /> Completed Quizzes
             </h3>
-            <div className="glass-card-static overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-muted-foreground uppercase bg-white/5 border-b border-white/5">
-                    <tr>
-                      <th className="px-6 py-4 font-semibold">Quiz Title</th>
-                      <th className="px-6 py-4 font-semibold">Subject</th>
-                      <th className="px-6 py-4 font-semibold">Questions</th>
-                      <th className="px-6 py-4 font-semibold">Score</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {completed.map((quiz, i) => (
-                      <motion.tr 
-                        key={quiz.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="hover:bg-white/5 transition-colors"
-                      >
-                        <td className="px-6 py-4 font-medium">{quiz.title}</td>
-                        <td className="px-6 py-4">
-                          <span className="text-[10px] bg-white/10 px-2 py-1 rounded-md">{quiz.subject?.name}</span>
-                        </td>
-                        <td className="px-6 py-4 text-muted-foreground">{quiz._count?.questions}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className={cn(
-                              "font-bold",
-                              quiz.attempts[0].score >= 90 ? "text-teal" : quiz.attempts[0].score >= 80 ? "text-amber" : "text-coral"
-                            )}>
-                              {quiz.attempts[0].score}%
-                            </span>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="space-y-6">
+              {Object.entries(
+                completed.reduce((acc, q) => {
+                  const c = q.class || 'Other';
+                  if (!acc[c]) acc[c] = [];
+                  acc[c].push(q);
+                  return acc;
+                }, {} as Record<string, any[]>)
+              ).sort((a, b) => b[0].localeCompare(a[0])).map(([className, classQuizzes]) => (
+                <div key={className} className="space-y-4">
+                  <h4 className="text-sm font-bold text-navy-900/70 dark:text-muted-foreground uppercase tracking-wider pl-2 border-l-2 border-teal">{className}</h4>
+                  <div className="glass-card-static overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="text-xs text-navy-900/70 dark:text-muted-foreground uppercase bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/5">
+                          <tr>
+                            <th className="px-6 py-4 font-semibold">Quiz Title</th>
+                            <th className="px-6 py-4 font-semibold">Subject</th>
+                            <th className="px-6 py-4 font-semibold">Questions</th>
+                            <th className="px-6 py-4 font-semibold">Score</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                          {classQuizzes.map((quiz: any, i: number) => (
+                            <motion.tr 
+                              key={quiz.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: i * 0.1 }}
+                              className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                            >
+                              <td className="px-6 py-4 font-medium text-navy-900 dark:text-white">{quiz.title}</td>
+                              <td className="px-6 py-4">
+                                <span className="text-[10px] bg-black/5 dark:bg-white/10 text-navy-900/70 dark:text-muted-foreground px-2 py-1 rounded-md">{quiz.subject?.name}</span>
+                              </td>
+                              <td className="px-6 py-4 text-navy-900/70 dark:text-muted-foreground">{quiz._count?.questions}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                  <span className={cn(
+                                    "font-bold",
+                                    quiz.attempts[0].score >= 90 ? "text-teal-800 dark:text-teal" : quiz.attempts[0].score >= 80 ? "text-amber-800 dark:text-amber" : "text-red-700 dark:text-coral"
+                                  )}>
+                                    {quiz.attempts[0].score}%
+                                  </span>
+                                </div>
+                              </td>
+                            </motion.tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
         )}
@@ -283,7 +325,7 @@ export default function StudentQuizzesPage() {
                       <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
                         <span>{activeQuiz.subject?.name}</span>
                         <span className="w-1 h-1 rounded-full bg-white/20" />
-                        <span>Question {currentQuestionIndex + 1} of {quizData.questions.length}</span>
+                        <span>Question {currentQuestionIndex + 1} of {quizData.questions?.length || 0}</span>
                       </p>
                     </div>
                     <button 
@@ -334,7 +376,7 @@ export default function StudentQuizzesPage() {
                     >
                       Cancel
                     </button>
-                    {currentQuestionIndex < quizData.questions.length - 1 ? (
+                    {currentQuestionIndex < (quizData.questions?.length || 0) - 1 ? (
                       <button
                         onClick={handleNextQuestion}
                         disabled={answers[currentQuestion?.id] === undefined}

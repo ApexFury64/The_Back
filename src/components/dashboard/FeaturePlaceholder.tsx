@@ -61,7 +61,7 @@ export default function FeaturePlaceholder({ title, role }: FeaturePlaceholderPr
           
           <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <Sparkles size={14} className="text-amber" /> 
-            Powered by TechWing AI
+            Powered by AI Tutor
           </div>
         </div>
       </motion.div>

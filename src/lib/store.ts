@@ -1,100 +1,53 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { studentQuizzesData, studentAssignments, studentSubjects } from './mock-data';
 
 export interface AppState {
-  quizzes: any[];
-  assignments: any[];
-  subjects: any[];
-  
-  submitQuiz: (quizId: number, score: number) => void;
-  submitAssignment: (assignmentId: number) => void;
-  completeTopic: (subjectName: string, topicTitle: string) => void;
-  resetProgress: () => void;
+  userEmail: string;
+  userName: string;
+  userRole: string;
+  schoolId: string;
+  schoolName: string;
+  userStandard: string;
+  refreshKey: number;
+
+  setUser: (data: { email: string; name: string; role: string; schoolId?: string; schoolName?: string; userStandard?: string }) => void;
+  triggerRefresh: () => void;
+  logout: () => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set, get) => ({
-      quizzes: studentQuizzesData,
-      assignments: studentAssignments,
-      subjects: studentSubjects,
+    (set) => ({
+      userEmail: '',
+      userName: '',
+      userRole: '',
+      schoolId: '',
+      schoolName: '',
+      userStandard: '8',
+      refreshKey: 0,
 
-      submitQuiz: (quizId: number, score: number) => {
-        set((state) => ({
-          quizzes: state.quizzes.map((q) =>
-            q.id === quizId
-              ? { ...q, status: 'completed', score, timeTaken: '15m' }
-              : q
-          ),
-        }));
-      },
-
-      submitAssignment: (assignmentId: number) => {
-        set((state) => ({
-          assignments: state.assignments.map((a) =>
-            a.id === assignmentId ? { ...a, status: 'submitted' } : a
-          ),
-        }));
-      },
-
-      completeTopic: (subjectName: string, topicTitle: string) => {
-        set((state) => {
-          const newSubjects = [...state.subjects];
-          const subjectIndex = newSubjects.findIndex(s => s.name === subjectName);
-          
-          if (subjectIndex !== -1) {
-            const subject = { ...newSubjects[subjectIndex] };
-            let foundTopic = false;
-            let unlockedNext = false;
-            const newModules = subject.modules.map((mod: any) => {
-              const newSubTopics = mod.subTopics.map((topic: any) => {
-                if (topic.title === topicTitle) {
-                  foundTopic = true;
-                  return { ...topic, status: 'completed' };
-                }
-                if (foundTopic && !unlockedNext && topic.status === 'locked') {
-                  unlockedNext = true;
-                  return { ...topic, status: 'in-progress' };
-                }
-                return topic;
-              });
-              return { ...mod, subTopics: newSubTopics };
-            });
-            
-            // If we completed the last topic in a module, we need to unlock the first topic in the next module
-            if (foundTopic && !unlockedNext) {
-              for (let i = 0; i < newModules.length; i++) {
-                let unlockedInModule = false;
-                newModules[i].subTopics = newModules[i].subTopics.map((topic: any) => {
-                  if (!unlockedNext && !unlockedInModule && topic.status === 'locked') {
-                    unlockedNext = true;
-                    unlockedInModule = true;
-                    return { ...topic, status: 'in-progress' };
-                  }
-                  return topic;
-                });
-              }
-            }
-            
-            subject.modules = newModules;
-            newSubjects[subjectIndex] = subject;
-          }
-          
-          return { subjects: newSubjects };
-        });
-      },
-
-      resetProgress: () => {
+      setUser: (data) => {
         set({
-          quizzes: studentQuizzesData,
-          assignments: studentAssignments,
-          subjects: studentSubjects,
+          userEmail: data.email,
+          userName: data.name,
+          userRole: data.role,
+          schoolId: data.schoolId || '',
+          schoolName: data.schoolName || '',
+          userStandard: data.userStandard || '8',
         });
-      }
+      },
+
+      triggerRefresh: () => {
+        set((state) => ({ refreshKey: state.refreshKey + 1 }));
+      },
+
+      logout: () => {
+        set({ userEmail: '', userName: '', userRole: '', schoolId: '', schoolName: '', refreshKey: 0 });
+      },
     }),
     {
-      name: 'techwing-ai-tutor-storage',
+      name: 'AI Tutor-ai-tutor-storage',
     }
   )
 );
+

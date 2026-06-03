@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
+import { useAppStore } from "@/lib/store";
 
 interface SidebarItem {
   label: string;
@@ -30,7 +31,6 @@ const sidebarConfig: Record<UserRole, { title: string; items: SidebarItem[] }> =
       { label: "Subjects", icon: <BookOpen size={20} />, href: "/student/subjects" },
       { label: "Quizzes", icon: <Brain size={20} />, href: "/student/quizzes" },
       { label: "Assignments", icon: <FileText size={20} />, href: "/student/assignments", badge: 3 },
-      { label: "Analytics", icon: <BarChart3 size={20} />, href: "/student/analytics" },
       { label: "Study Planner", icon: <Calendar size={20} />, href: "/student/study-planner" },
       { label: "Leaderboard", icon: <Trophy size={20} />, href: "/student/leaderboard" },
     ],
@@ -55,8 +55,6 @@ const sidebarConfig: Record<UserRole, { title: string; items: SidebarItem[] }> =
       { label: "Assignments", icon: <ClipboardList size={20} />, href: "/teacher/assignments", badge: 5 },
       { label: "AI Tools", icon: <Sparkles size={20} />, href: "/teacher/ai-tools", badge: "AI" },
       { label: "Live Classes", icon: <Video size={20} />, href: "/teacher/live-classes" },
-      { label: "Analytics", icon: <BarChart3 size={20} />, href: "/teacher/analytics" },
-      { label: "Students", icon: <Users size={20} />, href: "/teacher/students" },
     ],
   },
   admin: {
@@ -91,7 +89,9 @@ interface SidebarProps {
   schoolName?: string;
 }
 
-export default function Sidebar({ role, userName = "User", schoolName = "TechWing" }: SidebarProps) {
+import AILogo from "@/components/ui/AILogo";
+
+export default function Sidebar({ role, userName = "User", schoolName = "AI Tutor" }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const config = sidebarConfig[role];
@@ -107,8 +107,8 @@ export default function Sidebar({ role, userName = "User", schoolName = "TechWin
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-5 border-b border-white/5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal to-cyan flex items-center justify-center flex-shrink-0">
-            <Sparkles size={20} className="text-navy-900" />
+          <div className="flex items-center justify-center flex-shrink-0">
+            <AILogo size={36} />
           </div>
           <AnimatePresence>
             {!collapsed && (
@@ -118,7 +118,7 @@ export default function Sidebar({ role, userName = "User", schoolName = "TechWin
                 exit={{ opacity: 0, x: -10 }}
                 className="overflow-hidden"
               >
-                <h1 className="text-base font-bold gradient-text whitespace-nowrap">TechWing AI</h1>
+                <h1 className="text-base font-bold gradient-text whitespace-nowrap">AI Tutor</h1>
                 <p className="text-[10px] text-muted-foreground whitespace-nowrap">{config.title} Portal</p>
               </motion.div>
             )}
@@ -192,8 +192,9 @@ export default function Sidebar({ role, userName = "User", schoolName = "TechWin
           </div>
           {!collapsed && (
             <button 
-              onClick={() => {
-                // In a real app, clear auth tokens here
+              onClick={async () => {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                useAppStore.getState().logout();
                 window.location.href = "/login";
               }}
               className="flex items-center gap-2 mt-3 w-full px-3 py-2 text-sm text-muted-foreground hover:text-coral rounded-lg hover:bg-coral/10 transition-colors"

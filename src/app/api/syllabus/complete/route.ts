@@ -1,13 +1,22 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+
+const completeSyllabusSchema = z.object({
+  userEmail: z.string().email(),
+  topicId: z.string().min(1)
+});
 
 export async function POST(request: Request) {
   try {
-    const { userEmail, topicId } = await request.json();
-
-    if (!userEmail || !topicId) {
-      return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
+    const body = await request.json();
+    const parsed = completeSyllabusSchema.safeParse(body);
+    
+    if (!parsed.success) {
+      return NextResponse.json({ error: (parsed.error as any).errors[0].message }, { status: 400 });
     }
+    
+    const { userEmail, topicId } = parsed.data;
 
     const user = await prisma.user.findUnique({ where: { email: userEmail } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });

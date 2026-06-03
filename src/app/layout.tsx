@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import Providers from "@/components/Providers";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -15,9 +16,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TechWing AI Tutor — AI-Powered Education Platform",
+  title: "AI Tutor — AI-Powered Education Platform",
   description:
-    "The future of education is here. TechWing AI Tutor is an AI-powered learning ecosystem for schools, students, parents, and teachers. Replace traditional tuition with intelligent, adaptive learning.",
+    "The future of education is here. AI Tutor is an AI-powered learning ecosystem for schools, students, parents, and teachers. Replace traditional tuition with intelligent, adaptive learning.",
   keywords: [
     "AI tutor",
     "education platform",
@@ -27,13 +28,15 @@ export const metadata: Metadata = {
     "smart learning",
     "edtech",
   ],
-  authors: [{ name: "TechWing" }],
+  authors: [{ name: "AI Tutor" }],
   openGraph: {
-    title: "TechWing AI Tutor",
+    title: "AI Tutor",
     description: "AI-Powered Education Platform for Schools",
     type: "website",
   },
 };
+
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -41,8 +44,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen antialiased">{children}</body>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+      <body className="min-h-screen antialiased" suppressHydrationWarning>
+        <Providers>
+          {children}
+          <Toaster theme="dark" position="bottom-right" richColors />
+        </Providers>
+      </body>
     </html>
   );
 }

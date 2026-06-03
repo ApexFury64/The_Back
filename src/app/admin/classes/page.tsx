@@ -1,0 +1,533 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import { Plus, Users, BookOpen, UserPlus, BookCopy, ChevronDown, Check } from "lucide-react";
+import { useAppStore } from "@/lib/store";
+import { toast } from "sonner";
+
+export default function AdminClassesPage() {
+  const [classes, setClasses] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [unassignedStudents, setUnassignedStudents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
+  const [newClass, setNewClass] = useState({ name: "", grade: "", sections: "A,B,C" });
+  
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [assignData, setAssignData] = useState({ sectionId: "", teacherId: "", sectionName: "", className: "" });
+
+  const [isAssignSubjectModalOpen, setIsAssignSubjectModalOpen] = useState(false);
+  const [assignSubjectData, setAssignSubjectData] = useState({ sectionId: "", sectionName: "", className: "", teacherId: "", subjectId: "", subjectName: "" });
+
+  const [isAddStudentsModalOpen, setIsAddStudentsModalOpen] = useState(false);
+  const [addStudentsData, setAddStudentsData] = useState({ sectionId: "", sectionName: "", className: "", selectedStudentIds: [] as string[] });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const userName = useAppStore(s => s.userName);
+  const userEmail = useAppStore(s => s.userEmail);
+  const schoolName = useAppStore(s => s.schoolName);
+
+  const fetchData = async () => {
+    try {
+      const [classesRes, teachersRes, subjectsRes, studentsRes] = await Promise.all([
+        fetch(`/api/admin/classes?adminEmail=${userEmail || 'admin@dps-hyd.edu'}`),
+        fetch(`/api/admin/teachers`),
+        fetch(`/api/admin/subjects`),
+        fetch(`/api/admin/students`)
+      ]);
+      const classesData = await classesRes.json();
+      const teachersData = await teachersRes.json();
+      const subjectsData = await subjectsRes.json();
+      const studentsData = await studentsRes.json();
+      
+      if (classesData.classes) setClasses(classesData.classes);
+      if (teachersData.teachers) setTeachers(teachersData.teachers);
+      if (subjectsData.subjects) setSubjects(subjectsData.subjects);
+      
+      if (studentsData.students) {
+        // Filter out students that already have a sectionId
+        // The API returns all students, we just need to find those where section is unassigned
+        setUnassignedStudents(studentsData.students.filter((s: any) => !s.class));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [userEmail]);
+
+  const handleAddClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    const sectionsArray = newClass.sections.split(',').map(s => s.trim()).filter(Boolean);
+    try {
+      const res = await fetch('/api/admin/classes/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newClass, sections: sectionsArray, adminEmail: userEmail || 'admin@dps-hyd.edu' })
+      });
+      if (res.ok) {
+        setIsAddClassModalOpen(false);
+        setNewClass({ name: "", grade: "", sections: "A,B,C" });
+        fetchData();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to add class");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleAssignTeacher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assignData.teacherId) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/classes/assign-teacher', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sectionId: assignData.sectionId, teacherId: assignData.teacherId, adminEmail: userEmail || 'admin@dps-hyd.edu' })
+      });
+      if (res.ok) {
+        setIsAssignModalOpen(false);
+        fetchData();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to assign teacher");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleAssignSubjectTeacher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assignSubjectData.teacherId || (!assignSubjectData.subjectId && !assignSubjectData.subjectName)) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/sections/assign-subject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          sectionId: assignSubjectData.sectionId, 
+          subjectId: assignSubjectData.subjectId,
+          subjectName: assignSubjectData.subjectName,
+          teacherId: assignSubjectData.teacherId, 
+          adminEmail: userEmail || 'admin@dps-hyd.edu' 
+        })
+      });
+      if (res.ok) {
+        setIsAssignSubjectModalOpen(false);
+        fetchData();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to assign subject teacher");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleAssignStudents = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (addStudentsData.selectedStudentIds.length === 0) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/sections/assign-students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          sectionId: addStudentsData.sectionId, 
+          studentIds: addStudentsData.selectedStudentIds,
+          adminEmail: userEmail || 'admin@dps-hyd.edu' 
+        })
+      });
+      if (res.ok) {
+        toast.success("Students assigned successfully");
+        setIsAddStudentsModalOpen(false);
+        setAddStudentsData({ sectionId: "", sectionName: "", className: "", selectedStudentIds: [] });
+        fetchData();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to assign students");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    }
+    setIsSubmitting(false);
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout role="admin" userName={userName || "Loading..."} schoolName={schoolName || "Loading..."} pageTitle="Class & Section Management" pageSubtitle="Loading...">
+        <div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-teal rounded-full animate-spin border-t-transparent" /></div>
+      </DashboardLayout>
+    );
+  }
+
+  // Flatten the hierarchy to get a list of Sections instead of Classes
+  const sections = classes.flatMap(c => 
+    c.sections.map((s: any) => ({
+      ...s,
+      className: c.name,
+      classGrade: c.grade
+    }))
+  );
+
+  return (
+    <DashboardLayout role="admin" userName={userName || "Admin"} schoolName={schoolName || "AI Tutor"} pageTitle="Class & Section Management" pageSubtitle="Manage individual sections, subjects, and teachers">
+      <div className="flex justify-end mb-6">
+        <button 
+          onClick={() => setIsAddClassModalOpen(true)}
+          className="glass-button px-4 py-2 flex items-center gap-2"
+        >
+          <Plus size={16}/> Create New Class
+        </button>
+      </div>
+
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {sections.map(sec => (
+          <div key={sec.id} className="glass-card-static p-6 rounded-2xl space-y-4 relative">
+            <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-2">
+              <div>
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  {sec.className} - {sec.name} 
+                  <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full font-normal">Grade {sec.classGrade}</span>
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <Users size={12}/> {sec.students.length} Enrolled Students
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-teal/20 text-teal flex items-center justify-center shrink-0">
+                <BookOpen size={20} />
+              </div>
+            </div>
+
+            {/* Class Teacher Block */}
+            <div className="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5">
+              <div>
+                <div className="text-xs text-muted-foreground">Class Teacher</div>
+                <div className="font-semibold text-teal mt-0.5">
+                  {sec.classTeacher ? sec.classTeacher.name : <span className="text-amber italic font-normal">Unassigned</span>}
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setAssignData({ sectionId: sec.id, teacherId: sec.classTeacherId || "", sectionName: sec.name, className: sec.className });
+                  setIsAssignModalOpen(true);
+                }}
+                className="text-[10px] bg-white/10 hover:bg-white/20 text-muted-foreground px-2 py-1 rounded transition-colors flex items-center gap-1"
+              >
+                <UserPlus size={10} /> Assign Class Teacher
+              </button>
+            </div>
+
+            {/* Subject Teachers Block */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-muted-foreground">Subjects Taught</h4>
+                <button 
+                  onClick={() => {
+                    setAssignSubjectData({ sectionId: sec.id, sectionName: sec.name, className: sec.className, teacherId: "", subjectId: "", subjectName: "" });
+                    setIsAssignSubjectModalOpen(true);
+                  }}
+                  className="text-[10px] bg-white/10 hover:bg-white/20 text-teal px-2 py-1 rounded transition-colors flex items-center gap-1 border border-teal/30"
+                >
+                  <BookCopy size={10} /> Add Subject
+                </button>
+              </div>
+              
+              <div className="flex flex-col gap-2 mt-2">
+                {sec.sectionSubjects && sec.sectionSubjects.length > 0 ? (
+                  sec.sectionSubjects.map((ss: any) => (
+                    <div key={ss.id} className="text-xs flex items-center justify-between p-2 bg-white/5 border border-white/10 rounded-md">
+                      <span className="font-medium">{ss.subject.name}</span>
+                      <span className="text-muted-foreground">{ss.teacher.name}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-xs text-muted-foreground italic p-2 bg-white/5 rounded border border-white/5 text-center">No subjects added yet.</div>
+                )}
+              </div>
+            </div>
+            
+            {/* Add Students Button */}
+            <div className="pt-2">
+               <button 
+                  onClick={() => {
+                    setAddStudentsData({ sectionId: sec.id, sectionName: sec.name, className: sec.className, selectedStudentIds: [] });
+                    setIsAddStudentsModalOpen(true);
+                  }}
+                  className="w-full text-xs bg-white/5 hover:bg-white/10 text-muted-foreground px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 border border-white/10"
+                >
+                  <Users size={12} /> Manage Students
+                </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ADD CLASS MODAL */}
+      {isAddClassModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative">
+            <h3 className="text-xl font-bold mb-4">Create New Class</h3>
+            <form onSubmit={handleAddClass} className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Class Name (e.g. Class 11)</label>
+                <input 
+                  type="text" 
+                  value={newClass.name} 
+                  onChange={e => setNewClass({...newClass, name: e.target.value})} 
+                  className="glass-input w-full px-4 py-2 text-sm" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Grade / Standard Level (Number)</label>
+                <input 
+                  type="number" 
+                  value={newClass.grade} 
+                  onChange={e => setNewClass({...newClass, grade: e.target.value})} 
+                  className="glass-input w-full px-4 py-2 text-sm" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Sections (comma separated)</label>
+                <input 
+                  type="text" 
+                  value={newClass.sections} 
+                  onChange={e => setNewClass({...newClass, sections: e.target.value})} 
+                  className="glass-input w-full px-4 py-2 text-sm" 
+                  required 
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">E.g. A, B, C. These will be created automatically.</p>
+              </div>
+              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                <button 
+                  type="button" 
+                  onClick={() => setIsAddClassModalOpen(false)}
+                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
+                >
+                  {isSubmitting ? "Creating..." : "Create Class"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ASSIGN CLASS TEACHER MODAL */}
+      {isAssignModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative">
+            <h3 className="text-xl font-bold mb-1">Assign Class Teacher</h3>
+            <p className="text-xs text-muted-foreground mb-4">For {assignData.className} - {assignData.sectionName}</p>
+            <form onSubmit={handleAssignTeacher} className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Select Teacher (from assigned Subject Teachers)</label>
+                <select 
+                  value={assignData.teacherId} 
+                  onChange={e => setAssignData({...assignData, teacherId: e.target.value})} 
+                  className="glass-input w-full px-4 py-2 text-sm bg-navy-900" 
+                  required 
+                >
+                  <option value="" disabled>-- Select a Teacher --</option>
+                  {Array.from(new Map(
+                    (sections.find(s => s.id === assignData.sectionId)?.sectionSubjects || [])
+                      .filter((ss: any) => ss?.teacher?.id)
+                      .map((ss: any) => [ss.teacher.id, { id: ss.teacher.id, name: ss.teacher.name, subjects: [] }])
+                  ).values()).map((teacher: any) => {
+                    const subjects = (sections.find(s => s.id === assignData.sectionId)?.sectionSubjects || [])
+                      .filter((ss: any) => ss.teacher?.id === teacher.id)
+                      .map((ss: any) => ss.subject.name)
+                      .join(', ');
+                    return (
+                      <option key={teacher.id} value={teacher.id}>
+                        {teacher.name} ({subjects})
+                      </option>
+                    );
+                  })}
+                </select>
+                {(!sections.find(s => s.id === assignData.sectionId)?.sectionSubjects || sections.find(s => s.id === assignData.sectionId)?.sectionSubjects?.length === 0) && (
+                  <p className="text-xs text-coral mt-2">There are no subject teachers assigned to this section yet. Assign a subject teacher first.</p>
+                )}
+              </div>
+              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                <button 
+                  type="button" 
+                  onClick={() => setIsAssignModalOpen(false)}
+                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting || !assignData.teacherId}
+                  className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
+                >
+                  {isSubmitting ? "Assigning..." : "Assign Teacher"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ASSIGN SUBJECT TEACHER MODAL */}
+      {isAssignSubjectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative">
+            <h3 className="text-xl font-bold mb-1">Add Subject & Teacher</h3>
+            <p className="text-xs text-muted-foreground mb-4">For {assignSubjectData.className} - {assignSubjectData.sectionName}</p>
+            <form onSubmit={handleAssignSubjectTeacher} className="space-y-4">
+              
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Subject Name</label>
+                <div className="relative">
+                  <select 
+                    value={assignSubjectData.subjectId} 
+                    onChange={e => setAssignSubjectData({...assignSubjectData, subjectId: e.target.value, subjectName: ""})} 
+                    className="glass-input w-full px-4 py-2 text-sm bg-navy-900 mb-2" 
+                  >
+                    <option value="">-- Or Select Existing Subject --</option>
+                    {subjects.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} (Grade {s.standard})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-px bg-white/10 flex-1"></div>
+                  <span className="text-xs text-muted-foreground">OR CREATE NEW</span>
+                  <div className="h-px bg-white/10 flex-1"></div>
+                </div>
+                <input 
+                  type="text"
+                  placeholder="Type new subject name..."
+                  value={assignSubjectData.subjectName}
+                  onChange={e => setAssignSubjectData({...assignSubjectData, subjectName: e.target.value, subjectId: ""})}
+                  className="glass-input w-full px-4 py-2 text-sm mt-2"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Select Teacher</label>
+                <select 
+                  value={assignSubjectData.teacherId} 
+                  onChange={e => setAssignSubjectData({...assignSubjectData, teacherId: e.target.value})} 
+                  className="glass-input w-full px-4 py-2 text-sm bg-navy-900" 
+                  required 
+                >
+                  <option value="" disabled>-- Select a Teacher --</option>
+                  {teachers.map(t => (
+                    <option key={t.id} value={t.id}>{t.name} {t.primarySubject ? `(${t.primarySubject})` : ''}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                <button 
+                  type="button" 
+                  onClick={() => setIsAssignSubjectModalOpen(false)}
+                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting || !assignSubjectData.teacherId || (!assignSubjectData.subjectId && !assignSubjectData.subjectName)}
+                  className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
+                >
+                  {isSubmitting ? "Adding..." : "Add Subject"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD STUDENTS MODAL */}
+      {isAddStudentsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative">
+            <h3 className="text-xl font-bold mb-1">Add Students</h3>
+            <p className="text-xs text-muted-foreground mb-4">Assign unassigned students to {addStudentsData.className} - {addStudentsData.sectionName}</p>
+            <form onSubmit={handleAssignStudents} className="space-y-4">
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                {unassignedStudents.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic p-4 text-center border border-dashed border-white/10 rounded-lg">No unassigned students available in the system.</p>
+                ) : (
+                  unassignedStudents.map(student => (
+                    <label key={student.id} className="flex items-center gap-3 p-3 rounded-lg border border-white/5 hover:bg-white/5 cursor-pointer transition-colors group">
+                      <div className="relative flex items-center justify-center w-5 h-5 rounded border border-white/20 bg-black/20 overflow-hidden">
+                        <input 
+                          type="checkbox" 
+                          className="opacity-0 absolute inset-0 cursor-pointer"
+                          checked={addStudentsData.selectedStudentIds.includes(student.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setAddStudentsData({ ...addStudentsData, selectedStudentIds: [...addStudentsData.selectedStudentIds, student.id] });
+                            } else {
+                              setAddStudentsData({ ...addStudentsData, selectedStudentIds: addStudentsData.selectedStudentIds.filter(id => id !== student.id) });
+                            }
+                          }}
+                        />
+                        {addStudentsData.selectedStudentIds.includes(student.id) && <Check size={14} className="text-teal absolute pointer-events-none" />}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{student.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{student.email}</p>
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+              
+              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                <button 
+                  type="button" 
+                  onClick={() => setIsAddStudentsModalOpen(false)}
+                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting || addStudentsData.selectedStudentIds.length === 0}
+                  className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
+                >
+                  {isSubmitting ? "Adding..." : `Add ${addStudentsData.selectedStudentIds.length} Students`}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+    </DashboardLayout>
+  );
+}

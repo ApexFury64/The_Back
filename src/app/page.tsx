@@ -67,7 +67,7 @@ function LandingNav() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal to-cyan flex items-center justify-center">
               <Sparkles size={20} className="text-navy-900" />
             </div>
-            <span className="text-lg font-bold gradient-text">TechWing AI</span>
+            <span className="text-lg font-bold gradient-text">AI Tutor</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8">
@@ -260,7 +260,7 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-base sm:text-lg text-muted-foreground mt-6 max-w-2xl mx-auto leading-relaxed text-balance"
             >
-              TechWing AI Tutor replaces traditional tuition with an intelligent learning ecosystem. 
+              AI Tutor replaces traditional tuition with an intelligent learning ecosystem. 
               Personalized AI tutoring, real-time analytics, and complete school management — all in one platform.
             </motion.p>
 
@@ -537,7 +537,7 @@ export default function LandingPage() {
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            <TestimonialCard name="Dr. Lakshmi Prasad" role="Principal" school="Delhi Public School" content="TechWing AI has transformed how our students learn. The AI tutor is incredibly accurate with our CBSE syllabus, and parents love the real-time monitoring." delay={0} />
+            <TestimonialCard name="Dr. Lakshmi Prasad" role="Principal" school="Delhi Public School" content="AI Tutor has transformed how our students learn. The AI tutor is incredibly accurate with our CBSE syllabus, and parents love the real-time monitoring." delay={0} />
             <TestimonialCard name="Rajesh Kumar" role="Parent" school="Kendriya Vidyalaya" content="My son's grades improved from B to A+ in just 3 months. The AI tutor identified his weak areas in Physics and created personalized practice sessions." delay={0.1} />
             <TestimonialCard name="Sania Mirza" role="Math Teacher" school="St. Mary's Academy" content="The AI tools save me 5+ hours weekly. Auto-generated question papers, instant grading, and class-wide analytics — I can focus on teaching rather than paperwork." delay={0.2} />
           </div>
@@ -601,7 +601,7 @@ export default function LandingPage() {
             <div className="relative">
               <h2 className="text-3xl sm:text-4xl font-bold">Ready to Transform Your School?</h2>
               <p className="text-muted-foreground mt-4 max-w-xl mx-auto">
-                Join 150+ schools already using TechWing AI Tutor. 
+                Join 150+ schools already using AI Tutor. 
                 Start your free trial today — no credit card required.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
@@ -624,7 +624,7 @@ export default function LandingPage() {
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal to-cyan flex items-center justify-center">
                   <Sparkles size={16} className="text-navy-900" />
                 </div>
-                <span className="text-base font-bold gradient-text">TechWing AI</span>
+                <span className="text-base font-bold gradient-text">AI Tutor</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 AI-powered education platform transforming how schools teach and students learn.
@@ -656,7 +656,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t border-white/5 mt-8 pt-8 text-center">
-            <p className="text-xs text-muted-foreground">© 2026 TechWing AI Tutor. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground">© 2026 AI Tutor. All rights reserved.</p>
           </div>
         </div>
       </footer>

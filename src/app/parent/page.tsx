@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { DashboardData } from "@/lib/types";
 import {
   AlertTriangle, Bot, ChevronRight, Clock, FileText,
   MessageSquare, Send, TrendingDown, TrendingUp, User
@@ -9,11 +11,9 @@ import {
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import { GlassAreaChart } from "@/components/charts/Charts";
-import {
-  parentChildStats, childDailyActivity, weakSubjectAlerts,
-  weeklyStudyData, studentSubjects, studentAssignments
-} from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { useAppStore } from "@/lib/store";
+import CustomDropdown from "@/components/ui/CustomDropdown";
 
 const activityIcons: Record<string, React.ReactNode> = {
   class: <User size={14} />,
@@ -33,19 +33,74 @@ const activityColors: Record<string, string> = {
 
 export default function ParentDashboard() {
   const [aiQuery, setAiQuery] = useState("");
+  const userEmail = useAppStore(s => s.userEmail);
+  const userName = useAppStore(s => s.userName);
+  const schoolName = useAppStore(s => s.schoolName);
+  const [selectedStandard, setSelectedStandard] = useState<string>("8");
+
+  const { data, isLoading: loading, error } = useQuery<DashboardData>({
+    queryKey: ['parentDashboard', userEmail],
+    queryFn: async () => {
+      const res = await fetch(`/api/parent/dashboard`);
+      if (!res.ok) {
+        let errMsg = 'Failed to fetch';
+        try {
+          const errData = await res.json();
+          if (errData.error) errMsg = errData.error;
+        } catch(e) {}
+        throw new Error(errMsg);
+      }
+      return res.json();
+    },
+    refetchInterval: 10000,
+    retry: 1,
+  });
+
+  if (loading) {
+    return (
+      <DashboardLayout role="parent" userName="Parent" schoolName="Loading..." pageTitle="Your Child's Progress" pageSubtitle="Loading...">
+        <div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-teal rounded-full animate-spin border-t-transparent" /></div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error || !data || data.error) {
+    return (
+      <DashboardLayout role="parent" userName="Parent" schoolName="Error" pageTitle="Dashboard Error" pageSubtitle="Action needed">
+        <div className="flex flex-col items-center justify-center p-20 text-center">
+          <AlertTriangle size={48} className="text-coral mb-4" />
+          <h2 className="text-xl font-bold mb-2">Could not load dashboard</h2>
+          <p className="text-muted-foreground">{error?.message || data?.error || 'An unexpected error occurred.'}</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const {
+    parentChildStats = [],
+    weeklyStudyData = [],
+    weakSubjectAlerts = [],
+    studentSubjects = [],
+    studentAssignments = [],
+    childDailyActivity = [],
+    student = null
+  } = data;
+
+  const standards = ["All", ...Array.from(new Set(studentSubjects.map((s: any) => s.standard || '8'))).sort((a: any, b: any) => b.toString().localeCompare(a.toString()))];
+  const filteredSubjects = selectedStandard === "All" ? studentSubjects : studentSubjects.filter((s: any) => (s.standard || '8') === selectedStandard);
 
   return (
     <DashboardLayout
       role="parent"
-      userName="Suresh Reddy"
-      schoolName="Delhi Public School"
+      userName={userName || data.parent?.name || "Parent"}
+      schoolName={schoolName || data.school?.name || "AI Tutor"}
       pageTitle="Your Child's Progress"
-      pageSubtitle="Arjun Reddy · Class 10-A · Delhi Public School"
+      pageSubtitle={`${student?.name || 'Student'} · ${data.selectedChild?.className || 'N/A'} · ${data.school?.name || ''}`}
     >
       <div className="space-y-6">
         {/* Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {parentChildStats.map((stat, i) => (
+          {parentChildStats.map((stat: any, i: number) => (
             <StatCard key={stat.title} stat={stat} index={i} />
           ))}
         </div>
@@ -75,7 +130,7 @@ export default function ParentDashboard() {
                 <h3 className="text-sm font-semibold">Attention Needed</h3>
               </div>
               <div className="space-y-3">
-                {weakSubjectAlerts.map((alert, i) => (
+                {weakSubjectAlerts.map((alert: any, i: number) => (
                   <div key={i} className="p-4 rounded-xl bg-coral/5 border border-coral/10">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium">{alert.subject}</span>
@@ -102,20 +157,29 @@ export default function ParentDashboard() {
               transition={{ delay: 0.4 }}
               className="glass-card-static p-5 rounded-2xl"
             >
-              <h3 className="text-sm font-semibold mb-4">Subject Performance</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold">Subject Performance</h3>
+                <CustomDropdown
+                  options={standards}
+                  value={selectedStandard}
+                  onChange={setSelectedStandard}
+                  labelPrefix="Standard"
+                  currentStandard="8"
+                />
+              </div>
               <div className="space-y-3">
-                {studentSubjects.map((subject) => (
-                  <div key={subject.id} className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: `${subject.color}15`, color: subject.color }}>
-                      {subject.code.slice(0, 2)}
+                {filteredSubjects.map((subject: any, index: number) => (
+                  <div key={`${subject.id || subject.name}-${subject.standard}-${index}`} className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: `${subject.color || '#fff'}15`, color: subject.color }}>
+                      {(subject.code || subject.name || '').slice(0, 2).toUpperCase()}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium">{subject.name}</span>
+                        <span className="text-xs font-medium">{subject.name} {subject.standard ? `(Std ${subject.standard})` : ''}</span>
                         <span className="text-xs font-bold" style={{ color: subject.color }}>{subject.score}%</span>
                       </div>
                       <div className="progress-bar">
-                        <div className="progress-fill" style={{ width: `${subject.progress}%`, background: subject.color }} />
+                        <div className="progress-fill" style={{ width: `${subject.score || subject.progress || 0}%`, background: subject.color }} />
                       </div>
                     </div>
                   </div>
@@ -148,7 +212,7 @@ export default function ParentDashboard() {
                   "Why is Arjun weak in Physics?",
                   "How much time did he study this week?",
                   "Is he ready for the mid-term exams?",
-                ].map((q, i) => (
+                ].map((q, i: number) => (
                   <button
                     key={i}
                     onClick={() => setAiQuery(q)}
@@ -180,7 +244,7 @@ export default function ParentDashboard() {
               <div className="relative">
                 <div className="absolute left-4 top-0 bottom-0 w-px bg-white/5" />
                 <div className="space-y-4">
-                  {childDailyActivity.map((activity, i) => (
+                  {childDailyActivity.map((activity: any, i: number) => (
                     <div key={i} className="flex items-start gap-3 pl-1">
                       <div
                         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 relative z-10"
@@ -207,7 +271,7 @@ export default function ParentDashboard() {
             >
               <h3 className="text-sm font-semibold mb-4">Assignment Tracker</h3>
               <div className="space-y-2">
-                {studentAssignments.slice(0, 4).map((a) => (
+                {studentAssignments.slice(0, 4).map((a: any) => (
                   <div key={a.id} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-white/5 transition-colors">
                     <div className="flex items-center gap-2 min-w-0">
                       <FileText size={14} style={{ color: a.subjectColor }} />

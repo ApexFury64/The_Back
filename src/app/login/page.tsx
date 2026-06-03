@@ -1,11 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, GraduationCap, Users, BookOpen, Shield, Building2, Eye, EyeOff, ArrowRight, Phone, Mail, KeyRound } from "lucide-react";
 import type { UserRole } from "@/types";
+import { useAppStore } from "@/lib/store";
+
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import AILogo from "@/components/ui/AILogo";
 
 const roles: { role: UserRole; label: string; icon: React.ReactNode; color: string; loginMethod: string }[] = [
   { role: "student", label: "Student", icon: <GraduationCap size={22} />, color: "#00d4aa", loginMethod: "Student ID + Password" },
@@ -19,16 +24,58 @@ export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<UserRole>("student");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
+  const setUser = useAppStore(s => s.setUser);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const currentRole = roles.find((r) => r.role === selectedRole)!;
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+    setError("");
+
+    const formData = new FormData(formRef.current!);
+    const email = (formData.get('email') as string) || (formData.get('phone') as string) || '';
+    const password = (formData.get('password') as string) || '';
+
+    let resolvedEmail = email;
+
+    try {
+      // 1. Authenticate with Firebase on the client
+      const userCredential = await signInWithEmailAndPassword(auth, resolvedEmail, password);
+      const idToken = await userCredential.user.getIdToken();
+
+      // 2. Send ID Token to our backend to create a session
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken, role: selectedRole })
+      });
+      
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Login failed');
+        setIsLoading(false);
+        return;
+      }
+
+      setUser({
+        email: data.email,
+        name: data.name,
+        role: data.role,
+        schoolId: data.schoolId,
+        schoolName: data.schoolName,
+      });
+
       router.push(`/${selectedRole}`);
-    }, 800);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Connection failed');
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -48,10 +95,10 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal to-cyan flex items-center justify-center">
-              <Sparkles size={22} className="text-navy-900" />
+            <div className="flex items-center justify-center">
+              <AILogo size={40} />
             </div>
-            <span className="text-xl font-bold gradient-text">TechWing AI</span>
+            <span className="text-xl font-bold gradient-text">AI Tutor</span>
           </Link>
           <p className="text-sm text-muted-foreground mt-2">Sign in to your learning ecosystem</p>
         </div>
@@ -96,53 +143,51 @@ export default function LoginPage() {
           <div className="mb-6 p-3 rounded-xl bg-teal/5 border border-teal/10 text-xs">
             <p className="font-semibold text-teal mb-1">Demo Credentials:</p>
             {selectedRole === "parent" ? (
-              <p className="text-muted-foreground">Phone: <b>+91 9876543210</b><br/>OTP: <b>123456</b> (Linked to student Arjun Reddy)</p>
+              <p className="text-muted-foreground">Phone (Email): <b>parent@dps.edu</b><br/>OTP/Pass: <b>demo123</b></p>
             ) : selectedRole === "student" ? (
-              <p className="text-muted-foreground">ID: <b>STU-2026-001</b><br/>Pass: <b>demo123</b></p>
+              <p className="text-muted-foreground">ID (Email): <b>student@dps.edu</b><br/>Pass: <b>demo123</b></p>
             ) : selectedRole === "teacher" ? (
-              <p className="text-muted-foreground">Email: <b>teacher@school.edu</b><br/>Pass: <b>demo123</b></p>
+              <p className="text-muted-foreground">Email: <b>teacher@dps.edu</b><br/>Pass: <b>demo123</b></p>
             ) : selectedRole === "admin" ? (
-              <p className="text-muted-foreground">Email: <b>admin@school.edu</b><br/>Pass: <b>demo123</b></p>
+              <p className="text-muted-foreground">Email: <b>admin@dps-hyd.edu</b><br/>Pass: <b>demo123</b></p>
             ) : (
               <p className="text-muted-foreground">Email: <b>super@techwing.com</b><br/>Pass: <b>demo123</b></p>
             )}
           </div>
+          {error && <p className="text-coral text-xs mb-2">{error}</p>}
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form ref={formRef} onSubmit={handleLogin} className="space-y-4">
             {selectedRole === "parent" ? (
               <>
-                {/* Parent: Phone + OTP */}
+                {/* Parent: Email (Originally Phone) + Password (OTP) */}
                 <div>
-                  <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Phone Number</label>
+                  <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Email / Phone</label>
                   <div className="relative">
                     <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input type="tel" defaultValue="+91 9876543210" className="glass-input w-full pl-10 pr-4 py-2.5 text-sm" required />
+                    <input type="text" name="email" defaultValue="parent@dps.edu" className="glass-input w-full pl-10 pr-4 py-2.5 text-sm" required />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground font-medium mb-1.5 block">OTP</label>
+                  <label className="text-xs text-muted-foreground font-medium mb-1.5 block">OTP / Password</label>
                   <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5, 6].map((num, i) => (
-                      <input key={i} type="text" maxLength={1} defaultValue={num} className="glass-input w-full text-center py-2.5 text-lg font-mono" />
-                    ))}
+                    <input type={showPassword ? "text" : "password"} name="password" defaultValue="demo123" className="glass-input w-full py-2.5 text-sm px-4" required />
                   </div>
-                  <button type="button" className="text-[11px] text-teal hover:underline mt-2">Resend OTP</button>
                 </div>
               </>
             ) : selectedRole === "student" ? (
               <>
                 {/* Student: ID + Password */}
                 <div>
-                  <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Student ID</label>
+                  <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Student ID (Email)</label>
                   <div className="relative">
                     <KeyRound size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input type="text" defaultValue="STU-2026-001" className="glass-input w-full pl-10 pr-4 py-2.5 text-sm" required />
+                    <input type="text" name="email" defaultValue="student@dps.edu" className="glass-input w-full pl-10 pr-4 py-2.5 text-sm" required />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Password</label>
                   <div className="relative">
-                    <input type={showPassword ? "text" : "password"} defaultValue="demo123" className="glass-input w-full pl-4 pr-10 py-2.5 text-sm" required />
+                    <input type={showPassword ? "text" : "password"} name="password" defaultValue="demo123" className="glass-input w-full pl-4 pr-10 py-2.5 text-sm" required />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -156,16 +201,16 @@ export default function LoginPage() {
                   <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Email Address</label>
                   <div className="relative">
                     <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input type="email" defaultValue={
-                      selectedRole === "teacher" ? "teacher@school.edu" :
-                      selectedRole === "admin" ? "admin@school.edu" : "super@techwing.com"
+                    <input type="email" name="email" defaultValue={
+                      selectedRole === "teacher" ? "teacher@dps.edu" :
+                      selectedRole === "admin" ? "admin@dps-hyd.edu" : "super@techwing.com"
                     } className="glass-input w-full pl-10 pr-4 py-2.5 text-sm" required />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Password</label>
                   <div className="relative">
-                    <input type={showPassword ? "text" : "password"} defaultValue="demo123" className="glass-input w-full pl-4 pr-10 py-2.5 text-sm" required />
+                    <input type={showPassword ? "text" : "password"} name="password" defaultValue="demo123" className="glass-input w-full pl-4 pr-10 py-2.5 text-sm" required />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>

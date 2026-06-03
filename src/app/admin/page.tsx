@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { DashboardData } from "@/lib/types";
 import {
   Bell, ChevronRight, GraduationCap, Megaphone, Plus,
   Search, Settings, Users, UserPlus
@@ -9,25 +11,53 @@ import {
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import { GlassAreaChart, GlassBarChart } from "@/components/charts/Charts";
-import {
-  adminStats, schoolPerformanceData, attendanceData,
-  recentAnnouncements
-} from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { useAppStore } from "@/lib/store";
 
 export default function AdminDashboard() {
+  const userEmail = useAppStore(s => s.userEmail);
+  const userName = useAppStore(s => s.userName);
+  const schoolName = useAppStore(s => s.schoolName);
+
+  const { data, isLoading: loading } = useQuery<DashboardData>({
+    queryKey: ['adminDashboard', userEmail],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/dashboard`);
+      if (!res.ok) throw new Error('Unauthorized');
+      return res.json();
+    },
+    refetchInterval: 10000,
+  });
+
+  if (loading || !data || data.error) {
+    return (
+      <DashboardLayout role="admin" userName={userName || 'Admin'} schoolName={schoolName || 'Loading...'} pageTitle="School Administration" pageSubtitle="Loading...">
+        <div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-teal rounded-full animate-spin border-t-transparent" /></div>
+      </DashboardLayout>
+    );
+  }
+
+  const {
+    adminStats,
+    schoolPerformanceData,
+    attendanceData,
+    recentStudents,
+    recentAnnouncements,
+    schoolOverview
+  } = data;
+
   return (
     <DashboardLayout
       role="admin"
-      userName="Dr. Rajesh Gupta"
-      schoolName="Delhi Public School"
+      userName={userName || "School Admin"}
+      schoolName={schoolName || data.school?.name || "School Administration"}
       pageTitle="School Administration"
-      pageSubtitle="Delhi Public School, Hyderabad"
+      pageSubtitle={`${data.school?.name || ''} - ${data.school?.code || ''}`}
     >
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {adminStats.map((stat, i) => (
+          {adminStats.map((stat: any, i: number) => (
             <StatCard key={stat.title} stat={stat} index={i} />
           ))}
         </div>
@@ -44,7 +74,7 @@ export default function AdminDashboard() {
             { icon: <Users size={18} />, label: "Add Teacher", color: "#0ea5e9" },
             { icon: <Megaphone size={18} />, label: "Announcement", color: "#f59e0b" },
             { icon: <Settings size={18} />, label: "Settings", color: "#a78bfa" },
-          ].map((action, i) => (
+          ].map((action: any, i: number) => (
             <button key={i} className="glass-card p-4 flex flex-col items-center gap-2 text-center group">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ backgroundColor: `${action.color}15`, color: action.color }}>
                 {action.icon}
@@ -105,33 +135,27 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { name: "Arjun Reddy", class: "10-A", grade: "A", aiUsage: "High", status: "active" },
-                      { name: "Priya Sharma", class: "10-A", grade: "A+", aiUsage: "Very High", status: "active" },
-                      { name: "Vikram Singh", class: "10-B", grade: "C+", aiUsage: "Low", status: "active" },
-                      { name: "Kavya Nair", class: "9-A", grade: "A", aiUsage: "Medium", status: "active" },
-                      { name: "Ravi Kumar", class: "9-C", grade: "B", aiUsage: "High", status: "inactive" },
-                    ].map((student, i) => (
+                    {recentStudents.map((student: any, i: number) => (
                       <tr key={i} className="border-b border-white/3 hover:bg-white/3 transition-colors cursor-pointer">
                         <td className="py-2.5 px-3">
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-[9px] font-bold text-teal">
-                              {student.name.split(" ").map(n => n[0]).join("")}
+                              {student.name.split(" ").map((n: string) => n[0]).join("")}
                             </div>
                             <span className="text-xs font-medium">{student.name}</span>
                           </div>
                         </td>
                         <td className="py-2.5 px-3 text-xs text-muted-foreground">{student.class}</td>
-                        <td className="py-2.5 px-3 text-xs font-medium">{student.grade}</td>
+                        <td className="py-2.5 px-3 text-xs font-medium">{student.avgScore}%</td>
                         <td className="py-2.5 px-3">
                           <span className={cn(
                             "text-[10px] font-medium px-2 py-0.5 rounded-full",
-                            student.aiUsage === "Very High" && "bg-teal/15 text-teal",
-                            student.aiUsage === "High" && "bg-cyan/15 text-cyan",
-                            student.aiUsage === "Medium" && "bg-amber/15 text-amber",
-                            student.aiUsage === "Low" && "bg-coral/15 text-coral",
+                            student.avgScore >= 80 ? "bg-teal/15 text-teal" :
+                            student.avgScore >= 60 ? "bg-cyan/15 text-cyan" :
+                            student.avgScore >= 40 ? "bg-amber/15 text-amber" :
+                            "bg-coral/15 text-coral"
                           )}>
-                            {student.aiUsage}
+                            {student.avgScore >= 80 ? "High" : student.avgScore >= 60 ? "Medium" : "Low"}
                           </span>
                         </td>
                         <td className="py-2.5 px-3">
@@ -166,7 +190,7 @@ export default function AdminDashboard() {
                 </button>
               </div>
               <div className="space-y-3">
-                {recentAnnouncements.map((ann) => (
+                {recentAnnouncements.map((ann: any) => (
                   <div key={ann.id} className="p-3 rounded-xl bg-white/3 border border-white/5 hover:bg-white/5 transition-colors cursor-pointer">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-medium">{ann.title}</span>
@@ -195,12 +219,7 @@ export default function AdminDashboard() {
             >
               <h3 className="text-sm font-semibold mb-4">School Overview</h3>
               <div className="space-y-3">
-                {[
-                  { label: "Classes", value: "42", sub: "12 grades × 3-4 sections" },
-                  { label: "Subjects", value: "18", sub: "Core + Electives" },
-                  { label: "AI Sessions (Today)", value: "847", sub: "+23% from yesterday" },
-                  { label: "Pending Approvals", value: "5", sub: "3 materials, 2 assignments" },
-                ].map((item, i) => (
+                {schoolOverview.map((item: any, i: number) => (
                   <div key={i} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-white/5 transition-colors">
                     <div>
                       <p className="text-xs font-medium">{item.label}</p>

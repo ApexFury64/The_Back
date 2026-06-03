@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { DashboardData } from "@/lib/types";
 import {
   Activity, AlertCircle, CheckCircle, ChevronRight,
   Database, Globe, Search, Server, Shield, TrendingUp
@@ -9,25 +11,53 @@ import {
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import { GlassAreaChart } from "@/components/charts/Charts";
-import {
-  superAdminStats, platformSchools, systemHealthData,
-  platformGrowthData
-} from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { useAppStore } from "@/lib/store";
 
 export default function SuperAdminDashboard() {
+  const userEmail = useAppStore(s => s.userEmail);
+  const userName = useAppStore(s => s.userName);
+  const schoolName = useAppStore(s => s.schoolName);
+
+  const { data, isLoading: loading } = useQuery<DashboardData>({
+    queryKey: ['superAdminDashboard', userEmail],
+    queryFn: async () => {
+      const res = await fetch(`/api/super-admin/dashboard`);
+      if (!res.ok) throw new Error('Unauthorized');
+      return res.json();
+    },
+    refetchInterval: 10000,
+  });
+
+  if (loading || !data || data.error) {
+    return (
+      <DashboardLayout role="super-admin" userName="Admin" schoolName="Loading..." pageTitle="Platform Overview" pageSubtitle="Loading...">
+        <div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-teal rounded-full animate-spin border-t-transparent" /></div>
+      </DashboardLayout>
+    );
+  }
+
+  const {
+    superAdminStats,
+    platformGrowthData,
+    platformSchools,
+    systemHealthData,
+    platformMetrics,
+    auditLog
+  } = data;
+
   return (
     <DashboardLayout
       role="super-admin"
-      userName="Admin"
-      schoolName="TechWing Platform"
+      userName={userName || "Admin"}
+      schoolName="AI Tutor Platform"
       pageTitle="Platform Overview"
-      pageSubtitle="TechWing AI Tutor · Super Admin"
+      pageSubtitle="AI Tutor · Super Admin"
     >
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {superAdminStats.map((stat, i) => (
+          {superAdminStats.map((stat: any, i: number) => (
             <StatCard key={stat.title} stat={stat} index={i} />
           ))}
         </div>
@@ -73,7 +103,7 @@ export default function SuperAdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {platformSchools.map((school) => (
+                    {platformSchools.map((school: any) => (
                       <tr key={school.id} className="border-b border-white/3 hover:bg-white/3 transition-colors cursor-pointer">
                         <td className="py-2.5 px-3">
                           <span className="text-xs font-medium">{school.name}</span>
@@ -127,7 +157,7 @@ export default function SuperAdminDashboard() {
                 <h3 className="text-sm font-semibold">System Health</h3>
               </div>
               <div className="space-y-2.5">
-                {systemHealthData.map((item, i) => (
+                {systemHealthData.map((item: any, i: number) => (
                   <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-white/3">
                     <div className="flex items-center gap-2">
                       {item.status === "healthy" ? (
@@ -157,16 +187,9 @@ export default function SuperAdminDashboard() {
             >
               <h3 className="text-sm font-semibold mb-4">Platform Metrics</h3>
               <div className="space-y-3">
-                {[
-                  { label: "Daily Active Users", value: "12,847", trend: "+8%", icon: <Globe size={14} /> },
-                  { label: "AI Queries Today", value: "45,230", trend: "+15%", icon: <Server size={14} /> },
-                  { label: "Avg Response Time", value: "124ms", trend: "-12%", icon: <Activity size={14} /> },
-                  { label: "Storage Used", value: "2.4 TB", trend: "+5%", icon: <Database size={14} /> },
-                  { label: "Active Subscriptions", value: "142", trend: "+3%", icon: <Shield size={14} /> },
-                ].map((metric, i) => (
+                {platformMetrics.map((metric: any, i: number) => (
                   <div key={i} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-white/5 transition-colors">
                     <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">{metric.icon}</span>
                       <span className="text-xs">{metric.label}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -189,12 +212,7 @@ export default function SuperAdminDashboard() {
             >
               <h3 className="text-sm font-semibold mb-4">Recent Activity</h3>
               <div className="space-y-3">
-                {[
-                  { action: "New school registered", detail: "Cambridge School, Bangalore", time: "10 min ago", type: "success" },
-                  { action: "Storage warning", detail: "DPS Hyderabad at 90% capacity", time: "1 hour ago", type: "warning" },
-                  { action: "Plan upgraded", detail: "KV Delhi → Pro plan", time: "3 hours ago", type: "info" },
-                  { action: "AI token limit reached", detail: "St. Mary's Mumbai — daily limit", time: "5 hours ago", type: "alert" },
-                ].map((log, i) => (
+                {auditLog.map((log: any, i: number) => (
                   <div key={i} className="flex items-start gap-2">
                     <div className={cn(
                       "w-2 h-2 rounded-full mt-1.5 flex-shrink-0",

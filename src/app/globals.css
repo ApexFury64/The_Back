@@ -1,7 +1,9 @@
 @import "tailwindcss";
 
+@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* ============================================
-   TECHWING AI TUTOR — DESIGN SYSTEM v2
+   AI Tutor — DESIGN SYSTEM v2
    Matched to Reference Image:
    - Deep steel-blue background gradient
    - Blue-tinted frosted glass (dark cards)

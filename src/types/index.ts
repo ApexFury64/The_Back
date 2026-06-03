@@ -1,5 +1,5 @@
 /* ============================================
-   TechWing AI Tutor — Type Definitions
+   AI Tutor — Type Definitions
    ============================================ */
 
 export type UserRole = "student" | "parent" | "teacher" | "admin" | "super-admin";
