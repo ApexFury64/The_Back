@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 
@@ -9,27 +11,27 @@ const createTeacherSchema = z.object({
   phone: z.string().optional(),
   employeeId: z.string().optional(),
   primarySubject: z.string().optional(),
-  adminEmail: z.string().email()
 });
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any)?.role !== 'SCHOOLADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const parsed = createTeacherSchema.safeParse(body);
     
     if (!parsed.success) {
-      return NextResponse.json({ error: (parsed.error as any).errors[0].message }, { status: 400 });
+      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
     }
     
-    const { name, email, phone, employeeId, primarySubject, adminEmail } = parsed.data;
+    const { name, email, phone, employeeId, primarySubject } = parsed.data;
+    const schoolId = (session.user as any).schoolId;
 
-    // Find the admin to get their schoolId
-    const admin = await prisma.user.findUnique({
-      where: { email: adminEmail }
-    });
-
-    if (!admin || !admin.schoolId) {
-      return NextResponse.json({ error: 'Unauthorized or school not found' }, { status: 403 });
+    if (!schoolId) {
+      return NextResponse.json({ error: 'School not found' }, { status: 403 });
     }
 
     // Check if email already exists
@@ -38,9 +40,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
     }
 
-    const defaultPassword = await bcrypt.hash('demo123', 8);
+    const defaultPassword = await bcrypt.hash('demo123', 10);
 
-    // Create the teacher
     const newTeacher = await prisma.user.create({
       data: {
         name,
@@ -49,12 +50,12 @@ export async function POST(request: Request) {
         phone,
         employeeId,
         primarySubject,
-        role: 'teacher',
-        schoolId: admin.schoolId
+        role: 'TEACHER',
+        schoolId
       }
     });
 
-    return NextResponse.json({ success: true, teacher: newTeacher });
+    return NextResponse.json({ success: true, teacher: { id: newTeacher.id, name: newTeacher.name, email: newTeacher.email } });
   } catch (error) {
     console.error('Error creating teacher:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

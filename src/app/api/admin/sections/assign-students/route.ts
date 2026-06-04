@@ -1,41 +1,39 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
 
 const assignStudentsSchema = z.object({
-  sectionId: z.string().min(1),
+  classId: z.string().min(1),
   studentIds: z.array(z.string()).min(1),
-  adminEmail: z.string().email()
 });
 
 export async function POST(request: Request) {
   try {
-    const session = await getSession();
-    if (!session || session.role !== 'admin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any)?.role !== 'SCHOOLADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const body = await request.json();
     const parsed = assignStudentsSchema.safeParse(body);
     
     if (!parsed.success) {
-      return NextResponse.json({ error: (parsed.error as any).errors[0].message }, { status: 400 });
+      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
     }
 
-    const { sectionId, studentIds, adminEmail } = parsed.data;
+    const { classId, studentIds } = parsed.data;
+    const schoolId = (session.user as any).schoolId;
 
-    // Verify admin belongs to the school
-    const admin = await prisma.user.findUnique({ where: { email: adminEmail } });
-    if (!admin) return NextResponse.json({ error: 'Admin not found' }, { status: 404 });
-
-    // Update the students
     await prisma.user.updateMany({
       where: {
         id: { in: studentIds },
-        role: 'student',
-        schoolId: admin.schoolId
+        role: 'STUDENT',
+        schoolId
       },
       data: {
-        sectionId: sectionId
+        classId
       }
     });
 

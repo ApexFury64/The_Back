@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
-    const session = await getSession();
-    if (!session || session.role !== 'parent') {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any)?.role !== 'PARENT') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const email = searchParams.get('parentEmail') || session.email;
-
+    const email = session.user?.email as string;
     const parent = await prisma.user.findUnique({ where: { email } });
     if (!parent || !parent.schoolId) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 

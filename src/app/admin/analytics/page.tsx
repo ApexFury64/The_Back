@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = "force-dynamic";
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { GlassAreaChart, GlassBarChart } from "@/components/charts/Charts";

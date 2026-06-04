@@ -8,8 +8,7 @@ import { Sparkles, GraduationCap, Users, BookOpen, Shield, Building2, Eye, EyeOf
 import type { UserRole } from "@/types";
 import { useAppStore } from "@/lib/store";
 
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { signIn } from "next-auth/react";
 import AILogo from "@/components/ui/AILogo";
 
 const roles: { role: UserRole; label: string; icon: React.ReactNode; color: string; loginMethod: string }[] = [
@@ -43,32 +42,25 @@ export default function LoginPage() {
     let resolvedEmail = email;
 
     try {
-      // 1. Authenticate with Firebase on the client
-      const userCredential = await signInWithEmailAndPassword(auth, resolvedEmail, password);
-      const idToken = await userCredential.user.getIdToken();
-
-      // 2. Send ID Token to our backend to create a session
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken, role: selectedRole })
+      const res = await signIn('credentials', {
+        redirect: false,
+        email: resolvedEmail,
+        password,
       });
-      
-      const data = await res.json();
 
-      if (!res.ok) {
-        setError(data.error || 'Login failed');
+      if (res?.error) {
+        setError(res.error || 'Login failed');
         setIsLoading(false);
         return;
       }
 
-      setUser({
-        email: data.email,
-        name: data.name,
-        role: data.role,
-        schoolId: data.schoolId,
-        schoolName: data.schoolName,
-      });
+      // Instead of fetching session manually, we can just redirect.
+      // The session will be fetched automatically by the protected routes,
+      // but for the global store, we can rely on NextAuth's SessionProvider.
+      // For now, just redirect to the dashboard.
+
+      // Note: We might want to use useSession() inside layout to set global state
+      // but for now, redirecting will trigger a page reload that initializes it.
 
       router.push(`/${selectedRole}`);
     } catch (err: any) {

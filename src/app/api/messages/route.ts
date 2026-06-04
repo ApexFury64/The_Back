@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
 
 const sendMessageSchema = z.object({
@@ -10,9 +11,10 @@ const sendMessageSchema = z.object({
 
 export async function GET(request: Request) {
   try {
-    const session = await getSession();
+    const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    const userId = (session.user as any).id;
     const { searchParams } = new URL(request.url);
     const withUserId = searchParams.get('withUserId');
 
@@ -23,8 +25,8 @@ export async function GET(request: Request) {
     const messages = await prisma.message.findMany({
       where: {
         OR: [
-          { senderId: session.userId, receiverId: withUserId },
-          { senderId: withUserId, receiverId: session.userId }
+          { senderId: userId, receiverId: withUserId },
+          { senderId: withUserId, receiverId: userId }
         ]
       },
       orderBy: { timestamp: 'asc' }
@@ -39,21 +41,22 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await getSession();
+    const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await request.json();
     const parsed = sendMessageSchema.safeParse(body);
     
     if (!parsed.success) {
-      return NextResponse.json({ error: (parsed.error as any).errors[0].message }, { status: 400 });
+      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
     }
 
+    const userId = (session.user as any).id;
     const { receiverId, content } = parsed.data;
 
     const message = await prisma.message.create({
       data: {
-        senderId: session.userId,
+        senderId: userId,
         receiverId,
         content
       }

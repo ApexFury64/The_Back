@@ -15,6 +15,8 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "AI Tutor — AI-Powered Education Platform",
   description:

@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import fs from 'fs/promises';
 import path from 'path';
+import { put } from '@vercel/blob';
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any)?.role !== 'STUDENT') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const assignmentId = formData.get('assignmentId') as string;
@@ -15,51 +23,67 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({ where: { email: userEmail } });
-    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    const userId = user.id;
+    const student = await prisma.user.findUnique({ where: { email: userEmail } });
+    if (!student) return NextResponse.json({ error: 'Student not found' }, { status: 404 });
 
-    // Save physical file
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+    let filePath = "";
     
-    // Ensure directory exists
-    try {
-      await fs.access(uploadsDir);
-    } catch {
-      await fs.mkdir(uploadsDir, { recursive: true });
+    // Check if Vercel Blob is configured
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+       // Upload to Vercel Blob
+       const blob = await put(file.name, file, { access: 'public' });
+       filePath = blob.url;
+    } else {
+       // Fallback to local storage
+       const bytes = await file.arrayBuffer();
+       const buffer = Buffer.from(bytes);
+
+       const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+       
+       try {
+         await fs.access(uploadsDir);
+       } catch {
+         await fs.mkdir(uploadsDir, { recursive: true });
+       }
+
+       const uniqueFilename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+       const localFilePath = path.join(uploadsDir, uniqueFilename);
+       await fs.writeFile(localFilePath, buffer);
+
+       filePath = `/uploads/${uniqueFilename}`;
     }
 
-    const uniqueFilename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-    const filePath = path.join(uploadsDir, uniqueFilename);
-    await fs.writeFile(filePath, buffer);
-
-    const relativePath = `/uploads/${uniqueFilename}`;
-
     // Update DB
-    const submission = await prisma.assignmentSubmission.upsert({
+    const existingSubmission = await prisma.submission.findFirst({
       where: {
-        userId_assignmentId: {
-          userId,
-          assignmentId
-        }
-      },
-      update: {
-        filePath: relativePath,
-        comments,
-        status: 'submitted',
-        submittedAt: new Date()
-      },
-      create: {
-        userId,
-        assignmentId,
-        filePath: relativePath,
-        comments,
-        status: 'submitted'
+        studentId: student.id,
+        assignmentId
       }
     });
+
+    let submission;
+    if (existingSubmission) {
+      submission = await prisma.submission.update({
+        where: { id: existingSubmission.id },
+        data: {
+          filePath,
+          comments,
+          status: 'submitted',
+          submittedAt: new Date()
+        }
+      });
+    } else {
+      submission = await prisma.submission.create({
+        data: {
+          studentId: student.id,
+          assignmentId,
+          filePath,
+          comments,
+          status: 'submitted',
+          submittedAt: new Date()
+        }
+      });
+    }
 
     return NextResponse.json({ success: true, submission });
   } catch (error) {

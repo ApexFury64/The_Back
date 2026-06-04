@@ -1,19 +1,24 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
-    const session = await getSession();
-    if (!session || (session.role !== 'parent' && session.role !== 'student' && session.role !== 'teacher')) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const role = (session.user as any)?.role;
+    if (role !== 'PARENT' && role !== 'STUDENT' && role !== 'TEACHER') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // For MVP, just return all teachers in the same school
+    const schoolId = (session.user as any).schoolId;
+
     const teachers = await prisma.user.findMany({
       where: {
-        schoolId: session.schoolId,
-        role: 'teacher'
+        schoolId,
+        role: 'TEACHER'
       },
       select: {
         id: true,

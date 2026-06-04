@@ -1,64 +1,59 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
 
 const createClassSchema = z.object({
   name: z.string().min(1),
   grade: z.union([z.string(), z.number()]),
   sections: z.array(z.string()).optional(),
-  adminEmail: z.string().email()
 });
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any)?.role !== 'SCHOOLADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const parsed = createClassSchema.safeParse(body);
     
     if (!parsed.success) {
-      return NextResponse.json({ error: (parsed.error as any).errors[0].message }, { status: 400 });
+      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
     }
     
-    const { name, grade, sections, adminEmail } = parsed.data;
+    const { name, grade, sections } = parsed.data;
+    const schoolId = (session.user as any).schoolId;
 
-    // Find the admin to get their schoolId
-    const admin = await prisma.user.findUnique({
-      where: { email: adminEmail }
-    });
-
-    if (!admin || !admin.schoolId) {
-      return NextResponse.json({ error: 'Unauthorized or school not found' }, { status: 403 });
+    if (!schoolId) {
+      return NextResponse.json({ error: 'School not found' }, { status: 403 });
     }
 
-    // Check if class with this name already exists in the school
-    const existingClass = await prisma.class.findFirst({
-      where: {
-        name,
-        schoolId: admin.schoolId
-      }
-    });
+    const standard = String(grade);
+    const sectionNames = Array.isArray(sections) && sections.length > 0 ? sections : ['A'];
 
-    if (existingClass) {
-      return NextResponse.json({ error: 'Class with this name already exists' }, { status: 409 });
-    }
+    // Create one ClassRoom per section
+    const created = [];
+    for (const sec of sectionNames) {
+      const existing = await prisma.classRoom.findFirst({
+        where: { schoolId, standard, section: sec }
+      });
+      if (existing) continue;
 
-    // Create Class and Sections in a transaction
-    const sectionNames = Array.isArray(sections) && sections.length > 0 ? sections : ['A']; // Default to section A if none provided
-
-    const newClass = await prisma.class.create({
-      data: {
-        name,
-        grade: parseInt(String(grade)),
-        schoolId: admin.schoolId,
-        sections: {
-          create: sectionNames.map(secName => ({ name: secName }))
+      const classRoom = await prisma.classRoom.create({
+        data: {
+          schoolId,
+          name: `Class ${standard} - ${sec}`,
+          standard,
+          section: sec,
         }
-      },
-      include: {
-        sections: true
-      }
-    });
+      });
+      created.push(classRoom);
+    }
 
-    return NextResponse.json({ success: true, class: newClass });
+    return NextResponse.json({ success: true, classes: created });
   } catch (error) {
     console.error('Error creating class:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

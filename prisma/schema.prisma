@@ -1,0 +1,270 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// NextAuth Models
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          Role      @default(STUDENT)
+
+  // Profile fields
+  phone          String?
+  employeeId     String?
+  primarySubject String?
+
+  // Tenancy & Relations
+  schoolId      String?
+  school        School?   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  // Student Specific
+  classId       String?
+  class         ClassRoom? @relation(fields: [classId], references: [id])
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  taughtClasses ClassRoom[] @relation("ClassTeacher")
+  assignments   Assignment[]
+  submissions   Submission[]
+  announcements Announcement[]
+  sentMessages     Message[] @relation("MessageSender")
+  receivedMessages Message[] @relation("MessageReceiver")
+  studySessions    StudySession[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([schoolId])
+  @@index([classId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Platform Models
+
+enum Role {
+  SUPERADMIN
+  SCHOOLADMIN
+  TEACHER
+  STUDENT
+  PARENT
+}
+
+model School {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  address     String?
+  
+  users       User[]
+  classes     ClassRoom[]
+  subjects    Subject[]
+  assignments Assignment[]
+  announcements Announcement[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ClassRoom {
+  id             String   @id @default(cuid())
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  name           String   // e.g. "Class 8 - A"
+  standard       String   // e.g. "8"
+  section        String   // e.g. "A"
+  
+  classTeacherId String?
+  classTeacher   User?    @relation("ClassTeacher", fields: [classTeacherId], references: [id])
+  
+  students       User[]
+  assignments    Assignment[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([schoolId])
+  @@index([classTeacherId])
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  name        String   // e.g. "Mathematics"
+  code        String   // e.g. "MAT8"
+  color       String   // e.g. "#0ea5e9"
+  standard    String   // e.g. "8"
+  
+  assignments Assignment[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([schoolId])
+}
+
+model Assignment {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  classId     String
+  class       ClassRoom @relation(fields: [classId], references: [id], onDelete: Cascade)
+  
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  
+  teacherId   String
+  teacher     User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  title       String
+  description String?
+  dueDate     DateTime
+  
+  submissions Submission[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([schoolId])
+  @@index([classId])
+  @@index([subjectId])
+  @@index([teacherId])
+}
+
+model Submission {
+  id           String   @id @default(cuid())
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  
+  studentId    String
+  student      User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  status       String   @default("pending") // pending, submitted, graded
+  grade        String?
+  filePath     String?  // Local upload path or Vercel Blob URL
+  comments     String?  // Optional student or teacher comments
+  
+  submittedAt  DateTime?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([studentId, assignmentId])
+  @@index([assignmentId])
+  @@index([studentId])
+}
+
+// --- Models added from Backend Audit ---
+
+model Announcement {
+  id        String   @id @default(cuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  title     String
+  content   String
+  priority  String   @default("medium") // low, medium, high
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
+  @@index([authorId])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  receiverId String
+  receiver   User     @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  content    String
+  
+  timestamp  DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Setting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  updatedById String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model StudySession {
+  id        String   @id @default(cuid())
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  title     String
+  type      String   // "ai", "self-study"
+  startTime DateTime
+  endTime   DateTime
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+}
+

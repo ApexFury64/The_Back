@@ -1,58 +1,76 @@
-import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
-import { cookies } from 'next/headers';
+import { NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { PrismaAdapter } from '@auth/prisma-adapter';
+import { prisma } from './prisma';
+import bcrypt from 'bcryptjs';
 
-const SECRET_KEY = process.env.JWT_SECRET;
-if (!SECRET_KEY) throw new Error('JWT_SECRET environment variable is required');
-const key = new TextEncoder().encode(SECRET_KEY);
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma) as any,
+  session: {
+    strategy: 'jwt',
+  },
+  pages: {
+    signIn: '/login',
+  },
+  providers: [
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
 
-export interface SessionPayload extends JWTPayload {
-  userId: string;
-  email: string;
-  role: string;
-  schoolId: string | null;
-}
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        });
 
-export async function encrypt(payload: SessionPayload) {
-  return new SignJWT(payload)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('24h')
-    .sign(key);
-}
+        if (!user || !user.password) {
+          return null;
+        }
 
-export async function decrypt(input: string): Promise<SessionPayload | null> {
-  try {
-    const { payload } = await jwtVerify(input, key, {
-      algorithms: ['HS256'],
-    });
-    return payload as SessionPayload;
-  } catch (error) {
-    return null;
-  }
-}
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
 
+        if (!isPasswordValid) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          schoolId: user.schoolId,
+        };
+      },
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = (user as any).role;
+        token.schoolId = (user as any).schoolId;
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token && session.user) {
+        (session.user as any).role = token.role;
+        (session.user as any).schoolId = token.schoolId;
+        (session.user as any).id = token.id;
+      }
+      return session;
+    },
+  },
+  secret: process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET,
+};
+
+import { getServerSession } from "next-auth/next";
 export async function getSession() {
-  const cookieStore = await cookies();
-  const session = cookieStore.get('session')?.value;
-  if (!session) return null;
-  return await decrypt(session);
-}
-
-export async function createSession(payload: SessionPayload) {
-  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-  const session = await encrypt(payload);
-
-  const cookieStore = await cookies();
-  cookieStore.set('session', session, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    expires: expires,
-    sameSite: 'lax',
-    path: '/',
-  });
-}
-
-export async function deleteSession() {
-  const cookieStore = await cookies();
-  cookieStore.delete('session');
+  const session = await getServerSession(authOptions);
+  return session?.user as any || null;
 }

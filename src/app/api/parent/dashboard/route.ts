@@ -1,45 +1,73 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
-import { getSession } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
-    const session = await getSession();
-    if (!session || session.role !== 'parent') {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any)?.role !== 'parent') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const email = session.email;
+    const email = session.user?.email as string;
 
-    // Get Parent Profile
-    let parent = null;
-    const usersSnapshot = await adminDb.collection('users').where('email', '==', email).limit(1).get();
-    if (!usersSnapshot.empty) {
-      parent = { id: usersSnapshot.docs[0].id, ...usersSnapshot.docs[0].data() };
+    const parentData = await prisma.user.findUnique({
+      where: { email },
+      include: { school: true }
+    });
+
+    if (!parentData || !parentData.schoolId) {
+      return NextResponse.json({ error: 'Parent or school not found' }, { status: 404 });
     }
 
-    if (!parent) return NextResponse.json({ error: 'Parent not found' }, { status: 404 });
+    // In a real app, we'd have a Parent-Child relation. For now, we mock the child based on the parent's school.
+    const child = await prisma.user.findFirst({
+      where: { schoolId: parentData.schoolId, role: 'STUDENT' },
+      include: { class: { include: { classTeacher: true } } }
+    });
 
-    // In Firebase, we provide robust mock aggregates for the child's progress
+    if (!child) {
+      return NextResponse.json({ error: 'No student found in this school' }, { status: 404 });
+    }
+
     const childDailyActivity = [
       { time: '08:00 AM', activity: 'Logged in to portal', type: 'class' },
       { time: '10:30 AM', activity: 'AI Tutor Session', type: 'ai' },
-      { time: '01:00 PM', activity: 'Viewed Assignment Details', type: 'assignment' },
-      { time: '03:45 PM', activity: 'Completed a Quiz', type: 'quiz' },
-      { time: '05:00 PM', activity: 'Completed a Topic', type: 'study' },
     ];
 
-    const studentSubjects = [
-      { name: 'Mathematics', score: 85, color: '#0ea5e9', standard: '8' },
-      { name: 'Science', score: 78, color: '#00d4aa', standard: '8' },
-      { name: 'History', score: 92, color: '#f59e0b', standard: '8' },
-      { name: 'English', score: 88, color: '#a78bfa', standard: '8' },
-      { name: 'Mathematics', score: 82, color: '#0ea5e9', standard: '7' },
-      { name: 'Science', score: 80, color: '#00d4aa', standard: '7' },
-      { name: 'History', score: 85, color: '#f59e0b', standard: '7' },
-      { name: 'Mathematics', score: 90, color: '#0ea5e9', standard: '6' },
-      { name: 'Science', score: 85, color: '#00d4aa', standard: '6' },
-    ];
+    const subjects = await prisma.subject.findMany({
+       where: { schoolId: parentData.schoolId, standard: child.class?.standard }
+    });
+    
+    const assignments = await prisma.assignment.findMany({
+       where: { classId: child.classId as string },
+       include: { subject: true, submissions: { where: { studentId: child.id } } },
+       orderBy: { dueDate: 'desc' }
+    });
+
+    const studentSubjects = subjects.map(s => {
+       // calculate score dynamically based on graded assignments
+       const subjectAssignments = assignments.filter(a => a.subjectId === s.id);
+       let totalGrade = 0;
+       let gradedCount = 0;
+       subjectAssignments.forEach(a => {
+          if (a.submissions.length > 0 && a.submissions[0].status === 'graded') {
+             const gradeNum = parseInt(a.submissions[0].grade || '0');
+             if (!isNaN(gradeNum)) {
+                totalGrade += gradeNum;
+                gradedCount++;
+             }
+          }
+       });
+       const score = gradedCount > 0 ? Math.round(totalGrade / gradedCount) : 85; // default to 85 if no grades
+       return {
+         name: s.name,
+         score,
+         color: s.color,
+         standard: s.standard
+       };
+    });
 
     const weakSubjectAlerts = studentSubjects
       .filter(s => s.score < 80)
@@ -50,15 +78,21 @@ export async function GET(request: Request) {
         severity: s.score < 60 ? 'high' : 'medium' as string,
       }));
 
-    const studentAssignments = [
-      { id: '1', title: 'Algebra Worksheet', subject: 'Mathematics', subjectColor: '#0ea5e9', status: 'pending' },
-      { id: '2', title: 'Physics Lab Report', subject: 'Science', subjectColor: '#00d4aa', status: 'submitted' },
-    ];
+    const studentAssignments = assignments.map(a => ({
+       id: a.id,
+       title: a.title,
+       subject: a.subject.name,
+       subjectColor: a.subject.color,
+       status: a.submissions.length > 0 ? a.submissions[0].status : 'pending'
+    }));
+
+    const pendingCount = studentAssignments.filter(a => a.status === 'pending').length;
+    const completedCount = studentAssignments.filter(a => a.status !== 'pending').length;
 
     const parentChildStats = [
       { title: 'Overall Grade', value: 'B+', trend: 'Consistent', icon: 'GraduationCap', trendUp: true },
       { title: 'Study Hours', value: '12.5h', trend: '15 topics done', icon: 'Clock', trendUp: true },
-      { title: 'Attendance', value: '95%', trend: 'Excellent', icon: 'CheckCircle', trendUp: true },
+      { title: 'Assignments', value: completedCount.toString(), trend: `${pendingCount} pending`, icon: 'CheckCircle', trendUp: true },
       { title: 'Quizzes', value: '8', trend: 'Taken so far', icon: 'FileText', trendUp: null },
     ];
 
@@ -73,14 +107,14 @@ export async function GET(request: Request) {
     ];
 
     const childrenData = [
-      { id: 'child1', name: 'Arjun', className: 'Class 8' }
+      { id: child.id, name: child.name || 'Student', className: child.class?.name || 'Class' }
     ];
 
     const selectedChild = {
-      name: 'Arjun',
-      email: 'arjun@student.com',
-      className: 'Class 8',
-      classTeacher: 'Mr. Anderson',
+      name: child.name || 'Student',
+      email: child.email || 'student@school.com',
+      className: child.class?.name || 'Class',
+      classTeacher: child.class?.classTeacher?.name || 'Unassigned',
       parentChildStats,
       weeklyStudyData,
       weakSubjectAlerts,
@@ -90,8 +124,8 @@ export async function GET(request: Request) {
     };
 
     return NextResponse.json({
-      parent: { name: parent.name || 'Parent', email: parent.email, phone: parent.phone || '' },
-      school: { name: 'Firebase School' },
+      parent: { name: parentData.name || 'Parent', email: parentData.email, phone: '' },
+      school: { name: parentData.school?.name },
       children: childrenData,
       selectedChild,
       
