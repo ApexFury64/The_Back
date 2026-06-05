@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Plus, MoreHorizontal, Mail, Phone, BookOpen, Trash2 } from "lucide-react";
+import { Search, Plus, MoreHorizontal, Mail, Phone, BookOpen, Trash2, Edit } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ConfirmModal from "@/components/ui/ConfirmModal";
@@ -16,9 +16,49 @@ export default function AdminTeachersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{isOpen: boolean; id: string; name: string}>({isOpen: false, id: '', name: ''});
   
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState({ id: "", name: "", email: "", password: "", phone: "", employeeId: "", primarySubject: "" });
+
   const userName = useAppStore(s => s.userName);
   const userEmail = useAppStore(s => s.userEmail);
   const schoolName = useAppStore(s => s.schoolName);
+
+  const handleOpenEditModal = (teacher: any) => {
+    setEditingTeacher({
+      id: teacher.id,
+      name: teacher.name,
+      email: teacher.email,
+      password: "",
+      phone: teacher.phone === "N/A" ? "" : teacher.phone,
+      employeeId: teacher.employeeId.startsWith("T-") ? "" : teacher.employeeId,
+      primarySubject: teacher.subjects === "General" ? "" : teacher.subjects,
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditTeacher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/teachers/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingTeacher),
+      });
+      if (res.ok) {
+        toast.success("Teacher details updated successfully");
+        setIsEditModalOpen(false);
+        fetchTeachers();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to update teacher");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    }
+    setIsSubmitting(false);
+  };
 
   const fetchTeachers = () => {
     fetch('/api/admin/teachers')
@@ -127,13 +167,20 @@ export default function AdminTeachersPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTeachers.map((teacher) => (
             <div key={teacher.id} className="glass-card-static p-6 rounded-2xl relative overflow-hidden group">
-              <div className="absolute top-4 right-4 flex items-center gap-2">
+              <div className="absolute top-4 right-4 flex items-center gap-1">
+                <button 
+                  onClick={() => handleOpenEditModal(teacher)}
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-teal transition-colors"
+                  title="Edit Teacher"
+                >
+                  <Edit size={14} />
+                </button>
                 <button 
                   onClick={() => handleDeleteTeacher(teacher.id, teacher.name)}
-                  className="p-2 rounded-lg hover:bg-coral/20 hover:text-coral text-muted-foreground transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-coral transition-colors"
                   title="Delete Teacher"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={14} />
                 </button>
               </div>
               
@@ -257,6 +304,94 @@ export default function AdminTeachersPage() {
                   className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
                 >
                   {isSubmitting ? "Adding..." : "Add Teacher"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT TEACHER MODAL */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative">
+            <h3 className="text-xl font-bold mb-4">Edit Teacher Details</h3>
+            <form onSubmit={handleEditTeacher} className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Full Name</label>
+                <input 
+                  type="text" 
+                  value={editingTeacher.name} 
+                  onChange={e => setEditingTeacher({...editingTeacher, name: e.target.value})} 
+                  className="glass-input w-full px-4 py-2 text-sm" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Email Address</label>
+                <input 
+                  type="email" 
+                  value={editingTeacher.email} 
+                  onChange={e => setEditingTeacher({...editingTeacher, email: e.target.value})} 
+                  className="glass-input w-full px-4 py-2 text-sm" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Password (Leave blank to keep current)</label>
+                <input 
+                  type="password" 
+                  value={editingTeacher.password} 
+                  onChange={e => setEditingTeacher({...editingTeacher, password: e.target.value})} 
+                  className="glass-input w-full px-4 py-2 text-sm" 
+                  placeholder="Enter new password"
+                  minLength={6}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium mb-1 block">Phone Number</label>
+                  <input 
+                    type="tel" 
+                    value={editingTeacher.phone} 
+                    onChange={e => setEditingTeacher({...editingTeacher, phone: e.target.value})} 
+                    className="glass-input w-full px-4 py-2 text-sm" 
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium mb-1 block">Employee ID</label>
+                  <input 
+                    type="text" 
+                    value={editingTeacher.employeeId} 
+                    onChange={e => setEditingTeacher({...editingTeacher, employeeId: e.target.value})} 
+                    className="glass-input w-full px-4 py-2 text-sm" 
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Default Subject</label>
+                <input 
+                  type="text" 
+                  value={editingTeacher.primarySubject} 
+                  onChange={e => setEditingTeacher({...editingTeacher, primarySubject: e.target.value})} 
+                  placeholder="e.g. Mathematics"
+                  className="glass-input w-full px-4 py-2 text-sm" 
+                />
+              </div>
+              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                <button 
+                  type="button" 
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
+                >
+                  {isSubmitting ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>
