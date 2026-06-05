@@ -56,12 +56,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id, action } = await request.json();
+    const body = await request.json();
+    const { id, action, status } = body;
+    const finalStatus = status || (action === 'resolve' ? 'resolved' : 'reviewed');
 
-    if (id && action) {
+    if (id && !id.startsWith('mock')) {
       await prisma.moderationFlag.update({
         where: { id },
-        data: { status: action === 'resolve' ? 'resolved' : 'reviewed' }
+        data: { status: finalStatus }
       });
     }
 

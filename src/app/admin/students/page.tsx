@@ -22,8 +22,44 @@ export default function AdminStudentsPage() {
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
-
   const [selectedStudentForDetails, setSelectedStudentForDetails] = useState<any | null>(null);
+  const [studentPasswordResetVal, setStudentPasswordResetVal] = useState("");
+  const [parentPasswordResetVal, setParentPasswordResetVal] = useState("");
+  const [isResettingStudent, setIsResettingStudent] = useState(false);
+  const [isResettingParent, setIsResettingParent] = useState(false);
+
+  const handleResetPassword = async (targetUserId: string, isParent: boolean) => {
+    const password = isParent ? parentPasswordResetVal : studentPasswordResetVal;
+    if (!password || password.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      return;
+    }
+    
+    if (isParent) setIsResettingParent(true);
+    else setIsResettingStudent(true);
+    
+    try {
+      const res = await fetch('/api/admin/users/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: targetUserId, password })
+      });
+      if (res.ok) {
+        toast.success(`${isParent ? 'Parent' : 'Student'} password reset successfully!`);
+        if (isParent) setParentPasswordResetVal("");
+        else setStudentPasswordResetVal("");
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to reset password");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    } finally {
+      if (isParent) setIsResettingParent(false);
+      else setIsResettingStudent(false);
+    }
+  };
 
   const fetchStudents = () => {
     fetch('/api/admin/students')
@@ -406,7 +442,7 @@ export default function AdminStudentsPage() {
       {/* STUDENT DETAILS MODAL */}
       {selectedStudentForDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative border border-white/10">
+          <div className="glass-card w-full max-w-lg p-6 rounded-2xl relative border border-white/10 max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
               <GraduationCap className="text-teal" size={24} /> Student Profile
             </h3>
@@ -450,6 +486,91 @@ export default function AdminStudentsPage() {
                 </div>
               </div>
 
+              {/* Account Credentials & Password Management */}
+              <div className="space-y-4 border-t border-white/5 pt-4">
+                <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Account Credentials & Access</h5>
+                
+                {/* Student Account */}
+                <div className="p-3 bg-white/5 border border-white/5 rounded-xl space-y-3">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-muted-foreground font-medium">Student Login ID (Email):</span>
+                    <span className="font-semibold text-teal truncate max-w-[200px]">{selectedStudentForDetails.email}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-muted-foreground">Default Password:</span>
+                    <span className="font-mono bg-white/10 px-1.5 py-0.5 rounded text-[11px] text-teal">demo123</span>
+                  </div>
+                  
+                  {/* Reset Password Form */}
+                  <div className="pt-2 border-t border-white/5 space-y-2">
+                    <label className="text-[10px] text-muted-foreground font-medium block">Reset Student Password</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="password"
+                        placeholder="New student password"
+                        value={studentPasswordResetVal}
+                        onChange={(e) => setStudentPasswordResetVal(e.target.value)}
+                        className="glass-input flex-1 px-3 py-1.5 text-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleResetPassword(selectedStudentForDetails.id, false)}
+                        disabled={isResettingStudent || !studentPasswordResetVal}
+                        className="glass-button px-3 py-1.5 text-xs disabled:opacity-50 bg-teal text-navy-900 border-none font-bold"
+                      >
+                        {isResettingStudent ? "Saving..." : "Reset"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Parent Account */}
+                {selectedStudentForDetails.parent ? (
+                  <div className="p-3 bg-white/5 border border-white/5 rounded-xl space-y-3">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground font-medium">Parent Login ID (Email):</span>
+                      <span className="font-semibold text-teal truncate max-w-[200px]">{selectedStudentForDetails.parent.email}</span>
+                    </div>
+                    {selectedStudentForDetails.parent.phone !== 'N/A' && (
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-muted-foreground font-medium">Parent Login ID (Phone):</span>
+                        <span className="font-semibold text-teal">{selectedStudentForDetails.parent.phone}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground">Default Password:</span>
+                      <span className="font-mono bg-white/10 px-1.5 py-0.5 rounded text-[11px] text-teal">demo123</span>
+                    </div>
+                    
+                    {/* Reset Password Form */}
+                    <div className="pt-2 border-t border-white/5 space-y-2">
+                      <label className="text-[10px] text-muted-foreground font-medium block">Reset Parent Password</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="password"
+                          placeholder="New parent password"
+                          value={parentPasswordResetVal}
+                          onChange={(e) => setParentPasswordResetVal(e.target.value)}
+                          className="glass-input flex-1 px-3 py-1.5 text-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleResetPassword(selectedStudentForDetails.parent.id, true)}
+                          disabled={isResettingParent || !parentPasswordResetVal}
+                          className="glass-button px-3 py-1.5 text-xs disabled:opacity-50 bg-teal text-navy-900 border-none font-bold"
+                        >
+                          {isResettingParent ? "Saving..." : "Reset"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground italic text-center p-2 bg-white/5 rounded-xl border border-white/5">
+                    Parent account details unavailable (no parent linked).
+                  </p>
+                )}
+              </div>
+
               {/* Parent Contact Details */}
               <div className="space-y-2 border-t border-white/5 pt-4">
                 <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Parent Contact Info</h5>
@@ -479,7 +600,11 @@ export default function AdminStudentsPage() {
               <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-6">
                 <button 
                   type="button" 
-                  onClick={() => setSelectedStudentForDetails(null)}
+                  onClick={() => {
+                    setSelectedStudentForDetails(null);
+                    setStudentPasswordResetVal("");
+                    setParentPasswordResetVal("");
+                  }}
                   className="w-full px-4 py-2 rounded-xl bg-teal/20 text-teal hover:bg-teal/30 transition-colors text-sm font-medium border border-teal/30"
                 >
                   Close Profile

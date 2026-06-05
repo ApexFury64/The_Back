@@ -20,6 +20,8 @@ export async function GET(request: Request) {
           select: {
             id: true,
             name: true,
+            email: true,
+            phone: true,
             createdAt: true,
             parent: {
               select: {
@@ -51,11 +53,14 @@ export async function GET(request: Request) {
         students: curr.students.map((student: any) => ({
           id: student.id,
           name: student.name || 'Unknown Student',
+          email: student.email || 'N/A',
+          phone: student.phone || 'N/A',
           enrollmentYear: new Date(student.createdAt).getFullYear().toString(),
           avgScore: Math.floor(Math.random() * 40) + 60, // TODO: Calculate from Submissions
           attendancePercent: Math.floor(Math.random() * 20) + 80, // TODO: Implement Attendance model
           aiUsage: ['High', 'Medium', 'Low'][Math.floor(Math.random() * 3)], // TODO: Calculate from AiUsageLog
           parent: student.parent ? {
+            id: student.parent.id,
             name: student.parent.name || 'N/A',
             email: student.parent.email || 'N/A',
             phone: student.parent.phone || 'N/A'
