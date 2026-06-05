@@ -11,9 +11,10 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { classRoomId, teacherId } = body;
+    const { classRoomId, sectionId, teacherId } = body;
+    const targetClassRoomId = classRoomId || sectionId;
 
-    if (!classRoomId || !teacherId) {
+    if (!targetClassRoomId || !teacherId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     const updatedClass = await prisma.classRoom.update({
-      where: { id: classRoomId },
+      where: { id: targetClassRoomId },
       data: { classTeacherId: teacherId },
       include: { classTeacher: true }
     });

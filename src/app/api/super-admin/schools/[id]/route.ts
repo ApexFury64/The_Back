@@ -1,65 +1,116 @@
 import { NextResponse } from 'next/server';
-import mockData from '@/lib/schoolMockData.json';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role;
+
+    if (!session || userRole !== 'SUPERADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params; // Next.js 15 requires awaiting params
     
-    // Mock base school info based on ID
-    let schoolName = "Oakridge International";
-    let plan = "Enterprise";
-    if (id === '2') { schoolName = "Kendriya Vidyalaya"; plan = "Pro"; }
-    else if (id === '3') { schoolName = "Delhi Public School"; plan = "Enterprise"; }
-    else if (id === '4') { schoolName = "Future Innovators"; plan = "Enterprise"; }
-    else if (id === '5') { schoolName = "Legacy Prep School"; plan = "Pro"; }
+    const school = await prisma.school.findUnique({
+      where: { id },
+      include: {
+        classes: {
+          include: {
+            students: { select: { id: true } },
+            classTeacher: { select: { id: true, name: true, email: true } }
+          }
+        },
+        subjects: true,
+        users: {
+          include: {
+            taughtClasses: true,
+            class: true
+          }
+        }
+      }
+    });
+
+    if (!school) {
+      return NextResponse.json({ error: 'School not found' }, { status: 404 });
+    }
+
+    let city = school.address || 'Unknown';
+    let plan = 'Enterprise';
+    if (city.includes(' | ')) {
+      const parts = city.split(' | ');
+      city = parts[0];
+      plan = parts[1];
+    }
     
+    const studentsCount = school.users.filter(u => u.role === 'STUDENT').length;
+    const teachersCount = school.users.filter(u => u.role === 'TEACHER').length;
+
     const schoolData = {
       id,
-      name: schoolName,
-      plan,
+      name: school.name,
+      plan: plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase(),
       aiUsage: Math.floor(Math.random() * 40) + 50,
-      studentsCount: 1200 + Math.floor(Math.random() * 2000),
-      teachersCount: 90 + Math.floor(Math.random() * 100),
+      studentsCount,
+      teachersCount,
     };
 
-    const classes = [
-      { id: 'c1', name: 'Class 6', sections: ['6-A', '6-B', '6-C'], students: 120 },
-      { id: 'c2', name: 'Class 7', sections: ['7-A', '7-B', '7-C'], students: 145 },
-      { id: 'c3', name: 'Class 8', sections: ['8-A', '8-B', '8-C'], students: 160 },
-      { id: 'c4', name: 'Class 9', sections: ['9-A', '9-B', '9-C'], students: 155 },
-      { id: 'c5', name: 'Class 10', sections: ['10-A', '10-B', '10-C'], students: 150 },
-    ];
+    // Format classes grouped by standard
+    const classesGrouped: Record<string, any> = {};
+    school.classes.forEach((c) => {
+      if (!classesGrouped[c.standard]) {
+        classesGrouped[c.standard] = {
+          id: `class-${c.standard}`,
+          name: `Class ${c.standard}`,
+          sections: [],
+          students: 0
+        };
+      }
+      classesGrouped[c.standard].sections.push(c.section);
+    });
 
-    const subjects = [
-      { id: 's1', name: 'Mathematics', teachers: 12, classes: ['6','7','8','9','10'], avgScore: 82 },
-      { id: 's2', name: 'Physics', teachers: 8, classes: ['9','10'], avgScore: 78 },
-      { id: 's3', name: 'Chemistry', teachers: 7, classes: ['9','10'], avgScore: 75 },
-      { id: 's4', name: 'Biology', teachers: 6, classes: ['9','10'], avgScore: 88 },
-      { id: 's5', name: 'English', teachers: 15, classes: ['6','7','8','9','10'], avgScore: 85 },
-      { id: 's6', name: 'Computer Science', teachers: 5, classes: ['6','7','8','9','10'], avgScore: 92 },
-      { id: 's7', name: 'History', teachers: 8, classes: ['6','7','8','9','10'], avgScore: 80 },
-    ];
+    // Make sure standard section student count matches frontend expectations
+    Object.keys(classesGrouped).forEach(standard => {
+      classesGrouped[standard].students = school.users.filter(
+        u => u.role === 'STUDENT' && u.class?.standard === standard
+      ).length;
+    });
 
-    const schoolSpecificData = (mockData as any)[schoolName] || { teachers: [], students: [] };
+    const classes = Object.values(classesGrouped);
 
-    // Format teachers to match frontend expectation
-    const teachers = schoolSpecificData.teachers.map((t: any, i: number) => ({
-      id: t.email,
-      name: t.name,
-      email: t.email,
-      subject: subjects[i % subjects.length].name,
-      classes: [`Class ${6 + (i % 5)}`],
+    // Format subjects
+    const subjects = school.subjects.map(s => ({
+      id: s.id,
+      name: s.name,
+      code: s.code,
+      color: s.color,
+      classes: [s.standard],
+      teachers: school.users.filter(u => u.role === 'TEACHER' && u.primarySubject?.toLowerCase() === s.name.toLowerCase()).length || 1,
+      avgScore: 85
+    }));
+
+    // Format teachers
+    const dbTeachers = school.users.filter(u => u.role === 'TEACHER');
+    const teachers = dbTeachers.map(t => ({
+      id: t.id,
+      name: t.name || 'Teacher',
+      email: t.email || '',
+      subject: t.primarySubject || 'General',
+      classes: t.taughtClasses.map(c => `Class ${c.standard}`),
       status: 'active'
     }));
 
-    // Format students to match frontend expectation
-    const students = schoolSpecificData.students.map((s: any) => ({
-      id: s.email,
-      name: s.name,
-      grade: `Class ${s.class || '10'}`,
-      section: s.section || 'A',
-      attendance: 80 + Math.floor(Math.random() * 20),
-      performance: 60 + Math.floor(Math.random() * 40)
+    // Format students
+    const dbStudents = school.users.filter(u => u.role === 'STUDENT');
+    const students = dbStudents.map(s => ({
+      id: s.id,
+      name: s.name || 'Student',
+      grade: s.class ? `Class ${s.class.standard}` : 'Class 10',
+      section: s.class ? s.class.section : 'A',
+      attendance: 90 + Math.floor(Math.random() * 10),
+      performance: 75 + Math.floor(Math.random() * 20)
     }));
 
     return NextResponse.json({

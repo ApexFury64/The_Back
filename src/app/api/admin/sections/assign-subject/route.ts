@@ -5,9 +5,11 @@ import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
 
 const assignSubjectSchema = z.object({
-  classId: z.string().min(1),
+  classId: z.string().optional(),
+  sectionId: z.string().optional(),
   subjectId: z.string().optional(),
   subjectName: z.string().optional(),
+  teacherId: z.string().optional(),
 }).refine(data => data.subjectId || data.subjectName, {
   message: "Either subjectId or subjectName must be provided",
   path: ["subjectId"]
@@ -27,7 +29,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
     
-    const { classId, subjectId, subjectName } = parsed.data;
+    const { classId, sectionId, subjectId, subjectName, teacherId } = parsed.data;
+    const targetClassId = classId || sectionId;
+
+    if (!targetClassId) {
+      return NextResponse.json({ error: 'Missing classId or sectionId' }, { status: 400 });
+    }
+
     const schoolId = (session.user as any).schoolId;
 
     if (!schoolId) {
@@ -35,14 +43,20 @@ export async function POST(request: Request) {
     }
 
     // Get the class to know its standard
-    const classRoom = await prisma.classRoom.findUnique({ where: { id: classId } });
+    const classRoom = await prisma.classRoom.findUnique({ where: { id: targetClassId } });
     if (!classRoom || classRoom.schoolId !== schoolId) {
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
     }
 
     let finalSubjectId = subjectId;
+    let resolvedSubjectName = subjectName;
 
-    if (!finalSubjectId && subjectName) {
+    if (finalSubjectId) {
+      const subject = await prisma.subject.findUnique({ where: { id: finalSubjectId } });
+      if (subject) {
+        resolvedSubjectName = subject.name;
+      }
+    } else if (subjectName) {
       let subject = await prisma.subject.findFirst({
         where: { name: subjectName, schoolId }
       });
@@ -58,9 +72,21 @@ export async function POST(request: Request) {
         });
       }
       finalSubjectId = subject.id;
+      resolvedSubjectName = subject.name;
     }
 
-    return NextResponse.json({ success: true, subjectId: finalSubjectId, classId });
+    // Update teacher's primary subject to store this teaching assignment relation
+    if (teacherId && resolvedSubjectName) {
+      const teacher = await prisma.user.findUnique({ where: { id: teacherId } });
+      if (teacher && teacher.schoolId === schoolId && teacher.role === 'TEACHER') {
+        await prisma.user.update({
+          where: { id: teacherId },
+          data: { primarySubject: resolvedSubjectName }
+        });
+      }
+    }
+
+    return NextResponse.json({ success: true, subjectId: finalSubjectId, classId: targetClassId });
   } catch (error) {
     console.error('Error assigning subject:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
