@@ -105,8 +105,21 @@ export default function TeacherMaterialsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this material?")) return;
-    toast.success("Material deleted successfully (mock)");
-    setMaterials(materials.filter(m => m.id !== id));
+    try {
+      const res = await fetch(`/api/teacher/materials?id=${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        toast.success("Material deleted successfully");
+        fetchMaterials();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to delete material");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    }
     setActiveMenuId(null);
   };
 

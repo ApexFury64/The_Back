@@ -17,13 +17,61 @@ export default function SuperAdminSchoolsPage() {
   const userName = useAppStore(s => s.userName);
   const schoolName = useAppStore(s => s.schoolName);
 
-  useEffect(() => {
-    const email = userEmail || 'super@techwing.com';
-    fetch(`/api/super-admin/dashboard?superAdminEmail=${email}`)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newSchool, setNewSchool] = useState({
+    name: "",
+    code: "",
+    address: "",
+    plan: "pro",
+    adminName: "",
+    adminEmail: "",
+    adminPassword: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchSchools = () => {
+    fetch("/api/super-admin/schools")
       .then(res => res.json())
       .then(d => setData({ ...d, platformSchools: Array.isArray(d.platformSchools) ? d.platformSchools : [] }))
       .catch(console.error);
-  }, [userEmail]);
+  };
+
+  useEffect(() => {
+    fetchSchools();
+  }, []);
+
+  const handleOnboardSchool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/super-admin/schools", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSchool),
+      });
+      if (res.ok) {
+        toast.success("School onboarded successfully");
+        setIsAddModalOpen(false);
+        setNewSchool({
+          name: "",
+          code: "",
+          address: "",
+          plan: "pro",
+          adminName: "",
+          adminEmail: "",
+          adminPassword: "",
+        });
+        fetchSchools();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to onboard school");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    }
+    setIsSubmitting(false);
+  };
 
   const [filterPlan, setFilterPlan] = useState("All");
   const [showFilter, setShowFilter] = useState(false);
@@ -85,7 +133,7 @@ export default function SuperAdminSchoolsPage() {
               <Download size={16} /> Export
             </button>
             <button 
-              onClick={() => toast.info("Opening Onboard School wizard...")}
+              onClick={() => setIsAddModalOpen(true)}
               className="glass-button px-3 py-2 flex items-center gap-2 text-sm w-full sm:w-auto justify-center bg-teal text-navy-900 border-none font-semibold"
             >
               <Plus size={16} /> Onboard School
@@ -147,6 +195,127 @@ export default function SuperAdminSchoolsPage() {
           </table>
         </div>
       </div>
+
+      {/* ONBOARD SCHOOL MODAL */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4">Onboard New School</h3>
+            <form onSubmit={handleOnboardSchool} className="space-y-4">
+              <div>
+                <h4 className="text-sm font-semibold text-teal border-b border-white/10 pb-1 mb-3">School Details</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium mb-1 block">School Name</label>
+                    <input 
+                      type="text" 
+                      value={newSchool.name} 
+                      onChange={e => setNewSchool({...newSchool, name: e.target.value})} 
+                      className="glass-input w-full px-4 py-2 text-sm" 
+                      placeholder="e.g. Oakridge International"
+                      required 
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground font-medium mb-1 block">School Code (Unique)</label>
+                      <input 
+                        type="text" 
+                        value={newSchool.code} 
+                        onChange={e => setNewSchool({...newSchool, code: e.target.value.toUpperCase()})} 
+                        className="glass-input w-full px-4 py-2 text-sm" 
+                        placeholder="e.g. OAK-HYD"
+                        required 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground font-medium mb-1 block">Subscription Plan</label>
+                      <select 
+                        value={newSchool.plan} 
+                        onChange={e => setNewSchool({...newSchool, plan: e.target.value})} 
+                        className="glass-input w-full px-4 py-2 text-sm bg-navy-900" 
+                        required 
+                      >
+                        <option value="basic">Basic</option>
+                        <option value="pro">Pro</option>
+                        <option value="enterprise">Enterprise</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium mb-1 block">Address / City</label>
+                    <input 
+                      type="text" 
+                      value={newSchool.address} 
+                      onChange={e => setNewSchool({...newSchool, address: e.target.value})} 
+                      className="glass-input w-full px-4 py-2 text-sm" 
+                      placeholder="e.g. Hyderabad, India"
+                      required 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-teal border-b border-white/10 pb-1 mb-3 mt-4">Administrator Account</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium mb-1 block">Admin Name</label>
+                    <input 
+                      type="text" 
+                      value={newSchool.adminName} 
+                      onChange={e => setNewSchool({...newSchool, adminName: e.target.value})} 
+                      className="glass-input w-full px-4 py-2 text-sm" 
+                      placeholder="e.g. Principal Prasad"
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium mb-1 block">Admin Email</label>
+                    <input 
+                      type="email" 
+                      value={newSchool.adminEmail} 
+                      onChange={e => setNewSchool({...newSchool, adminEmail: e.target.value})} 
+                      className="glass-input w-full px-4 py-2 text-sm" 
+                      placeholder="e.g. admin@oakridge.edu"
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium mb-1 block">Admin Password</label>
+                    <input 
+                      type="password" 
+                      value={newSchool.adminPassword} 
+                      onChange={e => setNewSchool({...newSchool, adminPassword: e.target.value})} 
+                      className="glass-input w-full px-4 py-2 text-sm" 
+                      placeholder="Min 6 characters"
+                      required 
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
+                >
+                  {isSubmitting ? "Onboarding..." : "Onboard School"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
