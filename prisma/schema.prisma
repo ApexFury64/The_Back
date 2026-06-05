@@ -60,6 +60,11 @@ model User {
   classId       String?
   class         ClassRoom? @relation(fields: [classId], references: [id])
 
+  // Parent-Student Relation
+  parentId      String?
+  parent        User?      @relation("ParentChild", fields: [parentId], references: [id])
+  children      User[]     @relation("ParentChild")
+
   // Relations
   accounts      Account[]
   sessions      Session[]

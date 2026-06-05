@@ -21,15 +21,27 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Parent or school not found' }, { status: 404 });
     }
 
-    // In a real app, we'd have a Parent-Child relation. For now, we mock the child based on the parent's school.
-    const child = await prisma.user.findFirst({
-      where: { schoolId: parentData.schoolId, role: 'STUDENT' },
+    // Query children of this parent dynamically
+    const children = await prisma.user.findMany({
+      where: { parentId: parentData.id, role: 'STUDENT' },
       include: { class: { include: { classTeacher: true } } }
     });
 
-    if (!child) {
+    let tempChild: any = children[0] || null;
+
+    // Fallback if no child is linked, to avoid breaking the dashboard before bulk upload runs
+    if (!tempChild) {
+      tempChild = await prisma.user.findFirst({
+        where: { schoolId: parentData.schoolId, role: 'STUDENT' },
+        include: { class: { include: { classTeacher: true } } }
+      });
+    }
+
+    if (!tempChild) {
       return NextResponse.json({ error: 'No student found in this school' }, { status: 404 });
     }
+
+    const child = tempChild;
 
     const childDailyActivity = [
       { time: '08:00 AM', activity: 'Logged in to portal', type: 'class' },
@@ -106,9 +118,9 @@ export async function GET(request: Request) {
       { name: 'Sun', value: 60, value2: 15 },
     ];
 
-    const childrenData = [
-      { id: child.id, name: child.name || 'Student', className: child.class?.name || 'Class' }
-    ];
+    const childrenData = children.length > 0 
+      ? children.map(c => ({ id: c.id, name: c.name || 'Student', className: c.class?.name || 'Class' }))
+      : child ? [{ id: child.id, name: child.name || 'Student', className: child.class?.name || 'Class' }] : [];
 
     const selectedChild = {
       name: child.name || 'Student',

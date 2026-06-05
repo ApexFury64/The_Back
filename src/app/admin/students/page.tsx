@@ -18,6 +18,10 @@ export default function AdminStudentsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newStudent, setNewStudent] = useState({ name: "", email: "", classId: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const fetchStudents = () => {
     fetch('/api/admin/students')
@@ -64,6 +68,50 @@ export default function AdminStudentsPage() {
     setIsSubmitting(false);
   };
 
+  const downloadCsvTemplate = () => {
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "Student Name,Student Email,Standard,Section,Parent Name,Parent Email,Parent Phone\n"
+      + "John Doe,john.doe@school.com,8,A,Robert Doe,robert.doe@mail.com,+1234567890\n"
+      + "Jane Smith,jane.smith@school.com,8,B,Sarah Smith,sarah.smith@mail.com,+1987654321\n";
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "student_parent_import_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Template downloaded!");
+  };
+
+  const handleBulkImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFile) return;
+    setIsImporting(true);
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    try {
+      const res = await fetch('/api/admin/students/bulk', {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(`Successfully imported ${data.count} students!`);
+        setIsBulkModalOpen(false);
+        setSelectedFile(null);
+        fetchStudents();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to import students");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const toggleClass = (classId: string) => {
     setExpandedClasses(prev => ({ ...prev, [classId]: !prev[classId] }));
   };
@@ -106,8 +154,11 @@ export default function AdminStudentsPage() {
           <button className="glass-button-secondary px-3 py-2 flex items-center gap-2 text-sm w-full sm:w-auto justify-center">
             <Filter size={16} /> Filters
           </button>
-          <button className="glass-button-secondary px-3 py-2 flex items-center gap-2 text-sm w-full sm:w-auto justify-center">
-            <Download size={16} /> Export
+          <button 
+            onClick={() => setIsBulkModalOpen(true)}
+            className="glass-button-secondary px-3 py-2 flex items-center gap-2 text-sm w-full sm:w-auto justify-center border border-teal/30 text-teal hover:bg-teal/10"
+          >
+            <Download size={16} /> Bulk Import
           </button>
           <button 
             onClick={() => setIsAddModalOpen(true)}
@@ -200,6 +251,11 @@ export default function AdminStudentsPage() {
                                         <div>
                                           <p className="text-sm font-medium">{student.name}</p>
                                           <p className="text-[10px] text-muted-foreground">Enrolled: {student.enrollmentYear}</p>
+                                          {student.parent && (
+                                            <p className="text-[9px] text-teal/85 font-medium mt-0.5">
+                                              Parent: {student.parent.name} ({student.parent.phone !== 'N/A' ? student.parent.phone : student.parent.email})
+                                            </p>
+                                          )}
                                         </div>
                                       </div>
                                     </td>
@@ -309,6 +365,61 @@ export default function AdminStudentsPage() {
                   className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
                 >
                   {isSubmitting ? "Adding..." : "Add Student"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* BULK IMPORT MODAL */}
+      {isBulkModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative border border-white/10">
+            <h3 className="text-xl font-bold mb-1">Bulk Import Students</h3>
+            <p className="text-xs text-muted-foreground mb-4">Upload a CSV file to add multiple students and link their parents automatically.</p>
+            <form onSubmit={handleBulkImport} className="space-y-4">
+              <div className="p-4 bg-white/5 border border-white/10 rounded-xl space-y-3">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  First, download the template CSV file. Fill in the student and parent details, then upload the file back here.
+                </p>
+                <button
+                  type="button"
+                  onClick={downloadCsvTemplate}
+                  className="w-full glass-button-secondary py-2 text-xs flex items-center justify-center gap-2 border border-teal/20 text-teal"
+                >
+                  <Download size={14} /> Download Example CSV Template
+                </button>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Choose CSV File</label>
+                <input 
+                  type="file" 
+                  accept=".csv"
+                  onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+                  className="glass-input w-full px-4 py-2 text-sm text-muted-foreground file:bg-white/10 file:border-none file:text-white file:px-3 file:py-1 file:rounded-md file:mr-3 file:cursor-pointer" 
+                  required 
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsBulkModalOpen(false);
+                    setSelectedFile(null);
+                  }}
+                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isImporting || !selectedFile}
+                  className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
+                >
+                  {isImporting ? "Importing..." : "Upload & Import"}
                 </button>
               </div>
             </form>
