@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Plus, Users, BookOpen, UserPlus, BookCopy, ChevronDown, Check } from "lucide-react";
+import { Plus, Users, BookOpen, UserPlus, BookCopy, ChevronDown, Check, Trash2 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 
@@ -171,6 +171,29 @@ export default function AdminClassesPage() {
     }
   };
 
+  const handleDeleteClass = async (classId: string) => {
+    if (!window.confirm("Are you sure you want to delete this class section? Students in this section will be unassigned, and assignments created for this section will be deleted.")) {
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/admin/classes/delete/${classId}`, {
+        method: 'DELETE',
+      });
+      
+      if (res.ok) {
+        toast.success("Class section deleted successfully");
+        fetchData();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to delete class");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    }
+  };
+
   const handleAssignStudents = async (e: React.FormEvent) => {
     e.preventDefault();
     if (addStudentsData.selectedStudentIds.length === 0) return;
@@ -248,8 +271,17 @@ export default function AdminClassesPage() {
                   <Users size={12}/> {sec.students.length} Enrolled Students
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-teal/20 text-teal flex items-center justify-center shrink-0">
-                <BookOpen size={20} />
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-teal/20 text-teal flex items-center justify-center shrink-0">
+                  <BookOpen size={20} />
+                </div>
+                <button
+                  onClick={() => handleDeleteClass(sec.id)}
+                  title="Delete Class Section"
+                  className="w-8 h-8 rounded-lg text-muted-foreground hover:bg-coral/20 hover:text-coral flex items-center justify-center transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             </div>
 
