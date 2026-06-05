@@ -179,7 +179,10 @@ export default function StudentQuizzesPage() {
                 acc[c].push(q);
                 return acc;
               }, {} as Record<string, any[]>)
-            ).sort((a, b) => b[0].localeCompare(a[0])).map(([className, classQuizzes]) => (
+            ).sort((a, b) => b[0].localeCompare(a[0])).map((entry: any) => {
+              const className = entry[0];
+              const classQuizzes = entry[1];
+              return (
               <div key={className} className="space-y-4">
                 <h4 className="text-sm font-bold text-navy-900/70 dark:text-muted-foreground uppercase tracking-wider pl-2 border-l-2 border-coral">{className}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -221,7 +224,8 @@ export default function StudentQuizzesPage() {
                   ))}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </section>
 
@@ -237,9 +241,12 @@ export default function StudentQuizzesPage() {
                   const c = q.class || 'Other';
                   if (!acc[c]) acc[c] = [];
                   acc[c].push(q);
-                  return acc;
-                }, {} as Record<string, any[]>)
-              ).sort((a, b) => b[0].localeCompare(a[0])).map(([className, classQuizzes]) => (
+                return acc;
+              }, {} as Record<string, any[]>)
+            ).sort((a, b) => b[0].localeCompare(a[0])).map((entry: any) => {
+                const className = entry[0];
+                const classQuizzes = entry[1];
+                return (
                 <div key={className} className="space-y-4">
                   <h4 className="text-sm font-bold text-navy-900/70 dark:text-muted-foreground uppercase tracking-wider pl-2 border-l-2 border-teal">{className}</h4>
                   <div className="glass-card-static overflow-hidden">
@@ -284,7 +291,8 @@ export default function StudentQuizzesPage() {
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           </section>
         )}

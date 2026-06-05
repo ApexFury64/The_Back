@@ -158,7 +158,10 @@ export default function StudentAssignmentsPage() {
                 acc[c].push(a);
                 return acc;
               }, {} as Record<string, any[]>)
-            ).sort((a, b) => b[0].localeCompare(a[0])).map(([className, classAssignments]) => (
+            ).sort((a, b) => b[0].localeCompare(a[0])).map((entry: any) => {
+              const className = entry[0];
+              const classAssignments = entry[1];
+              return (
               <div key={className} className="space-y-4">
                 <h3 className="text-sm font-bold text-navy-900/70 dark:text-muted-foreground uppercase tracking-wider pl-2 border-l-2 border-teal">{className}</h3>
                 <div className="space-y-4">
@@ -210,10 +213,12 @@ export default function StudentAssignmentsPage() {
                         )}
                       </div>
                     </motion.div>
-                  )})}
+                  );
+                  })}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
 
           {/* Sidebar Summary */}

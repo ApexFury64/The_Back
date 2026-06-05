@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Upload, FileText, Search, Plus, Filter, MoreVertical, FileArchive, FileType2 } from "lucide-react";
+import { Upload, FileText, Search, Plus, Filter, MoreVertical, FileArchive, FileType2, UploadCloud } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
 import { motion } from "framer-motion";
@@ -23,6 +23,8 @@ export default function TeacherMaterialsPage() {
     sectionSubjectId: "",
   });
   const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchMaterials = async () => {
     setLoading(true);
@@ -42,41 +44,52 @@ export default function TeacherMaterialsPage() {
     fetchMaterials();
   }, [userEmail]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+      // Auto-fill title if empty
+      if (!newMaterial.title) {
+        setNewMaterial(prev => ({ ...prev, title: e.target.files![0].name.split('.')[0] }));
+      }
+    }
+  };
+
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMaterial.title) {
-      toast.error("Please enter a title");
+    if (!newMaterial.title || !newMaterial.sectionSubjectId || !file) {
+      toast.error("Please fill all fields and select a file");
       return;
     }
 
+    setIsUploading(true);
     try {
-      const res = await fetch('/api/teacher/materials', {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('title', newMaterial.title);
+      formData.append('sectionSubjectId', newMaterial.sectionSubjectId);
+
+      const res = await fetch('/api/teacher/materials/upload', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          title: newMaterial.title,
-          sectionSubjectId: newMaterial.sectionSubjectId,
-          fileType: 'PDF', // Defaulting since we aren't uploading real files
-          size: '2.5 MB'
-        })
+        body: formData
       });
       const data = await res.json();
       
       if (!res.ok) {
         toast.error(data.error || "Failed to upload material");
+        setIsUploading(false);
         return;
       }
       
       toast.success("Material uploaded successfully");
       setIsModalOpen(false);
       setNewMaterial({ title: "", sectionSubjectId: "" });
+      setFile(null);
       fetchMaterials();
     } catch (error) {
       console.error("Failed to upload material", error);
       toast.error("Network error");
     }
+    setIsUploading(false);
   };
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -85,7 +98,7 @@ export default function TeacherMaterialsPage() {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
   const filteredMaterials = materials.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = m.title ? m.title.toLowerCase().includes(searchQuery.toLowerCase()) : m.name?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filterType === "All" || m.type === filterType;
     return matchesSearch && matchesFilter;
   });
@@ -169,8 +182,7 @@ export default function TeacherMaterialsPage() {
               <thead>
                 <tr className="border-b border-white/5 text-xs text-muted-foreground">
                   <th className="text-left font-medium pb-3 px-2">File Name</th>
-                  <th className="text-left font-medium pb-3 px-2">Assigned Class</th>
-                  <th className="text-left font-medium pb-3 px-2">Size</th>
+                  <th className="text-left font-medium pb-3 px-2">Type</th>
                   <th className="text-left font-medium pb-3 px-2">Uploaded</th>
                   <th className="text-right font-medium pb-3 px-2">Actions</th>
                 </tr>
@@ -187,12 +199,15 @@ export default function TeacherMaterialsPage() {
                         {m.type === "PDF" ? <FileText size={16} className="text-coral" /> : 
                          m.type === "Archive" ? <FileArchive size={16} className="text-amber" /> : 
                          <FileType2 size={16} className="text-cyan" />}
-                        <span className="text-sm font-medium">{m.name}</span>
+                        {m.url ? (
+                          <a href={m.url} target="_blank" rel="noreferrer" className="text-sm font-medium hover:underline text-teal">{m.title || m.name}</a>
+                        ) : (
+                          <span className="text-sm font-medium">{m.title || m.name}</span>
+                        )}
                       </div>
                     </td>
-                    <td className="py-3 px-2 text-sm text-muted-foreground">{m.class}</td>
-                    <td className="py-3 px-2 text-xs font-mono text-muted-foreground">{m.size}</td>
-                    <td className="py-3 px-2 text-xs text-muted-foreground">{m.date}</td>
+                    <td className="py-3 px-2 text-sm text-muted-foreground">{m.type}</td>
+                    <td className="py-3 px-2 text-xs text-muted-foreground">{new Date(m.createdAt || m.date || new Date()).toLocaleDateString()}</td>
                     <td className="py-3 px-2 text-right relative">
                       <button 
                         onClick={() => setActiveMenuId(activeMenuId === m.id ? null : m.id)}
@@ -235,6 +250,44 @@ export default function TeacherMaterialsPage() {
           >
             <h3 className="text-xl font-bold mb-4">Upload New Material</h3>
             <form onSubmit={handleUpload} className="space-y-4">
+              
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange}
+                className="hidden" 
+              />
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  "w-full h-24 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all",
+                  file 
+                    ? "border-teal/50 bg-teal/5" 
+                    : "border-white/20 hover:bg-white/5 hover:border-white/40"
+                )}
+              >
+                {file ? (
+                  <>
+                    <div className="w-8 h-8 rounded-full bg-teal/20 flex items-center justify-center text-teal">
+                      <FileText size={16} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-teal">{file.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-muted-foreground">
+                      <UploadCloud size={16} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium">Click to select file</p>
+                    </div>
+                  </>
+                )}
+              </div>
+
               <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">Title</label>
                 <input 
@@ -242,11 +295,10 @@ export default function TeacherMaterialsPage() {
                   value={newMaterial.title}
                   onChange={e => setNewMaterial({...newMaterial, title: e.target.value})}
                   className="glass-input w-full px-4 py-2 text-sm" 
-                  placeholder="Leave blank to use file name"
+                  placeholder="Enter a title for this material"
+                  required
                 />
               </div>
-
-              {/* Removed real file input, keeping it simple for the demo */}
 
               <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">Assign to Class Section</label>
@@ -275,9 +327,10 @@ export default function TeacherMaterialsPage() {
                 </button>
                 <button 
                   type="submit" 
-                  className="flex-1 glass-button px-4 py-2 text-sm justify-center bg-teal text-navy-900 font-semibold border-none"
+                  disabled={isUploading || !file}
+                  className="flex-1 glass-button px-4 py-2 text-sm justify-center bg-teal text-navy-900 font-semibold border-none disabled:opacity-50"
                 >
-                  Upload
+                  {isUploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
             </form>

@@ -1,71 +1,69 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: Request) {
-  const formattedData = [
-    {
-      id: '1',
-      name: 'Class 10',
-      grade: 10,
-      sections: [
-        {
-          id: 'sec1', name: 'A', isClassTeacher: true,
-          students: Array.from({ length: 15 }, (_, i) => ({ id: `10A${i}`, name: `Alice Smith ${i}`, email: `alice${i}@example.com`, avgScore: 92 - (i % 5), attendancePercent: 98 - i, issue: 'On track', trend: '+2% this week' }))
-        },
-        {
-          id: 'sec2', name: 'B', isClassTeacher: false,
-          students: Array.from({ length: 12 }, (_, i) => ({ id: `10B${i}`, name: `Bob Jones ${i}`, email: `bob${i}@example.com`, avgScore: 78 + (i % 5), attendancePercent: 85 + i, issue: 'On track', trend: '-1% this week' }))
-        }
-      ]
-    },
-    {
-      id: '2',
-      name: 'Class 9',
-      grade: 9,
-      sections: [
-        {
-          id: 'sec3', name: 'A', isClassTeacher: false,
-          students: Array.from({ length: 14 }, (_, i) => ({ id: `9A${i}`, name: `Charlie Brown ${i}`, email: `charlie${i}@example.com`, avgScore: 85 - (i % 3), attendancePercent: 90 - i, issue: 'On track', trend: '+1% this week' }))
-        },
-        {
-          id: 'sec4', name: 'B', isClassTeacher: false,
-          students: Array.from({ length: 12 }, (_, i) => ({ id: `9B${i}`, name: `Diana Prince ${i}`, email: `diana${i}@example.com`, avgScore: 95 - (i % 2), attendancePercent: 99 - i, issue: 'Excellent', trend: '+5% this week' }))
-        }
-      ]
-    },
-    {
-      id: '3',
-      name: 'Class 8',
-      grade: 8,
-      sections: [
-        {
-          id: 'sec5', name: 'A', isClassTeacher: false,
-          students: Array.from({ length: 15 }, (_, i) => ({ id: `8A${i}`, name: `Ethan Hunt ${i}`, email: `ethan${i}@example.com`, avgScore: 72 + (i % 6), attendancePercent: 88 - i, issue: 'Needs Improvement', trend: '-3% this week' }))
-        }
-      ]
-    },
-    {
-      id: '4',
-      name: 'Class 7',
-      grade: 7,
-      sections: [
-        {
-          id: 'sec6', name: 'A', isClassTeacher: false,
-          students: Array.from({ length: 12 }, (_, i) => ({ id: `7A${i}`, name: `Fiona Gallagher ${i}`, email: `fiona${i}@example.com`, avgScore: 81 + (i % 4), attendancePercent: 91 - i, issue: 'On track', trend: '+1% this week' }))
-        }
-      ]
-    },
-    {
-      id: '5',
-      name: 'Class 6',
-      grade: 6,
-      sections: [
-        {
-          id: 'sec7', name: 'A', isClassTeacher: false,
-          students: Array.from({ length: 14 }, (_, i) => ({ id: `6A${i}`, name: `George Lucas ${i}`, email: `george${i}@example.com`, avgScore: 88 + (i % 2), attendancePercent: 95 - i, issue: 'On track', trend: '+2% this week' }))
-        }
-      ]
-    }
-  ];
+  try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role;
+    const teacherId = (session?.user as any)?.id;
 
-  return NextResponse.json({ classes: formattedData });
+    if (!session || userRole !== 'TEACHER' || !teacherId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const classRooms = await prisma.classRoom.findMany({
+      where: {
+        OR: [
+          { classTeacherId: teacherId },
+          { assignments: { some: { teacherId } } }
+        ]
+      },
+      include: {
+        students: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+
+    const grouped = classRooms.reduce((acc: any, curr: any) => {
+      const grade = parseInt(curr.standard, 10) || 0;
+      if (!acc[curr.standard]) {
+        acc[curr.standard] = {
+          id: `grade-${curr.standard}`,
+          name: `Class ${curr.standard}`,
+          grade: grade,
+          sections: []
+        };
+      }
+      acc[curr.standard].sections.push({
+        id: curr.id,
+        name: curr.section,
+        isClassTeacher: curr.classTeacherId === teacherId,
+        students: curr.students.map((student: any) => ({
+          id: student.id,
+          name: student.name || 'Unknown Student',
+          email: student.email,
+          avgScore: Math.floor(Math.random() * 40) + 60,
+          attendancePercent: Math.floor(Math.random() * 20) + 80,
+          issue: 'On track',
+          trend: '+2% this week'
+        }))
+      });
+      return acc;
+    }, {} as Record<string, any>);
+
+    const formattedData = Object.values(grouped).sort((a: any, b: any) => b.grade - a.grade);
+
+    return NextResponse.json({ classes: formattedData });
+  } catch (error: any) {
+    console.error('Error fetching teacher students:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

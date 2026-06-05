@@ -155,14 +155,14 @@ const SyllabusAccordion = ({
         />
       </div>
 
-      {Object.entries(groupedSubjects)
+      {(Object.entries(groupedSubjects) as [string, any[]][])
         .sort((a, b) => b[0].localeCompare(a[0]))
         .map(([standard, stdSubjects]) => (
           <div key={standard} className="space-y-3">
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider pl-2 border-l-2 border-teal/50">
               {standard}{standard !== 'Other' && 'th Standard'}
             </h3>
-            {stdSubjects.map(subject => (
+            {stdSubjects.map((subject: any) => (
               <div key={subject.id} className="bg-white/5 border border-white/5 rounded-xl overflow-hidden">
                 {/* Subject Header */}
                 <button 

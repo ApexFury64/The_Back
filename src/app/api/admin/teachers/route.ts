@@ -1,47 +1,44 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: Request) {
-  const teacherNames = [
-    'Mr. Anderson', 'Ms. Roberts', 'Mrs. Davis', 'Mr. White', 'Mr. Black', 
-    'Ms. Green', 'Mr. Brown', 'Ms. Taylor', 'Mr. Wilson', 'Mrs. Moore', 
-    'Mr. Clark', 'Ms. Hall', 'Mr. Lewis', 'Mrs. Walker', 'Ms. Young', 
-    'Mr. Allen', 'Ms. King', 'Mr. Wright', 'Mrs. Scott', 'Mr. Torres', 
-    'Ms. Nguyen', 'Mr. Hill', 'Mrs. Adams', 'Ms. Nelson', 'Mr. Baker', 
-    'Ms. Mitchell', 'Mr. Perez', 'Mrs. Roberts', 'Mr. Turner', 'Ms. Phillips'
-  ];
+  try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role;
+    const schoolId = (session?.user as any)?.schoolId;
 
-  const subjectsPool = [
-    'Mathematics', 'Science', 'English', 'History', 'Geography', 'Computer Science', 
-    'Physical Education', 'Art', 'Music', 'Biology', 'Chemistry', 'Physics'
-  ];
+    if (!session || userRole !== 'SCHOOLADMIN' || !schoolId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-  const standardsPool = ['Class 10', 'Class 9', 'Class 8', 'Class 7', 'Class 6'];
-  const sectionsPool = ['A', 'B', 'C'];
+    const dbTeachers = await prisma.user.findMany({
+      where: { schoolId, role: 'TEACHER' },
+      include: {
+        taughtClasses: true
+      }
+    });
 
-  const teachers = Array.from({ length: 30 }, (_, i) => {
-    const primarySubject = subjectsPool[i % subjectsPool.length];
-    
-    // Assign 1-2 classes
-    const class1 = standardsPool[i % standardsPool.length];
-    const sec1 = sectionsPool[i % sectionsPool.length];
-    
-    const class2 = standardsPool[(i + 1) % standardsPool.length];
-    const sec2 = sectionsPool[(i + 1) % sectionsPool.length];
-    
-    const assignedClasses = i % 2 === 0 
-      ? `${class1}-${sec1}, ${class1}-${sec2}`
-      : `${class1}-${sec1}, ${class2}-${sec2}`;
+    const teachers = dbTeachers.map((t: any) => {
+      const assignedClasses = t.taughtClasses
+        .map((c: any) => `Class ${c.standard}-${c.section}`)
+        .join(', ');
 
-    return {
-      id: `${i + 1}`,
-      name: teacherNames[i],
-      email: `${teacherNames[i].split(' ')[1].toLowerCase()}@school.com`,
-      phone: `9876543${String(210 + i).padStart(3, '0')}`,
-      employeeId: `T${String(i + 1).padStart(3, '0')}`,
-      subjects: primarySubject,
-      classes: assignedClasses
-    };
-  });
+      return {
+        id: t.id,
+        name: t.name || 'Unknown Teacher',
+        email: t.email,
+        phone: t.phone || 'N/A',
+        employeeId: t.employeeId || `T-${t.id.substring(0, 5).toUpperCase()}`,
+        subjects: t.primarySubject || 'General',
+        classes: assignedClasses || 'None'
+      };
+    });
 
-  return NextResponse.json({ teachers });
+    return NextResponse.json({ teachers });
+  } catch (error: any) {
+    console.error('Error fetching teachers:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

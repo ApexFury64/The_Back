@@ -64,12 +64,16 @@ model User {
   accounts      Account[]
   sessions      Session[]
   taughtClasses ClassRoom[] @relation("ClassTeacher")
+  topicProgresses TopicProgress[]
   assignments   Assignment[]
   submissions   Submission[]
   announcements Announcement[]
   sentMessages     Message[] @relation("MessageSender")
   receivedMessages Message[] @relation("MessageReceiver")
   studySessions    StudySession[]
+  materials        Material[]
+  liveClasses      LiveClass[]
+  quizAttempts     QuizAttempt[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -107,6 +111,9 @@ model School {
   subjects    Subject[]
   assignments Assignment[]
   announcements Announcement[]
+  materials     Material[]
+  liveClasses   LiveClass[]
+  quizzes       Quiz[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -145,6 +152,7 @@ model Subject {
   standard    String   // e.g. "8"
   
   assignments Assignment[]
+  topics      Topic[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -268,3 +276,142 @@ model StudySession {
   @@index([studentId])
 }
 
+// --- Models added for Phase 4 Mock Eradication ---
+
+model Material {
+  id        String   @id @default(cuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  teacherId String
+  teacher   User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  title     String
+  type      String   // "pdf", "video", "link"
+  url       String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
+  @@index([teacherId])
+}
+
+model LiveClass {
+  id        String   @id @default(cuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  teacherId String
+  teacher   User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  title     String
+  startTime DateTime
+  endTime   DateTime
+  meetingUrl String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
+  @@index([teacherId])
+}
+
+model Quiz {
+  id        String   @id @default(cuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  title     String
+  duration  Int      // minutes
+  
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
+}
+
+model QuizQuestion {
+  id        String   @id @default(cuid())
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  
+  question  String
+  options   String   // JSON string of options array
+  answer    String
+  
+  createdAt DateTime @default(now())
+}
+
+model QuizAttempt {
+  id        String   @id @default(cuid())
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  score     Int
+  
+  createdAt DateTime @default(now())
+
+  @@index([quizId])
+  @@index([studentId])
+}
+
+model AiUsageLog {
+  id        String   @id @default(cuid())
+  model     String
+  tokens    Int
+  cost      Float
+  
+  createdAt DateTime @default(now())
+}
+
+model ModerationFlag {
+  id        String   @id @default(cuid())
+  userId    String
+  reason    String
+  content   String
+  status    String   @default("pending") // pending, reviewed, resolved
+  
+  createdAt DateTime @default(now())
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  
+  title       String
+  description String?
+  icon        String?
+  order       Int
+  
+  progresses  TopicProgress[]
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([subjectId])
+}
+
+model TopicProgress {
+  id        String   @id @default(cuid())
+  topicId   String
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  status    String   // not-started, in-progress, completed
+  score     Int?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([topicId, studentId])
+  @@index([studentId])
+}

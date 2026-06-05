@@ -1,19 +1,67 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: Request) {
-  const mockMaterials = [
-    { id: 'm1', name: 'Algebra Fundamentals', class: 'Class 10-A', type: 'PDF', size: '2.4 MB', date: '2026-05-20', sectionSubjectId: 'MATH10' },
-    { id: 'm2', name: 'Geometry Formulas', class: 'Class 10-A', type: 'DOCX', size: '1.1 MB', date: '2026-05-21', sectionSubjectId: 'MATH10' },
-    { id: 'm3', name: 'Newton Laws', class: 'Class 9-B', type: 'PDF', size: '3.5 MB', date: '2026-05-22', sectionSubjectId: 'SCI9' },
-    { id: 'm4', name: 'History of Rome', class: 'Class 8-A', type: 'PPTX', size: '5.2 MB', date: '2026-05-25', sectionSubjectId: 'HIST8' },
-    { id: 'm5', name: 'Chemical Reactions', class: 'Class 7-C', type: 'PDF', size: '1.8 MB', date: '2026-05-26', sectionSubjectId: 'SCI7' },
-    { id: 'm6', name: 'Computer Basics', class: 'Class 6-A', type: 'PDF', size: '4.0 MB', date: '2026-05-27', sectionSubjectId: 'CS6' },
-  ];
+  try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role;
+    const teacherId = (session?.user as any)?.id;
 
-  // Return exactly what the UI expects for GET
-  return NextResponse.json({ materials: mockMaterials, sectionSubjects: [] });
+    if (!session || userRole !== 'TEACHER' || !teacherId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const dbMaterials = await prisma.material.findMany({
+      where: { teacherId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const materials = dbMaterials.map((m: any) => ({
+      id: m.id,
+      name: m.title,
+      class: 'All Classes', // TODO: Add classId to Material schema
+      type: m.type.toUpperCase(),
+      size: '1.5 MB', // TODO: Store file size in Material schema
+      date: m.createdAt.toISOString().split('T')[0],
+      sectionSubjectId: 'GENERAL'
+    }));
+
+    return NextResponse.json({ materials, sectionSubjects: [] });
+  } catch (error: any) {
+    console.error('Error fetching materials:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
-  return NextResponse.json({ success: true });
+  try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role;
+    const teacherId = (session?.user as any)?.id;
+    const schoolId = (session?.user as any)?.schoolId;
+
+    if (!session || userRole !== 'TEACHER' || !teacherId || !schoolId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const data = await request.json();
+    const { name, type, url } = data;
+
+    const material = await prisma.material.create({
+      data: {
+        schoolId,
+        teacherId,
+        title: name || 'Untitled Material',
+        type: type || 'pdf',
+        url: url || '#'
+      }
+    });
+
+    return NextResponse.json({ success: true, material });
+  } catch (error: any) {
+    console.error('Error creating material:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

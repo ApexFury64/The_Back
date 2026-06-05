@@ -86,7 +86,7 @@ export default function ParentDashboard() {
     student = null
   } = data;
 
-  const standards = ["All", ...Array.from(new Set(studentSubjects.map((s: any) => s.standard || '8'))).sort((a: any, b: any) => b.toString().localeCompare(a.toString()))];
+  const standards = ["All", ...Array.from(new Set<string>(studentSubjects.map((s: any) => s.standard || '8'))).sort((a: any, b: any) => b.toString().localeCompare(a.toString()))];
   const filteredSubjects = selectedStandard === "All" ? studentSubjects : studentSubjects.filter((s: any) => (s.standard || '8') === selectedStandard);
 
   return (

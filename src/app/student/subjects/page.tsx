@@ -371,9 +371,11 @@ export default function StudentSubjectsPage() {
                 acc[std].push(subject);
                 return acc;
               }, {} as Record<string, any[]>)
-            )
-          .sort((a, b) => b[0].localeCompare(a[0])) 
-          .map(([standard, stdSubjects]) => (
+            ).sort((a, b) => b[0].localeCompare(a[0]))
+          .map((entry: any) => {
+            const standard = entry[0];
+            const stdSubjects = entry[1];
+            return (
             <div key={standard} className="space-y-6">
               <div className="flex items-center gap-3 border-b border-white/10 pb-2">
                 <h2 className="text-xl font-bold gradient-text">{standard}{standard !== 'Other' && 'th Standard'}</h2>
@@ -458,7 +460,8 @@ export default function StudentSubjectsPage() {
                 ))}
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
         </>
       )}

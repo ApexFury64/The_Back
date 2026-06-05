@@ -418,7 +418,7 @@ function generateLabAssets(): LabAsset[] {
             subject,
             standard: std.toString(),
             color,
-            prompt: topic.prompt,
+            prompt: topic.prompt || '',
             description: `Learn about ${topic.title}`,
             svgPath: '', // Using icon instead
             icon: topic.icon,

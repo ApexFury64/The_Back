@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import mockData from '@/lib/schoolMockData.json';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params; // Next.js 15 requires awaiting params
     

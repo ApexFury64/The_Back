@@ -11,7 +11,6 @@ export default function CommunicationPage() {
   const userName = useAppStore(s => s.userName);
   const schoolName = useAppStore(s => s.schoolName);
   const userEmail = useAppStore(s => s.userEmail);
-  const userId = useAppStore(s => s.userId); // Ensure you have this in your store, or just rely on session cookie. 
   // Wait, if userId isn't in store, the API uses session cookie anyway for senderId. 
   // But we need receiverId for sending. 
 

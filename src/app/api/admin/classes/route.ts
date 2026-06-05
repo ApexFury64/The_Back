@@ -1,33 +1,52 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: Request) {
-  const classes = [
-    { id: '1', name: 'Class 10', grade: 10, sections: [
-      { id: 'sec10A', name: 'A', students: Array(30).fill({}), classTeacher: { name: 'Mr. Anderson' }, sectionSubjects: [
-        { id: 'ss1', subject: { name: 'Mathematics' }, teacher: { name: 'Mr. Anderson' } },
-        { id: 'ss2', subject: { name: 'Science' }, teacher: { name: 'Ms. Roberts' } }
-      ] },
-      { id: 'sec10B', name: 'B', students: Array(28).fill({}), classTeacher: { name: 'Mrs. Davis' }, sectionSubjects: [] },
-      { id: 'sec10C', name: 'C', students: Array(25).fill({}), classTeacher: { name: 'Mr. White' }, sectionSubjects: [] }
-    ]},
-    { id: '2', name: 'Class 9', grade: 9, sections: [
-      { id: 'sec9A', name: 'A', students: Array(32).fill({}), classTeacher: { name: 'Mr. Black' }, sectionSubjects: [] },
-      { id: 'sec9B', name: 'B', students: Array(30).fill({}), classTeacher: { name: 'Ms. Green' }, sectionSubjects: [] },
-      { id: 'sec9C', name: 'C', students: Array(29).fill({}), classTeacher: { name: 'Mr. Brown' }, sectionSubjects: [] }
-    ]},
-    { id: '3', name: 'Class 8', grade: 8, sections: [
-      { id: 'sec8A', name: 'A', students: Array(35).fill({}), classTeacher: { name: 'Ms. Taylor' }, sectionSubjects: [] },
-      { id: 'sec8B', name: 'B', students: Array(33).fill({}), classTeacher: { name: 'Mr. Wilson' }, sectionSubjects: [] }
-    ]},
-    { id: '4', name: 'Class 7', grade: 7, sections: [
-      { id: 'sec7A', name: 'A', students: Array(25).fill({}), classTeacher: { name: 'Mrs. Moore' }, sectionSubjects: [] },
-      { id: 'sec7B', name: 'B', students: Array(26).fill({}), classTeacher: { name: 'Mr. Clark' }, sectionSubjects: [] },
-      { id: 'sec7C', name: 'C', students: Array(28).fill({}), classTeacher: { name: 'Ms. Hall' }, sectionSubjects: [] }
-    ]},
-    { id: '5', name: 'Class 6', grade: 6, sections: [
-      { id: 'sec6A', name: 'A', students: Array(30).fill({}), classTeacher: { name: 'Mr. Young' }, sectionSubjects: [] },
-      { id: 'sec6B', name: 'B', students: Array(31).fill({}), classTeacher: { name: 'Ms. King' }, sectionSubjects: [] }
-    ]}
-  ];
-  return NextResponse.json({ classes });
+  try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role;
+    const schoolId = (session?.user as any)?.schoolId;
+
+    if (!session || userRole !== 'SCHOOLADMIN' || !schoolId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const classRooms = await prisma.classRoom.findMany({
+      where: { schoolId },
+      include: {
+        students: { select: { id: true } },
+        classTeacher: { select: { name: true } },
+      }
+    });
+
+    // Group by standard (grade)
+    const grouped = classRooms.reduce((acc: any, curr: any) => {
+      const grade = parseInt(curr.standard, 10) || 0;
+      if (!acc[curr.standard]) {
+        acc[curr.standard] = {
+          id: `grade-${curr.standard}`,
+          name: `Class ${curr.standard}`,
+          grade: grade,
+          sections: []
+        };
+      }
+      acc[curr.standard].sections.push({
+        id: curr.id,
+        name: curr.section,
+        students: curr.students,
+        classTeacher: curr.classTeacher,
+        sectionSubjects: [] // We don't have SectionSubject model anymore
+      });
+      return acc;
+    }, {} as Record<string, any>);
+
+    const classes = Object.values(grouped).sort((a: any, b: any) => b.grade - a.grade);
+
+    return NextResponse.json({ classes });
+  } catch (error: any) {
+    console.error('Error fetching classes:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

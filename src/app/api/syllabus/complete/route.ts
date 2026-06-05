@@ -1,87 +1,52 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
 
 const completeSyllabusSchema = z.object({
-  userEmail: z.string().email(),
-  topicId: z.string().min(1)
+  topicId: z.string()
 });
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as { role?: string })?.role;
+    const studentId = (session?.user as { id?: string })?.id;
+
+    if (!session || userRole !== 'STUDENT' || !studentId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
-    const parsed = completeSyllabusSchema.safeParse(body);
+    const result = completeSyllabusSchema.safeParse(body);
     
-    if (!parsed.success) {
-      return NextResponse.json({ error: (parsed.error as any).errors[0].message }, { status: 400 });
+    if (!result.success) {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
-    
-    const { userEmail, topicId } = parsed.data;
 
-    const user = await prisma.user.findUnique({ where: { email: userEmail } });
-    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    const userId = user.id;
+    const { topicId } = result.data;
 
-    // Mark current topic as completed
-    await prisma.topicProgress.upsert({
+    const topicProgress = await prisma.topicProgress.upsert({
       where: {
-        userId_topicId: { userId, topicId }
-      },
-      update: { status: 'completed' },
-      create: { userId, topicId, status: 'completed' }
-    });
-
-    // Find the next topic to unlock
-    // 1. Get the current topic to know its module
-    const currentTopic = await prisma.topic.findUnique({
-      where: { id: topicId },
-      include: {
-        module: {
-          include: {
-            subject: {
-              include: {
-                modules: {
-                  include: {
-                    topics: true
-                  }
-                }
-              }
-            }
-          }
+        topicId_studentId: {
+          topicId,
+          studentId
         }
+      },
+      update: {
+        status: 'completed'
+      },
+      create: {
+        topicId,
+        studentId,
+        status: 'completed'
       }
     });
 
-    if (!currentTopic) {
-      return NextResponse.json({ error: 'Topic not found' }, { status: 404 });
-    }
-
-    const allModules = currentTopic.module.subject.modules;
-    
-    // Flatten all topics sequentially
-    const sequentialTopics = allModules.flatMap(m => m.topics);
-    const currentIndex = sequentialTopics.findIndex(t => t.id === topicId);
-
-    // If there is a next topic, check if it's locked, and if so unlock it
-    if (currentIndex !== -1 && currentIndex < sequentialTopics.length - 1) {
-      const nextTopic = sequentialTopics[currentIndex + 1];
-      
-      const nextProgress = await prisma.topicProgress.findUnique({
-        where: { userId_topicId: { userId, topicId: nextTopic.id } }
-      });
-
-      if (!nextProgress || nextProgress.status === 'locked') {
-        await prisma.topicProgress.upsert({
-          where: { userId_topicId: { userId, topicId: nextTopic.id } },
-          update: { status: 'in-progress' },
-          create: { userId, topicId: nextTopic.id, status: 'in-progress' }
-        });
-      }
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error completing topic:', error);
-    return NextResponse.json({ error: 'Failed to complete topic' }, { status: 500 });
+    return NextResponse.json({ success: true, topicProgress });
+  } catch (error: unknown) {
+    console.error('Error completing syllabus:', error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to complete topic' }, { status: 500 });
   }
 }
