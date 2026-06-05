@@ -8,6 +8,7 @@ import bcrypt from 'bcryptjs';
 const createTeacherSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
+  password: z.string().min(6),
   phone: z.string().optional(),
   employeeId: z.string().optional(),
   primarySubject: z.string().optional(),
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
     
-    const { name, email, phone, employeeId, primarySubject } = parsed.data;
+    const { name, email, password, phone, employeeId, primarySubject } = parsed.data;
     const schoolId = (session.user as any).schoolId;
 
     if (!schoolId) {
@@ -40,13 +41,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
     }
 
-    const defaultPassword = await bcrypt.hash('demo123', 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const newTeacher = await prisma.user.create({
       data: {
         name,
         email,
-        password: defaultPassword,
+        password: hashedPassword,
         phone,
         employeeId,
         primarySubject,

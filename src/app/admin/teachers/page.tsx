@@ -12,7 +12,7 @@ export default function AdminTeachersPage() {
   const [teachers, setTeachers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newTeacher, setNewTeacher] = useState({ name: "", email: "", phone: "", employeeId: "", primarySubject: "" });
+  const [newTeacher, setNewTeacher] = useState({ name: "", email: "", password: "", phone: "", employeeId: "", primarySubject: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{isOpen: boolean; id: string; name: string}>({isOpen: false, id: '', name: ''});
   
@@ -46,7 +46,7 @@ export default function AdminTeachersPage() {
       if (res.ok) {
         toast.success("Teacher added successfully");
         setIsAddModalOpen(false);
-        setNewTeacher({ name: "", email: "", phone: "", employeeId: "", primarySubject: "" });
+        setNewTeacher({ name: "", email: "", password: "", phone: "", employeeId: "", primarySubject: "" });
         fetchTeachers(); // Refresh list
       } else {
         const data = await res.json();
@@ -199,6 +199,18 @@ export default function AdminTeachersPage() {
                   onChange={e => setNewTeacher({...newTeacher, email: e.target.value})} 
                   className="glass-input w-full px-4 py-2 text-sm" 
                   required 
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Password</label>
+                <input 
+                  type="password" 
+                  value={newTeacher.password} 
+                  onChange={e => setNewTeacher({...newTeacher, password: e.target.value})} 
+                  className="glass-input w-full px-4 py-2 text-sm" 
+                  placeholder="Min 6 characters"
+                  required 
+                  minLength={6}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
