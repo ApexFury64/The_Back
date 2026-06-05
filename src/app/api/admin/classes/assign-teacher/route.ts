@@ -26,6 +26,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Teacher not found in your school' }, { status: 404 });
     }
 
+    // Ensure this teacher is only assigned to one class section at a time by clearing their other class teacher roles
+    await prisma.classRoom.updateMany({
+      where: { schoolId, classTeacherId: teacherId },
+      data: { classTeacherId: null }
+    });
+
     const updatedClass = await prisma.classRoom.update({
       where: { id: targetClassRoomId },
       data: { classTeacherId: teacherId },
