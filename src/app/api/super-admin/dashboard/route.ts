@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth';
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (session.user as any)?.role !== 'superadmin') {
+    if (!session || (session.user as any)?.role !== 'SUPERADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -53,12 +53,10 @@ export async function GET() {
     ];
 
     const systemHealthData = [
-      { name: '00:00', value: 20 },
-      { name: '04:00', value: 15 },
-      { name: '08:00', value: 60 },
-      { name: '12:00', value: 95 },
-      { name: '16:00', value: 85 },
-      { name: '20:00', value: 40 },
+      { metric: 'Primary Database', status: 'healthy', value: 'Online (12ms latency)' },
+      { metric: 'API Gateway', status: 'healthy', value: 'Online (18ms latency)' },
+      { metric: 'AI Inference Queue', status: 'healthy', value: 'Active' },
+      { metric: 'Vercel Edge Network', status: 'healthy', value: '99.99% uptime' },
     ];
 
     const recentAlerts = [
@@ -66,11 +64,11 @@ export async function GET() {
     ];
 
     const platformMetrics = [
-      { name: 'API Requests', value: '12.4M', trend: '+15%', status: 'healthy' },
+      { name: 'API Requests', label: 'API Requests', value: '12.4M', trend: '+15%', status: 'healthy' },
     ];
 
     const auditLog = [
-      { id: '1', action: 'System Init', details: 'Prisma DB Connect', user: 'System', time: '1 hour ago', status: 'success' },
+      { id: '1', action: 'System Init', details: 'Prisma DB Connect', detail: 'Prisma DB Connect', user: 'System', time: '1 hour ago', status: 'success', type: 'success' },
     ];
 
     return NextResponse.json({

@@ -30,7 +30,7 @@ export default function SuperAdminAnalyticsPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {data.platformMetrics.map((metric: any, i: number) => (
             <div key={i} className="glass-card-static p-4 rounded-xl">
-              <p className="text-xs text-muted-foreground">{metric.label}</p>
+              <p className="text-xs text-muted-foreground">{metric.label || metric.name}</p>
               <h4 className="text-2xl font-bold mt-1 mb-2">{metric.value}</h4>
               <span className="text-[10px] text-teal bg-teal/10 px-2 py-0.5 rounded-full">{metric.trend}</span>
             </div>
