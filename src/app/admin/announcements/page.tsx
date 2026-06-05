@@ -1,9 +1,10 @@
 "use client";
-
+ 
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Megaphone, Send } from "lucide-react";
 import { useAppStore } from "@/lib/store";
+import { toast } from "sonner";
 
 export default function AdminAnnouncementsPage() {
   const userName = useAppStore(s => s.userName);
@@ -17,6 +18,12 @@ export default function AdminAnnouncementsPage() {
     title: "",
     content: "",
     priority: "medium"
+  });
+
+  const [targetRoles, setTargetRoles] = useState({
+    STUDENT: true,
+    TEACHER: true,
+    PARENT: true
   });
 
   const fetchAnnouncements = async () => {
@@ -38,17 +45,36 @@ export default function AdminAnnouncementsPage() {
 
   const handleBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
+    const selectedAudience = Object.entries(targetRoles)
+      .filter(([_, checked]) => checked)
+      .map(([role]) => role);
+
+    if (selectedAudience.length === 0) {
+      toast.error("Please select at least one target audience.");
+      return;
+    }
+
+    const targetAudience = selectedAudience.length === 3 ? 'all' : selectedAudience.join(',');
+
     try {
       const email = userEmail || 'admin@dps-hyd.edu';
-      await fetch('/api/admin/announcements', {
+      const res = await fetch('/api/admin/announcements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newAnnouncement, adminEmail: email })
+        body: JSON.stringify({ ...newAnnouncement, targetAudience, adminEmail: email })
       });
-      setNewAnnouncement({ title: "", content: "", priority: "medium" });
-      fetchAnnouncements();
+      if (res.ok) {
+        toast.success("Announcement broadcasted successfully!");
+        setNewAnnouncement({ title: "", content: "", priority: "medium" });
+        setTargetRoles({ STUDENT: true, TEACHER: true, PARENT: true });
+        fetchAnnouncements();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to broadcast announcement");
+      }
     } catch (error) {
       console.error("Failed to broadcast announcement", error);
+      toast.error("Network error");
     }
   };
 
@@ -73,6 +99,38 @@ export default function AdminAnnouncementsPage() {
               className="glass-input w-full px-4 py-2 text-sm min-h-[100px]" 
               required
             />
+            <div className="space-y-1.5">
+              <label className="text-xs text-muted-foreground font-medium block">Target Audience</label>
+              <div className="flex gap-4 p-3 bg-white/5 border border-white/10 rounded-xl">
+                <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={targetRoles.STUDENT}
+                    onChange={(e) => setTargetRoles({...targetRoles, STUDENT: e.target.checked})}
+                    className="w-4 h-4 rounded bg-white/5 border-white/20 text-teal focus:ring-teal"
+                  />
+                  Students
+                </label>
+                <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={targetRoles.TEACHER}
+                    onChange={(e) => setTargetRoles({...targetRoles, TEACHER: e.target.checked})}
+                    className="w-4 h-4 rounded bg-white/5 border-white/20 text-teal focus:ring-teal"
+                  />
+                  Teachers
+                </label>
+                <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={targetRoles.PARENT}
+                    onChange={(e) => setTargetRoles({...targetRoles, PARENT: e.target.checked})}
+                    className="w-4 h-4 rounded bg-white/5 border-white/20 text-teal focus:ring-teal"
+                  />
+                  Parents
+                </label>
+              </div>
+            </div>
             <div className="flex items-center gap-4">
               <select 
                 value={newAnnouncement.priority}
@@ -112,6 +170,7 @@ export default function AdminAnnouncementsPage() {
               <div className="flex items-center gap-2">
                 <span className="px-2 py-1 bg-white/5 rounded text-[10px] font-medium uppercase tracking-wider">Priority: {a.priority}</span>
                 <span className="px-2 py-1 bg-white/5 rounded text-[10px] font-medium text-muted-foreground">Author: {a.author?.name || 'Admin'}</span>
+                <span className="px-2 py-1 bg-teal/10 text-teal rounded text-[10px] font-semibold uppercase tracking-wider">Audience: {a.targetAudience || 'all'}</span>
               </div>
             </div>
           ))}

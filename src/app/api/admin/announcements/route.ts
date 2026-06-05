@@ -32,6 +32,7 @@ const createAnnouncementSchema = z.object({
   title: z.string().min(3),
   content: z.string().min(5),
   priority: z.enum(['low', 'medium', 'high']).optional(),
+  targetAudience: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -51,13 +52,14 @@ export async function POST(request: Request) {
     const admin = await prisma.user.findUnique({ where: { email } });
     if (!admin || !admin.schoolId) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    const { title, content, priority } = parsed.data;
+    const { title, content, priority, targetAudience } = parsed.data;
 
     const announcement = await prisma.announcement.create({
       data: {
         title,
         content,
         priority: priority || 'medium',
+        targetAudience: targetAudience || 'all',
         schoolId: admin.schoolId,
         authorId: admin.id
       },

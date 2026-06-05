@@ -15,7 +15,13 @@ export async function GET(request: Request) {
     if (!parent || !parent.schoolId) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     const announcements = await prisma.announcement.findMany({
-      where: { schoolId: parent.schoolId },
+      where: { 
+        schoolId: parent.schoolId,
+        OR: [
+          { targetAudience: 'all' },
+          { targetAudience: { contains: 'PARENT' } }
+        ]
+      },
       include: { author: { select: { name: true, role: true } } },
       orderBy: { createdAt: 'desc' }
     });
