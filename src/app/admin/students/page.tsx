@@ -23,6 +23,8 @@ export default function AdminStudentsPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
+  const [selectedStudentForDetails, setSelectedStudentForDetails] = useState<any | null>(null);
+
   const fetchStudents = () => {
     fetch('/api/admin/students')
       .then(res => res.json())
@@ -227,23 +229,20 @@ export default function AdminStudentsPage() {
                           <table className="w-full">
                             <thead>
                               <tr className="bg-white/5">
-                                <th className="text-xs text-muted-foreground font-medium text-left py-2 px-3 rounded-tl-lg">Student Name</th>
+                                <th className="text-xs text-muted-foreground font-medium text-left py-2 px-3 rounded-tl-lg">Student Details</th>
                                 <th className="text-xs text-muted-foreground font-medium text-left py-2 px-3">Student ID</th>
-                                <th className="text-xs text-muted-foreground font-medium text-left py-2 px-3">Avg Grade</th>
-                                <th className="text-xs text-muted-foreground font-medium text-left py-2 px-3">Attendance</th>
-                                <th className="text-xs text-muted-foreground font-medium text-left py-2 px-3">AI Usage</th>
                                 <th className="text-xs text-muted-foreground font-medium text-right py-2 px-3 rounded-tr-lg">Actions</th>
                               </tr>
                             </thead>
                             <tbody>
                               {sec.students.length === 0 ? (
                                 <tr>
-                                  <td colSpan={6} className="py-4 text-center text-sm text-muted-foreground">No students matched the search in this section.</td>
+                                  <td colSpan={3} className="py-4 text-center text-sm text-muted-foreground">No students matched the search in this section.</td>
                                 </tr>
                               ) : (
                                 sec.students.map((student: any) => (
                                   <tr key={student.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                                    <td className="py-2 px-3">
+                                    <td className="py-3 px-3">
                                       <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-[10px] font-bold text-teal">
                                           {student.name.split(" ").map((n: string) => n[0]).join("")}
@@ -251,41 +250,18 @@ export default function AdminStudentsPage() {
                                         <div>
                                           <p className="text-sm font-medium">{student.name}</p>
                                           <p className="text-[10px] text-muted-foreground">Enrolled: {student.enrollmentYear}</p>
-                                          {student.parent && (
-                                            <p className="text-[9px] text-teal/85 font-medium mt-0.5">
-                                              Parent: {student.parent.name} ({student.parent.phone !== 'N/A' ? student.parent.phone : student.parent.email})
-                                            </p>
-                                          )}
                                         </div>
                                       </div>
                                     </td>
-                                    <td className="py-2 px-3 text-sm font-mono text-muted-foreground">
+                                    <td className="py-3 px-3 text-sm font-mono text-muted-foreground">
                                       STU-{student.id.substring(0, 5).toUpperCase()}
                                     </td>
-                                    <td className="py-2 px-3">
-                                      <span className={cn("text-sm font-bold", student.avgScore >= 80 ? "text-teal" : student.avgScore >= 60 ? "text-amber" : "text-coral")}>
-                                        {student.avgScore}%
-                                      </span>
-                                    </td>
-                                    <td className="py-2 px-3">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                          <div className={cn("h-full", student.attendancePercent >= 85 ? "bg-teal" : "bg-amber")} style={{ width: `${student.attendancePercent}%` }} />
-                                        </div>
-                                        <span className="text-xs text-muted-foreground">{student.attendancePercent}%</span>
-                                      </div>
-                                    </td>
-                                    <td className="py-2 px-3">
-                                      <span className={cn(
-                                        "text-xs font-medium px-2 py-1 rounded-md",
-                                        student.aiUsage === "High" ? "bg-cyan/15 text-cyan" : student.aiUsage === "Medium" ? "bg-amber/15 text-amber" : "bg-white/10 text-muted-foreground"
-                                      )}>
-                                        {student.aiUsage}
-                                      </span>
-                                    </td>
-                                    <td className="py-2 px-3 text-right">
-                                      <button className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground transition-colors inline-block">
-                                        <MoreHorizontal size={16} />
+                                    <td className="py-3 px-3 text-right">
+                                      <button 
+                                        onClick={() => setSelectedStudentForDetails(student)}
+                                        className="glass-button px-3 py-1.5 text-xs bg-teal/10 hover:bg-teal/20 text-teal border border-teal/20"
+                                      >
+                                        Actions
                                       </button>
                                     </td>
                                   </tr>
@@ -423,6 +399,93 @@ export default function AdminStudentsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* STUDENT DETAILS MODAL */}
+      {selectedStudentForDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative border border-white/10">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <GraduationCap className="text-teal" size={24} /> Student Profile
+            </h3>
+            
+            <div className="space-y-6">
+              {/* Profile Header */}
+              <div className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/5">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-base font-bold text-teal">
+                  {selectedStudentForDetails.name.split(" ").map((n: string) => n[0]).join("")}
+                </div>
+                <div>
+                  <h4 className="text-base font-bold">{selectedStudentForDetails.name}</h4>
+                  <p className="text-xs text-muted-foreground font-mono">ID: STU-{selectedStudentForDetails.id.substring(0, 5).toUpperCase()}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Enrolled: {selectedStudentForDetails.enrollmentYear}</p>
+                </div>
+              </div>
+
+              {/* Academic Details */}
+              <div className="space-y-3">
+                <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Academic Performance</h5>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-white/5 border border-white/5 rounded-xl space-y-1">
+                    <span className="text-[10px] text-muted-foreground block">Average Grade</span>
+                    <span className={cn("text-lg font-bold block", selectedStudentForDetails.avgScore >= 80 ? "text-teal" : selectedStudentForDetails.avgScore >= 60 ? "text-amber" : "text-coral")}>
+                      {selectedStudentForDetails.avgScore}%
+                    </span>
+                  </div>
+                  <div className="p-3 bg-white/5 border border-white/5 rounded-xl space-y-1">
+                    <span className="text-[10px] text-muted-foreground block">Attendance</span>
+                    <span className="text-lg font-bold block text-teal">{selectedStudentForDetails.attendancePercent}%</span>
+                  </div>
+                </div>
+                <div className="p-3 bg-white/5 border border-white/5 rounded-xl flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">AI Tutor Usage</span>
+                  <span className={cn(
+                    "text-xs font-semibold px-2.5 py-0.5 rounded-full",
+                    selectedStudentForDetails.aiUsage === "High" ? "bg-cyan/15 text-cyan" : selectedStudentForDetails.aiUsage === "Medium" ? "bg-amber/15 text-amber" : "bg-white/10 text-muted-foreground"
+                  )}>
+                    {selectedStudentForDetails.aiUsage}
+                  </span>
+                </div>
+              </div>
+
+              {/* Parent Contact Details */}
+              <div className="space-y-2 border-t border-white/5 pt-4">
+                <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Parent Contact Info</h5>
+                {selectedStudentForDetails.parent ? (
+                  <div className="p-3 bg-white/5 border border-white/5 rounded-xl space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Parent Name:</span>
+                      <span className="font-semibold">{selectedStudentForDetails.parent.name}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Parent Email:</span>
+                      <span className="font-semibold">{selectedStudentForDetails.parent.email}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Parent Phone:</span>
+                      <span className="font-semibold">{selectedStudentForDetails.parent.phone !== 'N/A' ? selectedStudentForDetails.parent.phone : 'Not Provided'}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic p-3 bg-white/5 border border-white/5 rounded-xl text-center">
+                    No parent linked to this student.
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setSelectedStudentForDetails(null)}
+                  className="w-full px-4 py-2 rounded-xl bg-teal/20 text-teal hover:bg-teal/30 transition-colors text-sm font-medium border border-teal/30"
+                >
+                  Close Profile
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
