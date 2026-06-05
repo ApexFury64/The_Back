@@ -29,6 +29,10 @@ export async function GET(request: Request) {
       where: { schoolId, role: 'TEACHER' }
     });
 
+    const settingKey = `section_subject_teachers_${schoolId}`;
+    const setting = await prisma.setting.findUnique({ where: { key: settingKey } });
+    const teacherMappings: Record<string, string> = setting ? JSON.parse(setting.value) : {};
+
     // Group by standard (grade)
     const grouped = classRooms.reduce((acc: any, curr: any) => {
       const grade = parseInt(curr.standard, 10) || 0;
@@ -45,8 +49,12 @@ export async function GET(request: Request) {
       const sectionSubjects = subjects
         .filter((sub: any) => sub.standard === curr.standard)
         .map((sub: any) => {
-          // Find teacher teaching this subject
-          const teacher = teachers.find((t: any) => t.primarySubject?.toLowerCase() === sub.name.toLowerCase());
+          // Find teacher assigned to this specific section and subject, falling back to matching primarySubject name
+          const assignedTeacherId = teacherMappings[`${curr.id}_${sub.id}`];
+          const teacher = assignedTeacherId 
+            ? teachers.find((t: any) => t.id === assignedTeacherId) 
+            : teachers.find((t: any) => t.primarySubject?.toLowerCase() === sub.name.toLowerCase());
+
           return {
             id: `${curr.id}_${sub.id}`,
             subject: {

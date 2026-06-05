@@ -33,3 +33,54 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role;
+    const schoolId = (session?.user as any)?.schoolId;
+
+    if (!session || userRole !== 'SCHOOLADMIN' || !schoolId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { name, standard, code, color } = body;
+
+    if (!name || !standard) {
+      return NextResponse.json({ error: 'Name and standard are required' }, { status: 400 });
+    }
+
+    // Check if subject already exists for this standard in the school (case-insensitive)
+    const existingSubject = await prisma.subject.findFirst({
+      where: {
+        schoolId,
+        name: { equals: name, mode: 'insensitive' },
+        standard: standard.toString(),
+      }
+    });
+
+    if (existingSubject) {
+      return NextResponse.json({ error: 'Subject already exists for this standard' }, { status: 400 });
+    }
+
+    const subjectCode = code || (name.substring(0, 3).toUpperCase() + standard);
+    const subjectColor = color || '#0ea5e9';
+
+    const subject = await prisma.subject.create({
+      data: {
+        name,
+        code: subjectCode,
+        color: subjectColor,
+        standard: standard.toString(),
+        schoolId,
+      }
+    });
+
+    return NextResponse.json({ success: true, subject });
+  } catch (error: any) {
+    console.error('Error creating subject:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+

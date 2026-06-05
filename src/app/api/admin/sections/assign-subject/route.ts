@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     }
 
     // Update teacher's primary subject to store this teaching assignment relation
-    if (teacherId && resolvedSubjectName) {
+    if (teacherId && teacherId !== 'unassigned' && resolvedSubjectName) {
       const teacher = await prisma.user.findUnique({ where: { id: teacherId } });
       if (teacher && teacher.schoolId === schoolId && teacher.role === 'TEACHER') {
         await prisma.user.update({
@@ -84,6 +84,32 @@ export async function POST(request: Request) {
           data: { primarySubject: resolvedSubjectName }
         });
       }
+    }
+
+    // Store the section-specific subject-teacher mapping in a JSON setting
+    if (finalSubjectId) {
+      const settingKey = `section_subject_teachers_${schoolId}`;
+      let setting = await prisma.setting.findUnique({ where: { key: settingKey } });
+      let mappings: Record<string, string> = {};
+      if (setting) {
+        try {
+          mappings = JSON.parse(setting.value);
+        } catch (e) {
+          console.error('Error parsing section subject teachers settings:', e);
+        }
+      }
+      
+      if (!teacherId || teacherId === 'unassigned' || teacherId === '') {
+        delete mappings[`${targetClassId}_${finalSubjectId}`];
+      } else {
+        mappings[`${targetClassId}_${finalSubjectId}`] = teacherId;
+      }
+
+      await prisma.setting.upsert({
+        where: { key: settingKey },
+        update: { value: JSON.stringify(mappings) },
+        create: { key: settingKey, value: JSON.stringify(mappings) }
+      });
     }
 
     return NextResponse.json({ success: true, subjectId: finalSubjectId, classId: targetClassId });

@@ -19,8 +19,8 @@ export default function AdminClassesPage() {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [assignData, setAssignData] = useState({ sectionId: "", teacherId: "", sectionName: "", className: "" });
 
-  const [isAssignSubjectModalOpen, setIsAssignSubjectModalOpen] = useState(false);
-  const [assignSubjectData, setAssignSubjectData] = useState({ sectionId: "", sectionName: "", className: "", teacherId: "", subjectId: "", subjectName: "" });
+  const [isCreateSubjectModalOpen, setIsCreateSubjectModalOpen] = useState(false);
+  const [newSubject, setNewSubject] = useState({ name: "", standard: "", code: "", color: "#0ea5e9" });
 
   const [isAddStudentsModalOpen, setIsAddStudentsModalOpen] = useState(false);
   const [addStudentsData, setAddStudentsData] = useState({ sectionId: "", sectionName: "", className: "", selectedStudentIds: [] as string[] });
@@ -113,34 +113,62 @@ export default function AdminClassesPage() {
     setIsSubmitting(false);
   };
 
-  const handleAssignSubjectTeacher = async (e: React.FormEvent) => {
+
+  const handleCreateSubject = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!assignSubjectData.teacherId || (!assignSubjectData.subjectId && !assignSubjectData.subjectName)) return;
+    if (!newSubject.name || !newSubject.standard) return;
     setIsSubmitting(true);
     try {
-      const res = await fetch('/api/admin/sections/assign-subject', {
+      const res = await fetch('/api/admin/subjects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          sectionId: assignSubjectData.sectionId, 
-          subjectId: assignSubjectData.subjectId,
-          subjectName: assignSubjectData.subjectName,
-          teacherId: assignSubjectData.teacherId, 
-          adminEmail: userEmail || 'admin@dps-hyd.edu' 
+          name: newSubject.name,
+          standard: newSubject.standard,
+          code: newSubject.code || undefined,
+          color: newSubject.color || '#0ea5e9',
+          adminEmail: userEmail || 'admin@dps-hyd.edu'
         })
       });
       if (res.ok) {
-        setIsAssignSubjectModalOpen(false);
+        setIsCreateSubjectModalOpen(false);
+        setNewSubject({ name: "", standard: "", code: "", color: "#0ea5e9" });
+        toast.success("Subject created successfully!");
         fetchData();
       } else {
         const err = await res.json();
-        toast.error(err.error || "Failed to assign subject teacher");
+        toast.error(err.error || "Failed to create subject");
       }
     } catch (err) {
       console.error(err);
       toast.error("Network error");
     }
     setIsSubmitting(false);
+  };
+
+  const handleUpdateSubjectTeacher = async (sectionId: string, subjectId: string, teacherId: string) => {
+    try {
+      const res = await fetch('/api/admin/sections/assign-subject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          sectionId, 
+          subjectId,
+          teacherId: teacherId === 'unassigned' ? '' : teacherId, 
+          adminEmail: userEmail || 'admin@dps-hyd.edu' 
+        })
+      });
+      if (res.ok) {
+        toast.success(teacherId === 'unassigned' ? "Teacher unassigned" : "Teacher assigned successfully");
+        fetchData();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to assign teacher");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    }
   };
 
   const handleAssignStudents = async (e: React.FormEvent) => {
@@ -192,7 +220,13 @@ export default function AdminClassesPage() {
 
   return (
     <DashboardLayout role="admin" userName={userName || "Admin"} schoolName={schoolName || "AI Tutor"} pageTitle="Class & Section Management" pageSubtitle="Manage individual sections, subjects, and teachers">
-      <div className="flex justify-end mb-6">
+      <div className="flex justify-end gap-3 mb-6">
+        <button 
+          onClick={() => setIsCreateSubjectModalOpen(true)}
+          className="glass-button px-4 py-2 flex items-center gap-2 border border-teal/30 text-teal hover:bg-teal/10"
+        >
+          <BookOpen size={16}/> Create Subject
+        </button>
         <button 
           onClick={() => setIsAddClassModalOpen(true)}
           className="glass-button px-4 py-2 flex items-center gap-2"
@@ -242,15 +276,6 @@ export default function AdminClassesPage() {
             <div className="space-y-2 pt-2">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-semibold text-muted-foreground">Subjects Taught</h4>
-                <button 
-                  onClick={() => {
-                    setAssignSubjectData({ sectionId: sec.id, sectionName: sec.name, className: sec.className, teacherId: "", subjectId: "", subjectName: "" });
-                    setIsAssignSubjectModalOpen(true);
-                  }}
-                  className="text-[10px] bg-white/10 hover:bg-white/20 text-teal px-2 py-1 rounded transition-colors flex items-center gap-1 border border-teal/30"
-                >
-                  <BookCopy size={10} /> Add Subject
-                </button>
               </div>
               
               <div className="flex flex-col gap-2 mt-2">
@@ -258,11 +283,22 @@ export default function AdminClassesPage() {
                   sec.sectionSubjects.map((ss: any) => (
                     <div key={ss.id} className="text-xs flex items-center justify-between p-2 bg-white/5 border border-white/10 rounded-md">
                       <span className="font-medium">{ss.subject.name}</span>
-                      <span className="text-muted-foreground">{ss.teacher.name}</span>
+                      <select
+                        value={ss.teacher.id}
+                        onChange={(e) => handleUpdateSubjectTeacher(sec.id, ss.subject.id, e.target.value)}
+                        className="bg-transparent text-teal border-none focus:outline-none focus:ring-0 max-w-[150px] text-right cursor-pointer hover:text-teal font-medium text-xs"
+                      >
+                        <option value="unassigned" className="bg-navy-950 text-muted-foreground">Unassigned</option>
+                        {teachers.map(t => (
+                          <option key={t.id} value={t.id} className="bg-navy-950 text-white">
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   ))
                 ) : (
-                  <div className="text-xs text-muted-foreground italic p-2 bg-white/5 rounded border border-white/5 text-center">No subjects added yet.</div>
+                  <div className="text-xs text-muted-foreground italic p-2 bg-white/5 rounded border border-white/5 text-center">No subjects added yet. Create a subject for this class above.</div>
                 )}
               </div>
             </div>
@@ -282,6 +318,91 @@ export default function AdminClassesPage() {
           </div>
         ))}
       </div>
+
+      {/* CREATE SUBJECT MODAL */}
+      {isCreateSubjectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative">
+            <h3 className="text-xl font-bold mb-4">Create New Subject</h3>
+            <form onSubmit={handleCreateSubject} className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Subject Name (e.g. Mathematics)</label>
+                <input 
+                  type="text" 
+                  value={newSubject.name} 
+                  onChange={e => setNewSubject({...newSubject, name: e.target.value})} 
+                  className="glass-input w-full px-4 py-2 text-sm" 
+                  placeholder="e.g. Physics"
+                  required 
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Grade / Standard Level</label>
+                {classes.length > 0 ? (
+                  <select 
+                    value={newSubject.standard} 
+                    onChange={e => setNewSubject({...newSubject, standard: e.target.value})} 
+                    className="glass-input w-full px-4 py-2 text-sm bg-navy-950 text-white" 
+                    required 
+                  >
+                    <option value="" disabled>-- Select a Class/Grade --</option>
+                    {classes.map(c => (
+                      <option key={c.id} value={c.grade.toString()}>{c.name} (Grade {c.grade})</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input 
+                    type="number" 
+                    value={newSubject.standard} 
+                    onChange={e => setNewSubject({...newSubject, standard: e.target.value})} 
+                    className="glass-input w-full px-4 py-2 text-sm" 
+                    placeholder="e.g. 8"
+                    required 
+                  />
+                )}
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Subject Code (Optional)</label>
+                <input 
+                  type="text" 
+                  value={newSubject.code} 
+                  onChange={e => setNewSubject({...newSubject, code: e.target.value})} 
+                  className="glass-input w-full px-4 py-2 text-sm" 
+                  placeholder="e.g. PHY8 (leave blank to auto-generate)"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Subject Display Color</label>
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="color" 
+                    value={newSubject.color} 
+                    onChange={e => setNewSubject({...newSubject, color: e.target.value})} 
+                    className="w-12 h-10 bg-transparent border border-white/20 rounded cursor-pointer"
+                  />
+                  <span className="text-xs text-muted-foreground">{newSubject.color}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                <button 
+                  type="button" 
+                  onClick={() => setIsCreateSubjectModalOpen(false)}
+                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
+                >
+                  {isSubmitting ? "Creating..." : "Create Subject"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ADD CLASS MODAL */}
       {isAddClassModalOpen && (
@@ -398,77 +519,7 @@ export default function AdminClassesPage() {
         </div>
       )}
 
-      {/* ASSIGN SUBJECT TEACHER MODAL */}
-      {isAssignSubjectModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative">
-            <h3 className="text-xl font-bold mb-1">Add Subject & Teacher</h3>
-            <p className="text-xs text-muted-foreground mb-4">For {assignSubjectData.className} - {assignSubjectData.sectionName}</p>
-            <form onSubmit={handleAssignSubjectTeacher} className="space-y-4">
-              
-              <div className="space-y-2">
-                <label className="text-xs text-muted-foreground font-medium mb-1 block">Subject Name</label>
-                <div className="relative">
-                  <select 
-                    value={assignSubjectData.subjectId} 
-                    onChange={e => setAssignSubjectData({...assignSubjectData, subjectId: e.target.value, subjectName: ""})} 
-                    className="glass-input w-full px-4 py-2 text-sm bg-navy-900 mb-2" 
-                  >
-                    <option value="">-- Or Select Existing Subject --</option>
-                    {subjects.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} (Grade {s.standard})</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-px bg-white/10 flex-1"></div>
-                  <span className="text-xs text-muted-foreground">OR CREATE NEW</span>
-                  <div className="h-px bg-white/10 flex-1"></div>
-                </div>
-                <input 
-                  type="text"
-                  placeholder="Type new subject name..."
-                  value={assignSubjectData.subjectName}
-                  onChange={e => setAssignSubjectData({...assignSubjectData, subjectName: e.target.value, subjectId: ""})}
-                  className="glass-input w-full px-4 py-2 text-sm mt-2"
-                />
-              </div>
 
-              <div>
-                <label className="text-xs text-muted-foreground font-medium mb-1 block">Select Teacher</label>
-                <select 
-                  value={assignSubjectData.teacherId} 
-                  onChange={e => setAssignSubjectData({...assignSubjectData, teacherId: e.target.value})} 
-                  className="glass-input w-full px-4 py-2 text-sm bg-navy-900" 
-                  required 
-                >
-                  <option value="" disabled>-- Select a Teacher --</option>
-                  {teachers.map(t => (
-                    <option key={t.id} value={t.id}>{t.name} {t.primarySubject ? `(${t.primarySubject})` : ''}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-                <button 
-                  type="button" 
-                  onClick={() => setIsAssignSubjectModalOpen(false)}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting || !assignSubjectData.teacherId || (!assignSubjectData.subjectId && !assignSubjectData.subjectName)}
-                  className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
-                >
-                  {isSubmitting ? "Adding..." : "Add Subject"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ADD STUDENTS MODAL */}
       {isAddStudentsModalOpen && (
