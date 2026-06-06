@@ -404,16 +404,21 @@ export default function StudentSubjectsPage() {
                           <p className="text-sm text-navy-900/70 dark:text-muted-foreground">{subject.code} • {subject.standard}th Standard</p>
                         </div>
                         {/* Larger Icon */}
-                        <div 
-                          className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-3 border border-black/5 dark:border-white/10 text-[var(--subject-icon-color-light)] dark:text-[var(--subject-icon-color-dark)]"
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/student/ebooks?subjectId=${subject.id}`);
+                          }}
+                          className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-transform hover:scale-110 hover:rotate-3 border border-black/5 dark:border-white/10 text-[var(--subject-icon-color-light)] dark:text-[var(--subject-icon-color-dark)] cursor-pointer"
                           style={{ 
                             backgroundColor: `${subject.color}15`,
                             '--subject-icon-color-light': getContrastColor(subject.color),
                             '--subject-icon-color-dark': subject.color
                           } as any}
+                          title="Open Course eBook"
                         >
                           <BookOpen size={32} />
-                        </div>
+                        </button>
                       </div>
                       
                       <div className="space-y-4 mb-2">
@@ -454,6 +459,16 @@ export default function StudentSubjectsPage() {
                             <p className="text-xl font-bold text-navy-900 dark:text-white">{Math.floor(subject.progress / 5)}h</p>
                           </div>
                         </div>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/student/ebooks?subjectId=${subject.id}`);
+                          }}
+                          className="col-span-2 mt-2 w-full py-2 px-4 rounded-xl bg-teal/10 hover:bg-teal/20 text-teal-800 dark:text-teal text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 border border-teal/20"
+                        >
+                          <BookOpen size={14} /> Read Course eBook
+                        </button>
                       </div>
                     </div>
                   </motion.div>

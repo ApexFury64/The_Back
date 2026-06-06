@@ -26,6 +26,12 @@ export default function TeacherSyllabusPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // eBook Editor Modal State
+  const [isEbookModalOpen, setIsEbookModalOpen] = useState(false);
+  const [selectedTopicForEbook, setSelectedTopicForEbook] = useState<any>(null);
+  const [ebookContent, setEbookContent] = useState({ ebookHtml: "", ebookVideoUrl: "" });
+  const [isSavingEbook, setIsSavingEbook] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchSubjects = async () => {
@@ -57,20 +63,44 @@ export default function TeacherSyllabusPage() {
   };
 
   const downloadTemplate = () => {
-    const csvContent = "data:text/csv;charset=utf-8,title,description,order,icon\nIntroduction to Algebra,Equations and graphing,1,Sparkles\nLinear Functions,Slopes and intercepts,2,BookOpen\nQuadratic Equations,Solving equations and formulas,3,FileText\n";
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = 'title,description,order,icon,ebookHtml,ebookVideoUrl\n' +
+      '"Introduction to Algebra","Basic equations and graphing",1,"Sparkles","<h3>1. What is Algebra?</h3><p>Algebra is a branch of mathematics dealing with symbols and the rules for manipulating those symbols. In its simplest form, algebra involves solving equations where variables stand in for unknown values.</p><h4>Key Concepts</h4><ul><li><b>Variables:</b> Letters like x or y used to represent numbers.</li><li><b>Coefficients:</b> The numbers multiplying the variables.</li></ul>","https://www.youtube.com/watch?v=NybHckSEQBI"\n' +
+      '"Linear Functions","Slopes and intercepts",2,"BookOpen","<h3>Linear Equations & Graphs</h3><p>A linear equation is an equation for a straight line. The standard form is y = mx + c, where m is the slope of the line and c is the y-intercept (the point where the line crosses the y-axis).</p>","https://www.youtube.com/watch?v=9_C8pY4c2rc"\n' +
+      '"Quadratic Equations","Solving formulas",3,"FileText","<h3>Quadratic Formula</h3><p>A quadratic equation is a second-order polynomial equation in a single variable. The general form is ax² + bx + c = 0. We can solve for x using the quadratic formula: x = (-b ± √(b² - 4ac)) / 2a.</p>","https://www.youtube.com/watch?v=i7idZhlqkyw"\n';
+      
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "syllabus_template.csv");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "syllabus_ebooks_template.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Syllabus template downloaded successfully!");
+    toast.success("eBook-enabled syllabus template downloaded successfully!");
   };
 
   const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const parseCsvLine = (line: string): string[] => {
+      const result = [];
+      let current = "";
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result.map(val => val.replace(/^"|"$/g, '').replace(/""/g, '"'));
+    };
 
     const reader = new FileReader();
     reader.onload = async (event) => {
@@ -82,7 +112,7 @@ export default function TeacherSyllabusPage() {
           return;
         }
 
-        const headers = lines[0].toLowerCase().split(",").map(h => h.trim());
+        const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase());
         const titleIndex = headers.indexOf("title");
         if (titleIndex === -1) {
           toast.error("CSV file must contain a 'title' column");
@@ -92,16 +122,20 @@ export default function TeacherSyllabusPage() {
         const descIndex = headers.indexOf("description");
         const orderIndex = headers.indexOf("order");
         const iconIndex = headers.indexOf("icon");
+        const ebookHtmlIndex = headers.indexOf("ebookhtml");
+        const ebookVideoUrlIndex = headers.indexOf("ebookvideourl");
 
         const parsedTopics = [];
         for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(",").map(c => c.trim());
+          const cols = parseCsvLine(lines[i]);
           if (cols[titleIndex]) {
             parsedTopics.push({
               title: cols[titleIndex],
               description: descIndex !== -1 ? cols[descIndex] : "",
               order: orderIndex !== -1 && cols[orderIndex] ? parseInt(cols[orderIndex]) : i,
-              icon: iconIndex !== -1 ? cols[iconIndex] : "BookOpen"
+              icon: iconIndex !== -1 ? cols[iconIndex] : "BookOpen",
+              ebookHtml: ebookHtmlIndex !== -1 ? cols[ebookHtmlIndex] : "",
+              ebookVideoUrl: ebookVideoUrlIndex !== -1 ? cols[ebookVideoUrlIndex] : ""
             });
           }
         }
@@ -122,7 +156,7 @@ export default function TeacherSyllabusPage() {
         });
 
         if (res.ok) {
-          toast.success(`Successfully imported ${parsedTopics.length} topics!`);
+          toast.success(`Successfully imported ${parsedTopics.length} topics and eBooks!`);
           fetchSubjects();
         } else {
           const err = await res.json();
@@ -198,6 +232,38 @@ export default function TeacherSyllabusPage() {
     } catch (err) {
       console.error(err);
       toast.error("Network error");
+    }
+  };
+
+  const handleSaveEbookSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTopicForEbook) return;
+
+    setIsSavingEbook(true);
+    try {
+      const res = await fetch("/api/teacher/ebook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topicId: selectedTopicForEbook.id,
+          ebookHtml: ebookContent.ebookHtml,
+          ebookVideoUrl: ebookContent.ebookVideoUrl
+        })
+      });
+
+      if (res.ok) {
+        toast.success("eBook content updated successfully!");
+        setIsEbookModalOpen(false);
+        fetchSubjects();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to save eBook content");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    } finally {
+      setIsSavingEbook(false);
     }
   };
 
@@ -314,12 +380,29 @@ export default function TeacherSyllabusPage() {
                         <p className="text-xs text-muted-foreground mt-0.5">{topic.description || "No description provided."}</p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDeleteTopic(topic.id)}
-                      className="p-1.5 rounded-lg hover:bg-coral/10 text-muted-foreground hover:text-coral transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => {
+                          setSelectedTopicForEbook(topic);
+                          setEbookContent({
+                            ebookHtml: topic.ebookHtml || "",
+                            ebookVideoUrl: topic.ebookVideoUrl || ""
+                          });
+                          setIsEbookModalOpen(true);
+                        }}
+                        className="p-1.5 rounded-lg hover:bg-teal/15 text-muted-foreground hover:text-teal transition-colors"
+                        title="Manage eBook Content"
+                      >
+                        <BookOpen size={15} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTopic(topic.id)}
+                        className="p-1.5 rounded-lg hover:bg-coral/10 text-muted-foreground hover:text-coral transition-colors"
+                        title="Delete Topic"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </div>
                 ))}
 
@@ -421,6 +504,62 @@ export default function TeacherSyllabusPage() {
                   className="flex-1 glass-button px-4 py-2 text-sm justify-center bg-teal border-none text-navy-900 font-semibold disabled:opacity-50"
                 >
                   {isSubmitting ? "Adding..." : "Add Topic"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* EBOOK EDIT MODAL */}
+      {isEbookModalOpen && selectedTopicForEbook && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-card w-full max-w-2xl p-6 rounded-2xl border border-black/10 dark:border-white/10"
+          >
+            <h3 className="text-lg font-bold mb-1 text-navy-900 dark:text-white">Manage eBook: {selectedTopicForEbook.title}</h3>
+            <p className="text-xs text-muted-foreground mb-4">Add lesson text, inline HTML (supporting text/images), and a YouTube explanation video.</p>
+            <form onSubmit={handleSaveEbookSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">YouTube Explanation Video URL</label>
+                <input
+                  type="url"
+                  value={ebookContent.ebookVideoUrl}
+                  onChange={e => setEbookContent({ ...ebookContent, ebookVideoUrl: e.target.value })}
+                  placeholder="e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                  className="glass-input w-full px-4 py-2 text-sm"
+                />
+              </div>
+              
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-xs text-muted-foreground font-medium block">eBook Content (HTML Format)</label>
+                  <span className="text-[10px] text-teal-800 dark:text-teal font-medium">Supports inline HTML, &lt;img&gt;, &lt;p&gt;, &lt;h3&gt;, etc.</span>
+                </div>
+                <textarea
+                  value={ebookContent.ebookHtml}
+                  onChange={e => setEbookContent({ ...ebookContent, ebookHtml: e.target.value })}
+                  placeholder="<h3>1. Overview</h3><p>Enter the text and content here...</p>"
+                  className="glass-input w-full px-4 py-3 text-sm min-h-[280px] font-mono"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-4 border-t border-black/10 dark:border-white/10 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsEbookModalOpen(false)}
+                  className="flex-1 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-sm font-medium text-navy-900 dark:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEbook}
+                  className="flex-1 glass-button px-4 py-2 text-sm justify-center bg-teal border-none text-navy-900 font-semibold disabled:opacity-50"
+                >
+                  {isSavingEbook ? "Saving..." : "Save eBook"}
                 </button>
               </div>
             </form>

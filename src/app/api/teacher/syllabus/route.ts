@@ -173,7 +173,9 @@ export async function POST(request: Request) {
             title: t.title,
             description: t.description || '',
             icon: t.icon || 'BookOpen',
-            order: t.order !== undefined && t.order !== null ? parseInt(t.order) : (startOrder + i)
+            order: t.order !== undefined && t.order !== null ? parseInt(t.order) : (startOrder + i),
+            ebookHtml: t.ebookHtml || null,
+            ebookVideoUrl: t.ebookVideoUrl || null
           }
         });
         created.push(topic);

@@ -388,14 +388,17 @@ model ModerationFlag {
 }
 
 model Topic {
-  id          String   @id @default(cuid())
-  subjectId   String
-  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  subjectId     String
+  subject       Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   
-  title       String
-  description String?
-  icon        String?
-  order       Int
+  title         String
+  description   String?
+  icon          String?
+  order         Int
+  
+  ebookHtml     String?  @db.Text
+  ebookVideoUrl String?
   
   progresses  TopicProgress[]
   
