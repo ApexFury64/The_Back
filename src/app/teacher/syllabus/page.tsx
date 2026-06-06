@@ -211,8 +211,8 @@ export default function TeacherSyllabusPage() {
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-12rem)] min-h-[500px]">
         {/* Left Side: Subjects List */}
-        <div className="glass-card-static p-4 rounded-2xl flex flex-col h-full overflow-hidden border border-white/5 bg-white/5">
-          <h3 className="text-sm font-bold mb-4 text-white">Your School Subjects</h3>
+        <div className="glass-card-static p-4 rounded-2xl flex flex-col h-full overflow-hidden">
+          <h3 className="text-sm font-bold mb-4 text-navy-900 dark:text-white">Your School Subjects</h3>
           
           {loading ? (
             <div className="flex justify-center p-10">
@@ -230,11 +230,11 @@ export default function TeacherSyllabusPage() {
                       "w-full text-left p-3.5 rounded-xl border transition-all duration-200 flex items-center justify-between group",
                       isSelected
                         ? "bg-teal/15 border-teal text-teal shadow-md"
-                        : "bg-white/3 border-white/5 text-muted-foreground hover:bg-white/5 hover:text-white"
+                        : "bg-black/5 dark:bg-white/3 border-black/5 dark:border-white/5 text-muted-foreground hover:bg-black/10 dark:hover:bg-white/5 hover:text-navy-900 dark:hover:text-white"
                     )}
                   >
                     <div>
-                      <h4 className="font-semibold text-sm text-white group-hover:text-teal-400 transition-colors">
+                      <h4 className="font-semibold text-sm text-navy-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
                         {subj.name}
                       </h4>
                       <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -242,7 +242,7 @@ export default function TeacherSyllabusPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-slate-300 font-medium">
+                      <span className="text-[10px] bg-black/10 dark:bg-white/10 px-2 py-0.5 rounded text-navy-900/70 dark:text-slate-300 font-medium">
                         {subj.topics?.length || 0} topics
                       </span>
                       <ChevronRight size={14} className="text-muted-foreground opacity-60" />
@@ -258,13 +258,13 @@ export default function TeacherSyllabusPage() {
         </div>
 
         {/* Right Side: Topics List & Syllabus Management */}
-        <div className="lg:col-span-2 glass-card-static p-6 rounded-2xl flex flex-col h-full overflow-hidden border border-white/5 bg-white/5 relative">
+        <div className="lg:col-span-2 glass-card-static p-6 rounded-2xl flex flex-col h-full overflow-hidden relative">
           {selectedSubject ? (
             <div className="flex flex-col h-full overflow-hidden">
               {/* Header */}
-              <div className="border-b border-white/10 pb-4 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+              <div className="border-b border-black/10 dark:border-white/10 pb-4 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
                 <div>
-                  <h3 className="text-lg font-bold text-white">{selectedSubject.name} Syllabus</h3>
+                  <h3 className="text-lg font-bold text-navy-900 dark:text-white">{selectedSubject.name} Syllabus</h3>
                   <p className="text-xs text-muted-foreground">Class {selectedSubject.standard} • {selectedSubject.code}</p>
                 </div>
                 
@@ -303,14 +303,14 @@ export default function TeacherSyllabusPage() {
                 {selectedSubject.topics?.map((topic: any, idx: number) => (
                   <div
                     key={topic.id}
-                    className="p-4 bg-white/3 border border-white/5 rounded-xl flex items-center justify-between hover:border-teal/20 transition-all duration-200 group"
+                    className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-xl flex items-center justify-between hover:border-teal/20 transition-all duration-200 group"
                   >
                     <div className="flex items-start gap-4">
                       <div className="w-8 h-8 rounded-lg bg-teal/15 text-teal flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                         {topic.order || (idx + 1)}
                       </div>
                       <div>
-                        <h4 className="font-semibold text-sm text-white">{topic.title}</h4>
+                        <h4 className="font-semibold text-sm text-navy-900 dark:text-white">{topic.title}</h4>
                         <p className="text-xs text-muted-foreground mt-0.5">{topic.description || "No description provided."}</p>
                       </div>
                     </div>
@@ -324,11 +324,11 @@ export default function TeacherSyllabusPage() {
                 ))}
 
                 {(!selectedSubject.topics || selectedSubject.topics.length === 0) && (
-                  <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl p-6 flex flex-col items-center">
-                    <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-3 text-muted-foreground">
+                  <div className="text-center py-20 border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-6 flex flex-col items-center">
+                    <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center mb-3 text-muted-foreground">
                       <FileText size={20} />
                     </div>
-                    <h4 className="text-sm font-semibold text-white">Syllabus is empty</h4>
+                    <h4 className="text-sm font-semibold text-navy-900 dark:text-white">Syllabus is empty</h4>
                     <p className="text-xs text-muted-foreground mt-1 max-w-sm">No topics have been added yet. Click Add Topic, or download the template and import via CSV to set up the subject syllabus.</p>
                   </div>
                 )}
@@ -336,11 +336,11 @@ export default function TeacherSyllabusPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground space-y-4">
-              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-muted-foreground">
+              <div className="w-16 h-16 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center text-muted-foreground">
                 <BookOpen size={30} />
               </div>
               <div>
-                <h4 className="font-bold text-white text-base">Syllabus Editor</h4>
+                <h4 className="font-bold text-navy-900 dark:text-white text-base">Syllabus Editor</h4>
                 <p className="text-xs text-muted-foreground mt-1 max-w-xs">Select a subject from the left panel to load and configure its syllabus topics.</p>
               </div>
             </div>
@@ -354,9 +354,9 @@ export default function TeacherSyllabusPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="glass-card w-full max-w-md p-6 rounded-2xl border border-white/10"
+            className="glass-card w-full max-w-md p-6 rounded-2xl border border-black/10 dark:border-white/10"
           >
-            <h3 className="text-lg font-bold mb-4 text-white">Add Topic to Syllabus</h3>
+            <h3 className="text-lg font-bold mb-4 text-navy-900 dark:text-white">Add Topic to Syllabus</h3>
             <form onSubmit={handleAddTopicSubmit} className="space-y-4">
               <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">Topic Title</label>
@@ -396,7 +396,7 @@ export default function TeacherSyllabusPage() {
                   <select
                     value={newTopic.icon}
                     onChange={e => setNewTopic({ ...newTopic, icon: e.target.value })}
-                    className="glass-input w-full px-4 py-2 text-sm bg-navy-900"
+                    className="glass-input w-full px-4 py-2 text-sm bg-white dark:bg-navy-900 text-navy-900 dark:text-white border border-black/10 dark:border-white/10"
                   >
                     <option value="BookOpen">BookOpen</option>
                     <option value="Sparkles">Sparkles</option>
@@ -407,11 +407,11 @@ export default function TeacherSyllabusPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-6">
+              <div className="flex items-center gap-3 pt-4 border-t border-black/10 dark:border-white/10 mt-6">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-sm font-medium text-navy-900 dark:text-white"
                 >
                   Cancel
                 </button>
