@@ -49,11 +49,11 @@ export async function GET(request: Request) {
       const sectionSubjects = subjects
         .filter((sub: any) => sub.standard === curr.standard)
         .map((sub: any) => {
-          // Find teacher assigned to this specific section and subject, falling back to matching primarySubject name
+          // Find teacher assigned to this specific section and subject
           const assignedTeacherId = teacherMappings[`${curr.id}_${sub.id}`];
           const teacher = assignedTeacherId 
             ? teachers.find((t: any) => t.id === assignedTeacherId) 
-            : teachers.find((t: any) => t.primarySubject?.toLowerCase() === sub.name.toLowerCase());
+            : undefined;
 
           return {
             id: `${curr.id}_${sub.id}`,
