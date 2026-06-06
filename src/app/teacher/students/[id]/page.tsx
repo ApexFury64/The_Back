@@ -144,6 +144,31 @@ export default function StudentProfilePage({ params }: { params: Promise<{ id: s
               </p>
             </div>
 
+            {/* Parent & Guardian Contact Information */}
+            <div className="glass-card p-6 rounded-2xl border border-white/5 bg-white/5">
+              <h3 className="text-base font-bold mb-4 flex items-center gap-2 text-teal">
+                <User size={18} /> Parent & Guardian Contact Details
+              </h3>
+              {data.parent ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                  <div className="bg-black/20 p-3.5 rounded-xl border border-white/5">
+                    <span className="text-xs text-muted-foreground block mb-1">Parent Name</span>
+                    <span className="font-semibold text-white">{data.parent.name}</span>
+                  </div>
+                  <div className="bg-black/20 p-3.5 rounded-xl border border-white/5">
+                    <span className="text-xs text-muted-foreground block mb-1">Parent Email</span>
+                    <span className="font-medium text-slate-200 font-mono truncate block">{data.parent.email}</span>
+                  </div>
+                  <div className="bg-black/20 p-3.5 rounded-xl border border-white/5">
+                    <span className="text-xs text-muted-foreground block mb-1">Parent Phone</span>
+                    <span className="font-medium text-slate-200 font-mono">{data.parent.phone}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">No parent account has been linked to this student.</p>
+              )}
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
               <div className="glass-card-static p-6 rounded-2xl">
                 <h4 className="font-semibold mb-4 flex items-center gap-2"><Award size={18} className="text-teal"/> Recent Strengths</h4>

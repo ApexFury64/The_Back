@@ -21,6 +21,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       where: { id: studentId },
       include: {
         class: true,
+        parent: true,
         submissions: {
           include: {
             assignment: {
@@ -51,6 +52,12 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       className: student.class?.name || "Unassigned",
       sectionName: student.class?.section || "Unassigned",
       rollNo: `RL${student.id.substring(0, 4).toUpperCase()}`,
+      parent: student.parent ? {
+        id: student.parent.id,
+        name: student.parent.name || "N/A",
+        email: student.parent.email || "N/A",
+        phone: student.parent.phone || "N/A"
+      } : null,
       metrics: {
         avgScore,
         attendancePercent,

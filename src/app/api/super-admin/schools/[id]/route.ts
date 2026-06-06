@@ -48,6 +48,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const studentsCount = school.users.filter(u => u.role === 'STUDENT').length;
     const teachersCount = school.users.filter(u => u.role === 'TEACHER').length;
 
+    const adminUser = school.users.find(u => u.role === 'SCHOOLADMIN');
+
     const schoolData = {
       id,
       name: school.name,
@@ -55,6 +57,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       aiUsage: Math.floor(Math.random() * 40) + 50,
       studentsCount,
       teachersCount,
+      admin: adminUser ? {
+        id: adminUser.id,
+        name: adminUser.name || 'Admin',
+        email: adminUser.email || ''
+      } : null
     };
 
     // Format classes grouped by standard

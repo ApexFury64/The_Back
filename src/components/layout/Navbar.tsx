@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Search, Sun, Moon, X, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { notifications } from "@/lib/mock-data";
 
 interface NavbarProps {
   title?: string;
@@ -16,7 +15,20 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const [dynamicNotifications, setDynamicNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/notifications")
+      .then(res => res.json())
+      .then(data => {
+        if (data.notifications) {
+          setDynamicNotifications(data.notifications);
+        }
+      })
+      .catch(err => console.error("Error loading notifications:", err));
+  }, []);
+
+  const unreadCount = dynamicNotifications.filter((n) => !n.read).length;
 
   const toggleTheme = () => {
     setIsDark(!isDark);
@@ -110,30 +122,36 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
                     </div>
                   </div>
                   <div className="max-h-80 overflow-y-auto no-scrollbar">
-                    {notifications.map((notif) => (
-                      <div
-                        key={notif.id}
-                        className={cn(
-                          "px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer",
-                          !notif.read && "bg-teal/5"
-                        )}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={cn(
-                            "w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
-                            notif.type === "success" && "bg-teal",
-                            notif.type === "warning" && "bg-amber",
-                            notif.type === "alert" && "bg-coral",
-                            notif.type === "info" && "bg-cyan"
-                          )} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium">{notif.title}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5 truncate">{notif.message}</p>
-                            <p className="text-[10px] text-muted-foreground mt-1">{notif.time}</p>
+                    {dynamicNotifications.length === 0 ? (
+                      <div className="p-8 text-center text-xs text-muted-foreground">
+                        No new notifications
+                      </div>
+                    ) : (
+                      dynamicNotifications.map((notif) => (
+                        <div
+                          key={notif.id}
+                          className={cn(
+                            "px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer",
+                            !notif.read && "bg-teal/5"
+                          )}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={cn(
+                              "w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
+                              notif.type === "success" && "bg-teal",
+                              notif.type === "warning" && "bg-amber",
+                              notif.type === "alert" && "bg-coral",
+                              notif.type === "info" && "bg-cyan"
+                            )} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium">{notif.title}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 truncate">{notif.message}</p>
+                              <p className="text-[10px] text-muted-foreground mt-1">{notif.time}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                   <div className="p-3 border-t border-white/5">
                     <button className="w-full text-center text-xs text-teal font-medium hover:underline">

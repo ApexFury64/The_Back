@@ -79,6 +79,19 @@ export async function GET(request: Request) {
       { name: 'Ethan Hunt', class: '8-A', score: 72, issue: 'Below average performance', trend: '-3% this week' }
     ];
 
+    // Fetch school announcements targeted at Teachers or all
+    const announcements = await prisma.announcement.findMany({
+      where: {
+        schoolId: teacherData.schoolId,
+        OR: [
+          { targetAudience: { equals: 'all', mode: 'insensitive' } },
+          { targetAudience: { contains: 'TEACHER', mode: 'insensitive' } }
+        ]
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5
+    });
+
     return NextResponse.json({
       teacher,
       school: { name: teacherData.school?.name, code: teacherData.school?.code },
@@ -89,6 +102,7 @@ export async function GET(request: Request) {
       recentHomework,
       classTeacherSections: [],
       students: [],
+      announcements,
     });
   } catch (error: any) {
     console.error('Error fetching teacher dashboard:', error);

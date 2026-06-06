@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { DashboardData } from "@/lib/types";
 import {
   AlertTriangle, BookOpen, ChevronRight, Clock,
-  FileCheck, Sparkles, TrendingDown, Upload, Users, Video
+  FileCheck, Sparkles, TrendingDown, Upload, Users, Video, Megaphone
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import StatCard from "@/components/dashboard/StatCard";
@@ -39,7 +39,8 @@ export default function TeacherDashboard() {
     teacherStats,
     performanceData,
     teacherClasses,
-    weakStudents
+    weakStudents,
+    announcements = []
   } = data;
 
   return (
@@ -202,6 +203,39 @@ export default function TeacherDashboard() {
                     </Link>
                   </div>
                 ))}
+              </div>
+            </motion.div>
+
+            {/* School Announcements */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="glass-card-static p-5 rounded-2xl"
+            >
+              <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <Megaphone size={16} className="text-teal" /> School Announcements
+              </h3>
+              <div className="space-y-3">
+                {announcements.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">No recent announcements</p>
+                ) : (
+                  announcements.map((ann: any) => (
+                    <div key={ann.id} className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className={cn(
+                          "text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase",
+                          ann.priority === 'high' ? 'bg-coral/15 text-coral' : 'bg-teal/15 text-teal'
+                        )}>
+                          {ann.priority} Priority
+                        </span>
+                        <span className="text-[9px] text-muted-foreground">{new Date(ann.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <h4 className="text-xs font-semibold text-white">{ann.title}</h4>
+                      <p className="text-[10px] text-muted-foreground line-clamp-2">{ann.content}</p>
+                    </div>
+                  ))
+                )}
               </div>
             </motion.div>
           </div>

@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAppStore } from "@/lib/store";
-import { ArrowLeft, BookOpen, Users, UserCheck, GraduationCap, Building2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Users, UserCheck, GraduationCap, Building2, KeyRound } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function SuperAdminSchoolDetails() {
   const router = useRouter();
@@ -15,6 +16,8 @@ export default function SuperAdminSchoolDetails() {
   const [data, setData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "classes">("overview");
   const [expandedClass, setExpandedClass] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
 
   const userName = useAppStore(s => s.userName);
   const appSchoolName = useAppStore(s => s.schoolName);
@@ -37,6 +40,43 @@ export default function SuperAdminSchoolDetails() {
   }
 
   const { schoolData, teachers, classes, subjects, students } = data;
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      return;
+    }
+    if (!schoolData.admin?.id) {
+      toast.error("No administrator account associated with this school");
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      const res = await fetch("/api/super-admin/users/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: schoolData.admin.id,
+          password: newPassword,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Administrator password reset successfully!");
+        setNewPassword("");
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to reset password");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error resetting password");
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   return (
     <DashboardLayout 
@@ -98,6 +138,71 @@ export default function SuperAdminSchoolDetails() {
               <div className="bg-white/5 p-4 rounded-xl border border-white/5">
                 <p className="text-xs text-muted-foreground mb-1">AI Adoption</p>
                 <p className="text-2xl font-mono text-pink-400">{schoolData.aiUsage}%</p>
+              </div>
+            </div>
+
+            {/* School Administrator & Password Management */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+              <div className="bg-white/5 p-6 rounded-xl border border-white/5 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <Building2 size={18} className="text-teal" />
+                    Administrator Profile
+                  </h3>
+                  {schoolData.admin ? (
+                    <div className="space-y-4">
+                      <div>
+                        <span className="text-xs text-muted-foreground block mb-0.5">Administrator Name</span>
+                        <span className="text-base font-semibold text-teal">{schoolData.admin.name}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-muted-foreground block mb-0.5">Email Address</span>
+                        <span className="text-base font-medium text-slate-200 font-mono">{schoolData.admin.email}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No administrator account found for this school.</p>
+                  )}
+                </div>
+                {schoolData.admin && (
+                  <div className="mt-4 pt-4 border-t border-white/5">
+                    <span className="text-xs bg-teal/15 text-teal px-2.5 py-1 rounded-md font-medium border border-teal/20 inline-block">
+                      Role: School Administrator
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white/5 p-6 rounded-xl border border-white/5">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <KeyRound size={18} className="text-purple" />
+                  Password Reset
+                </h3>
+                {schoolData.admin ? (
+                  <form onSubmit={handleResetPassword} className="space-y-4">
+                    <div>
+                      <label className="text-xs text-muted-foreground font-medium mb-1 block">New Password</label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password (min 6 characters)"
+                        className="glass-input w-full px-4 py-2 text-sm"
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isResetting || newPassword.length < 6}
+                      className="glass-button w-full py-2.5 text-sm font-semibold justify-center bg-teal text-navy-900 border-none disabled:opacity-50 transition-all hover:brightness-110"
+                    >
+                      {isResetting ? "Resetting..." : "Reset Admin Password"}
+                    </button>
+                  </form>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Cannot reset password: No administrator account associated with this school.</p>
+                )}
               </div>
             </div>
           </div>
