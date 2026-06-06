@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, PlayCircle, Trophy, Clock, ArrowLeft, LayoutGrid, Lock, Sparkles, Target, Activity, Flame, ChevronRight } from "lucide-react";
+import { BookOpen, PlayCircle, Trophy, Clock, ArrowLeft, LayoutGrid, Lock, Sparkles, Target, Activity, Flame, ChevronRight, HelpCircle, FileText } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -26,13 +26,75 @@ const getContrastColor = (color: string) => {
 export default function StudentSubjectsPage() {
   const router = useRouter();
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "syllabus" | "quizzes">("syllabus");
+  const [activeTab, setActiveTab] = useState<"overview" | "syllabus" | "quizzes" | "ebook">("syllabus");
+  const [selectedEbookTopic, setSelectedEbookTopic] = useState<any>(null);
+  const [ebookData, setEbookData] = useState<any>(null);
+  const [ebookLoading, setEbookLoading] = useState(false);
   const userEmail = useAppStore(s => s.userEmail);
   const userName = useAppStore(s => s.userName);
   const schoolName = useAppStore(s => s.schoolName);
   const userStandard = useAppStore(s => s.userStandard);
 
   const [selectedStandard, setSelectedStandard] = useState<string>(userStandard || "8");
+
+  const getYoutubeEmbedUrl = (url: string) => {
+    if (!url) return null;
+    try {
+      let videoId = "";
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      if (match && match[2].length === 11) {
+        videoId = match[2];
+      } else {
+        return null;
+      }
+      return `https://www.youtube.com/embed/${videoId}`;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // Extract all subtopics from selectedSubject
+  const subjectTopics: any[] = [];
+  if (selectedSubject?.modules) {
+    selectedSubject.modules.forEach((mod: any) => {
+      if (mod.subTopics) {
+        subjectTopics.push(...mod.subTopics);
+      }
+    });
+  }
+
+  // Set default eBook topic when tab changes
+  useEffect(() => {
+    if (activeTab === 'ebook' && !selectedEbookTopic && subjectTopics.length > 0) {
+      setSelectedEbookTopic(subjectTopics[0]);
+    }
+  }, [activeTab, selectedSubject, selectedEbookTopic, subjectTopics]);
+
+  // Fetch eBook content on topic change
+  useEffect(() => {
+    const fetchEbookContent = async () => {
+      if (!selectedEbookTopic) return;
+
+      setEbookLoading(true);
+      try {
+        const res = await fetch(`/api/student/ebook?topicId=${selectedEbookTopic.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setEbookData(data);
+        } else {
+          setEbookData(null);
+        }
+      } catch (err) {
+        console.error("Error fetching eBook content:", err);
+        setEbookData(null);
+      } finally {
+        setEbookLoading(false);
+      }
+    };
+
+    fetchEbookContent();
+  }, [selectedEbookTopic]);
 
   const { data: subjects = [], isLoading: loading } = useQuery<any[]>({
     queryKey: ['studentSubjects', userEmail],
@@ -134,6 +196,7 @@ export default function StudentSubjectsPage() {
                   { id: 'overview', label: 'Overview', icon: <LayoutGrid size={16} /> },
                   { id: 'syllabus', label: 'Syllabus', icon: <BookOpen size={16} /> },
                   { id: 'quizzes', label: 'Quizzes', icon: <Target size={16} /> },
+                  { id: 'ebook', label: 'eBook', icon: <BookOpen size={16} /> },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -334,6 +397,120 @@ export default function StudentSubjectsPage() {
                         <div>
                           <p className="font-bold text-navy-900 dark:text-white text-lg">No Quizzes Available</p>
                           <p className="text-muted-foreground text-sm mt-1">Check back later for new topic assessments.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'ebook' && (
+                  <div className="animate-in fade-in duration-500 h-full flex flex-col">
+                    {subjectTopics.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-16 text-center space-y-5 bg-black/5 dark:bg-white/5 rounded-2xl border border-dashed border-black/10 dark:border-white/10">
+                        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-muted-foreground">
+                          <BookOpen size={24} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-navy-900 dark:text-white text-base">No eBook Content</p>
+                          <p className="text-muted-foreground text-sm mt-1">This subject does not have any syllabus topics yet.</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-full min-h-[450px]">
+                        {/* Left Side: Table of Contents */}
+                        <div className="md:col-span-1 border-r border-black/10 dark:border-white/10 pr-4 flex flex-col h-full overflow-hidden max-h-[500px]">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-teal-800 dark:text-teal mb-3">Chapters</h4>
+                          <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                            {subjectTopics.map((topic, index) => {
+                              const isSelected = selectedEbookTopic?.id === topic.id;
+                              return (
+                                <button
+                                  key={topic.id}
+                                  onClick={() => setSelectedEbookTopic(topic)}
+                                  className={cn(
+                                    "w-full text-left p-2.5 rounded-xl border transition-all duration-200 flex items-center justify-between group",
+                                    isSelected
+                                      ? "bg-teal/15 border-teal text-teal shadow-sm font-semibold"
+                                      : "bg-black/5 dark:bg-white/3 border-black/5 dark:border-white/5 text-muted-foreground hover:bg-black/10 dark:hover:bg-white/5 hover:text-navy-900 dark:hover:text-white"
+                                  )}
+                                >
+                                  <span className="text-xs truncate max-w-[120px] text-navy-900 dark:text-white">
+                                    {topic.title}
+                                  </span>
+                                  <ChevronRight size={10} className="opacity-40 group-hover:opacity-100 transition-opacity" />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Right Side: eBook Content Viewer */}
+                        <div className="md:col-span-3 flex flex-col h-full overflow-y-auto max-h-[500px] pr-1 space-y-4 no-scrollbar">
+                          {selectedEbookTopic ? (
+                            <>
+                              {ebookLoading ? (
+                                <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                                  <div className="w-8 h-8 border-2 border-teal rounded-full animate-spin border-t-transparent" />
+                                  <span className="text-xs text-muted-foreground">Loading study guide...</span>
+                                </div>
+                              ) : ebookData?.ebookHtml || ebookData?.ebookVideoUrl ? (
+                                <div className="space-y-5">
+                                  {/* Video explanation */}
+                                  {ebookData?.ebookVideoUrl && (
+                                    <div className="space-y-2">
+                                      <h4 className="text-xs font-bold uppercase tracking-wider text-teal-800 dark:text-teal flex items-center gap-1.5">
+                                        <PlayCircle size={14} /> Video Explanation
+                                      </h4>
+                                      <div className="relative aspect-video w-full max-w-2xl rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 shadow bg-black">
+                                        {getYoutubeEmbedUrl(ebookData.ebookVideoUrl) ? (
+                                          <iframe
+                                            src={getYoutubeEmbedUrl(ebookData.ebookVideoUrl)!}
+                                            title={`${selectedEbookTopic.title} Explanation Video`}
+                                            className="absolute inset-0 w-full h-full"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                          />
+                                        ) : (
+                                          <video
+                                            src={ebookData.ebookVideoUrl}
+                                            controls
+                                            className="absolute inset-0 w-full h-full object-contain"
+                                          />
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Text study guide */}
+                                  {ebookData?.ebookHtml && (
+                                    <div className="space-y-2">
+                                      <h4 className="text-xs font-bold uppercase tracking-wider text-teal-800 dark:text-teal flex items-center gap-1.5">
+                                        <FileText size={14} /> Study Guide &amp; Text
+                                      </h4>
+                                      <div className="bg-black/5 dark:bg-white/3 p-5 rounded-2xl border border-black/5 dark:border-white/5">
+                                        <div 
+                                          className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-navy-900/90 dark:text-white/90"
+                                          dangerouslySetInnerHTML={{ __html: ebookData.ebookHtml }}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="text-center py-20 border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center">
+                                  <HelpCircle className="text-muted-foreground mb-2" size={24} />
+                                  <h4 className="text-sm font-semibold text-navy-900 dark:text-white">eBook Content Pending</h4>
+                                  <p className="text-xs text-muted-foreground mt-1 max-w-xs">No eBook or explanation video has been uploaded for this lesson yet.</p>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-center py-20">
+                              <BookOpen className="text-muted-foreground mb-2" size={24} />
+                              <h4 className="text-sm font-semibold text-navy-900 dark:text-white">Select a Chapter</h4>
+                              <p className="text-xs text-muted-foreground mt-1">Select a chapter from the left menu to start reading.</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
