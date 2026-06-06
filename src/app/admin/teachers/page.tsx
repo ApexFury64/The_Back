@@ -6,6 +6,7 @@ import { useAppStore } from "@/lib/store";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { toast } from "sonner";
+import AcademicNavigationTabs from "@/components/ui/AcademicNavigationTabs";
 
 export default function AdminTeachersPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -131,7 +132,7 @@ export default function AdminTeachersPage() {
 
   if (loading) {
     return (
-      <DashboardLayout role="admin" userName={userName || "Loading..."} schoolName={schoolName || "Loading..."} pageTitle="Teaching Staff" pageSubtitle="Loading...">
+      <DashboardLayout role="admin" userName={userName || "Loading..."} schoolName={schoolName || "Loading..."} pageTitle="Academic Workspace" pageSubtitle="Loading...">
         <div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-teal rounded-full animate-spin border-t-transparent" /></div>
       </DashboardLayout>
     );
@@ -142,9 +143,10 @@ export default function AdminTeachersPage() {
       role="admin"
       userName={userName || "Admin"}
       schoolName={schoolName || "AI Tutor"}
-      pageTitle="Teaching Staff"
-      pageSubtitle="Manage teachers and faculty members"
+      pageTitle="Academic Workspace"
+      pageSubtitle="Manage your school's classes, curriculum, teachers, and students in a single workspace."
     >
+      <AcademicNavigationTabs />
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="relative w-full sm:w-80">

@@ -36,6 +36,45 @@ export async function GET(request: Request) {
       }
     });
 
+    // Fetch all students (both assigned and unassigned) in the school
+    const dbStudents = await prisma.user.findMany({
+      where: { schoolId, role: 'STUDENT' },
+      include: {
+        class: true,
+        parent: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true
+          }
+        }
+      }
+    });
+
+    const formattedStudents = dbStudents.map((student: any) => ({
+      id: student.id,
+      name: student.name || 'Unknown Student',
+      email: student.email || 'N/A',
+      phone: student.phone || 'N/A',
+      enrollmentYear: new Date(student.createdAt).getFullYear().toString(),
+      avgScore: Math.floor(Math.random() * 40) + 60, // TODO: Calculate from Submissions
+      attendancePercent: Math.floor(Math.random() * 20) + 80, // TODO: Implement Attendance model
+      aiUsage: ['High', 'Medium', 'Low'][Math.floor(Math.random() * 3)], // TODO: Calculate from AiUsageLog
+      class: student.class ? {
+        id: student.class.id,
+        name: student.class.name,
+        standard: student.class.standard,
+        section: student.class.section
+      } : null,
+      parent: student.parent ? {
+        id: student.parent.id,
+        name: student.parent.name || 'N/A',
+        email: student.parent.email || 'N/A',
+        phone: student.parent.phone || 'N/A'
+      } : null
+    }));
+
     // Group by standard (grade)
     const grouped = classRooms.reduce((acc: Record<string, any>, curr: any) => {
       const grade = parseInt(curr.standard, 10) || 0;
@@ -50,29 +89,33 @@ export async function GET(request: Request) {
       acc[curr.standard].sections.push({
         id: curr.id,
         name: curr.section,
-        students: curr.students.map((student: any) => ({
-          id: student.id,
-          name: student.name || 'Unknown Student',
-          email: student.email || 'N/A',
-          phone: student.phone || 'N/A',
-          enrollmentYear: new Date(student.createdAt).getFullYear().toString(),
-          avgScore: Math.floor(Math.random() * 40) + 60, // TODO: Calculate from Submissions
-          attendancePercent: Math.floor(Math.random() * 20) + 80, // TODO: Implement Attendance model
-          aiUsage: ['High', 'Medium', 'Low'][Math.floor(Math.random() * 3)], // TODO: Calculate from AiUsageLog
-          parent: student.parent ? {
-            id: student.parent.id,
-            name: student.parent.name || 'N/A',
-            email: student.parent.email || 'N/A',
-            phone: student.parent.phone || 'N/A'
-          } : null
-        }))
+        students: curr.students.map((student: any) => {
+          const formatted = formattedStudents.find(fs => fs.id === student.id);
+          return formatted || {
+            id: student.id,
+            name: student.name || 'Unknown Student',
+            email: student.email || 'N/A',
+            phone: student.phone || 'N/A',
+            enrollmentYear: new Date(student.createdAt).getFullYear().toString(),
+            avgScore: Math.floor(Math.random() * 40) + 60,
+            attendancePercent: Math.floor(Math.random() * 20) + 80,
+            aiUsage: 'Medium',
+            class: null,
+            parent: student.parent ? {
+              id: student.parent.id,
+              name: student.parent.name || 'N/A',
+              email: student.parent.email || 'N/A',
+              phone: student.parent.phone || 'N/A'
+            } : null
+          };
+        })
       });
       return acc;
     }, {} as Record<string, any>);
 
     const classes = Object.values(grouped).sort((a: any, b: any) => b.grade - a.grade);
 
-    return NextResponse.json({ classes });
+    return NextResponse.json({ classes, students: formattedStudents });
   } catch (error: any) {
     console.error('Error fetching students:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

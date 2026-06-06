@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Plus, Users, BookOpen, UserPlus, BookCopy, ChevronDown, Check, Trash2 } from "lucide-react";
+import { Plus, Users, BookOpen, UserPlus, BookCopy, ChevronDown, Check, Trash2, Filter } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
+import AcademicNavigationTabs from "@/components/ui/AcademicNavigationTabs";
 
 export default function AdminClassesPage() {
   const [classes, setClasses] = useState<any[]>([]);
@@ -26,6 +27,7 @@ export default function AdminClassesPage() {
   const [addStudentsData, setAddStudentsData] = useState({ sectionId: "", sectionName: "", className: "", selectedStudentIds: [] as string[] });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedGradeFilter, setSelectedGradeFilter] = useState("All");
 
   const userName = useAppStore(s => s.userName);
   const userEmail = useAppStore(s => s.userEmail);
@@ -226,14 +228,14 @@ export default function AdminClassesPage() {
 
   if (loading) {
     return (
-      <DashboardLayout role="admin" userName={userName || "Loading..."} schoolName={schoolName || "Loading..."} pageTitle="Class & Section Management" pageSubtitle="Loading...">
+      <DashboardLayout role="admin" userName={userName || "Loading..."} schoolName={schoolName || "Loading..."} pageTitle="Academic Workspace" pageSubtitle="Loading...">
         <div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-teal rounded-full animate-spin border-t-transparent" /></div>
       </DashboardLayout>
     );
   }
 
   // Flatten the hierarchy to get a list of Sections instead of Classes
-  const sections = classes.flatMap(c => 
+  const allSections = classes.flatMap(c => 
     c.sections.map((s: any) => ({
       ...s,
       className: c.name,
@@ -241,21 +243,47 @@ export default function AdminClassesPage() {
     }))
   );
 
+  const sections = selectedGradeFilter === "All" 
+    ? allSections 
+    : allSections.filter(s => s.classGrade.toString() === selectedGradeFilter);
+
+  const grades = ["All", ...Array.from(new Set(allSections.map(s => s.classGrade.toString()))).sort((a: any, b: any) => a - b)];
+
   return (
-    <DashboardLayout role="admin" userName={userName || "Admin"} schoolName={schoolName || "AI Tutor"} pageTitle="Class & Section Management" pageSubtitle="Manage individual sections, subjects, and teachers">
-      <div className="flex justify-end gap-3 mb-6">
-        <button 
-          onClick={() => setIsCreateSubjectModalOpen(true)}
-          className="glass-button px-4 py-2 flex items-center gap-2 border border-teal/30 text-teal hover:bg-teal/10"
-        >
-          <BookOpen size={16}/> Create Subject
-        </button>
-        <button 
-          onClick={() => setIsAddClassModalOpen(true)}
-          className="glass-button px-4 py-2 flex items-center gap-2"
-        >
-          <Plus size={16}/> Create New Class
-        </button>
+    <DashboardLayout role="admin" userName={userName || "Admin"} schoolName={schoolName || "AI Tutor"} pageTitle="Academic Workspace" pageSubtitle="Manage your school's classes, curriculum, teachers, and students in a single workspace.">
+      <AcademicNavigationTabs />
+
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Filter size={16} className="text-muted-foreground shrink-0" />
+          <span className="text-xs font-semibold text-muted-foreground mr-1">Grade Level:</span>
+          <select
+            value={selectedGradeFilter}
+            onChange={(e) => setSelectedGradeFilter(e.target.value)}
+            className="glass-input px-3 py-1.5 text-xs bg-navy-950 text-teal font-medium border border-white/10 rounded-xl"
+          >
+            {grades.map(grade => (
+              <option key={grade} value={grade} className="bg-navy-950 text-white">
+                {grade === "All" ? "All Grades" : `Grade ${grade}`}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <button 
+            onClick={() => setIsCreateSubjectModalOpen(true)}
+            className="glass-button px-4 py-2 flex items-center gap-2 border border-teal/30 text-teal hover:bg-teal/10 text-xs"
+          >
+            <BookOpen size={14}/> Create Subject
+          </button>
+          <button 
+            onClick={() => setIsAddClassModalOpen(true)}
+            className="glass-button px-4 py-2 flex items-center gap-2 text-xs"
+          >
+            <Plus size={14}/> Create New Class
+          </button>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">

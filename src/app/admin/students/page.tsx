@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
+import AcademicNavigationTabs from "@/components/ui/AcademicNavigationTabs";
 
 export default function AdminStudentsPage() {
   const userName = useAppStore((s) => s.userName);
@@ -164,7 +165,7 @@ export default function AdminStudentsPage() {
 
   if (loading) {
     return (
-      <DashboardLayout role="admin" userName={userName || "Loading..."} schoolName={schoolName || "Loading..."} pageTitle="Student Directory" pageSubtitle="Loading...">
+      <DashboardLayout role="admin" userName={userName || "Loading..."} schoolName={schoolName || "Loading..."} pageTitle="Academic Workspace" pageSubtitle="Loading...">
         <div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-teal rounded-full animate-spin border-t-transparent" /></div>
       </DashboardLayout>
     );
@@ -175,9 +176,10 @@ export default function AdminStudentsPage() {
       role="admin"
       userName={userName || "Admin"}
       schoolName={schoolName || "AI Tutor"}
-      pageTitle="Student Directory"
-      pageSubtitle="Manage and monitor all enrolled students by class"
+      pageTitle="Academic Workspace"
+      pageSubtitle="Manage your school's classes, curriculum, teachers, and students in a single workspace."
     >
+      <AcademicNavigationTabs />
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
         <div className="relative w-full sm:w-72">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
