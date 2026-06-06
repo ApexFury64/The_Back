@@ -64,9 +64,7 @@ const sidebarConfig: Record<UserRole, { title: string; items: SidebarItem[] }> =
     title: "School Admin",
     items: [
       { label: "Dashboard", icon: <LayoutDashboard size={20} />, href: "/admin" },
-      { label: "Students", icon: <GraduationCap size={20} />, href: "/admin/students" },
-      { label: "Teachers", icon: <UserCheck size={20} />, href: "/admin/teachers" },
-      { label: "Classes", icon: <School size={20} />, href: "/admin/classes" },
+      { label: "Academic Workspace", icon: <School size={20} />, href: "/admin/classes" },
       { label: "Announcements", icon: <Megaphone size={20} />, href: "/admin/announcements" },
       { label: "Analytics", icon: <BarChart3 size={20} />, href: "/admin/analytics" },
       { label: "Settings", icon: <Settings size={20} />, href: "/admin/settings" },
@@ -131,7 +129,10 @@ export default function Sidebar({ role, userName = "User", schoolName = "AI Tuto
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto no-scrollbar">
           {config.items.map((item) => {
-            const isActive = pathname === item.href || (item.href !== `/${role}` && pathname?.startsWith(item.href));
+            const isActive = 
+              pathname === item.href || 
+              (item.href !== `/${role}` && pathname?.startsWith(item.href)) ||
+              (item.href === "/admin/classes" && (pathname === "/admin/students" || pathname === "/admin/teachers"));
             return (
               <Link key={item.href} href={item.href}>
                 <motion.div
@@ -221,7 +222,9 @@ export default function Sidebar({ role, userName = "User", schoolName = "AI Tuto
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-navbar border-t border-white/5">
         <div className="flex items-center justify-around px-2 py-2">
           {config.items.slice(0, 5).map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = 
+              pathname === item.href ||
+              (item.href === "/admin/classes" && (pathname === "/admin/students" || pathname === "/admin/teachers"));
             return (
               <Link key={item.href} href={item.href}>
                 <div className={cn(
