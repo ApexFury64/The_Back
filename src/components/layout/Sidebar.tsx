@@ -33,6 +33,7 @@ const sidebarConfig: Record<UserRole, { title: string; items: SidebarItem[] }> =
       { label: "Assignments", icon: <FileText size={20} />, href: "/student/assignments", badge: 3 },
       { label: "Study Planner", icon: <Calendar size={20} />, href: "/student/study-planner" },
       { label: "Leaderboard", icon: <Trophy size={20} />, href: "/student/leaderboard" },
+      { label: "Notifications", icon: <Bell size={20} />, href: "/student/notifications" },
     ],
   },
   parent: {
@@ -55,6 +56,7 @@ const sidebarConfig: Record<UserRole, { title: string; items: SidebarItem[] }> =
       { label: "Assignments", icon: <ClipboardList size={20} />, href: "/teacher/assignments", badge: 5 },
       { label: "AI Tools", icon: <Sparkles size={20} />, href: "/teacher/ai-tools", badge: "AI" },
       { label: "Live Classes", icon: <Video size={20} />, href: "/teacher/live-classes" },
+      { label: "Notifications", icon: <Bell size={20} />, href: "/teacher/notifications" },
     ],
   },
   admin: {

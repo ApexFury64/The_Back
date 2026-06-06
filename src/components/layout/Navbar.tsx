@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Search, Sun, Moon, X, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAppStore } from "@/lib/store";
+import Link from "next/link";
 
 interface NavbarProps {
   title?: string;
@@ -16,6 +18,16 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [dynamicNotifications, setDynamicNotifications] = useState<any[]>([]);
+
+  const userRole = useAppStore(s => s.userRole);
+
+  const getNotificationLink = () => {
+    const role = userRole?.toLowerCase();
+    if (role === 'student') return '/student/notifications';
+    if (role === 'teacher') return '/teacher/notifications';
+    if (role === 'parent') return '/parent/notifications';
+    return '#';
+  };
 
   useEffect(() => {
     fetch("/api/notifications")
@@ -154,9 +166,13 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
                     )}
                   </div>
                   <div className="p-3 border-t border-white/5">
-                    <button className="w-full text-center text-xs text-teal font-medium hover:underline">
+                    <Link 
+                      href={getNotificationLink()}
+                      onClick={() => setShowNotifications(false)}
+                      className="w-full block text-center text-xs text-teal font-medium hover:underline"
+                    >
                       View All Notifications
-                    </button>
+                    </Link>
                   </div>
                 </motion.div>
               )}
