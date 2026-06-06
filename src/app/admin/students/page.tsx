@@ -603,7 +603,7 @@ export default function AdminStudentsPage() {
 
           <div className="absolute inset-y-0 right-0 pl-10 max-w-full flex">
             {/* Drawer Container */}
-            <div className="w-screen max-w-md bg-navy-950/95 border-l border-white/10 backdrop-blur-md flex flex-col justify-between shadow-2xl relative">
+            <div className="w-screen max-w-md bg-[#090d16] border-l border-white/10 flex flex-col justify-between shadow-2xl relative">
               <div className="flex-1 py-6 overflow-y-auto px-6 space-y-6 no-scrollbar">
                 
                 {/* Header details */}
