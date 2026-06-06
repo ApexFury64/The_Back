@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Plus, Users, BookOpen, UserPlus, BookCopy, ChevronDown, Check, Trash2, Filter } from "lucide-react";
+import { Plus, Users, BookOpen, UserPlus, BookCopy, ChevronDown, Check, Trash2, Filter, Edit } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import AcademicNavigationTabs from "@/components/ui/AcademicNavigationTabs";
@@ -22,6 +22,9 @@ export default function AdminClassesPage() {
 
   const [isCreateSubjectModalOpen, setIsCreateSubjectModalOpen] = useState(false);
   const [newSubject, setNewSubject] = useState({ name: "", standard: "", code: "", color: "#0ea5e9" });
+
+  const [isEditSubjectModalOpen, setIsEditSubjectModalOpen] = useState(false);
+  const [editingSubject, setEditingSubject] = useState({ id: "", name: "", standard: "", code: "", color: "#0ea5e9" });
 
   const [isAddStudentsModalOpen, setIsAddStudentsModalOpen] = useState(false);
   const [addStudentsData, setAddStudentsData] = useState({ sectionId: "", sectionName: "", className: "", selectedStudentIds: [] as string[] });
@@ -146,6 +149,63 @@ export default function AdminClassesPage() {
       toast.error("Network error");
     }
     setIsSubmitting(false);
+  };
+
+  const handleOpenEditSubjectModal = (subject: any) => {
+    setEditingSubject({
+      id: subject.id,
+      name: subject.name,
+      standard: subject.standard || "",
+      code: subject.code || "",
+      color: subject.color || "#0ea5e9"
+    });
+    setIsEditSubjectModalOpen(true);
+  };
+
+  const handleUpdateSubject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSubject.name) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/subjects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingSubject)
+      });
+      if (res.ok) {
+        setIsEditSubjectModalOpen(false);
+        toast.success("Subject updated successfully!");
+        fetchData();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to update subject");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleDeleteSubject = async (subjectId: string, subjectName: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${subjectName}"? This will delete the subject across all sections of this grade, including all topics and student progresses. This cannot be undone.`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/subjects?id=${subjectId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        toast.success("Subject deleted successfully!");
+        fetchData();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to delete subject");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    }
   };
 
   const handleUpdateSubjectTeacher = async (sectionId: string, subjectId: string, teacherId: string) => {
@@ -341,8 +401,26 @@ export default function AdminClassesPage() {
               <div className="flex flex-col gap-2 mt-2">
                 {sec.sectionSubjects && sec.sectionSubjects.length > 0 ? (
                   sec.sectionSubjects.map((ss: any) => (
-                    <div key={ss.id} className="text-xs flex items-center justify-between p-2 bg-white/5 border border-white/10 rounded-md">
-                      <span className="font-medium">{ss.subject.name}</span>
+                    <div key={ss.id} className="text-xs flex items-center justify-between p-2 bg-white/5 border border-white/10 rounded-md group/sub animate-fade-in">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{ss.subject.name}</span>
+                        <div className="opacity-0 group-hover/sub:opacity-100 flex items-center gap-1 transition-opacity">
+                          <button
+                            onClick={() => handleOpenEditSubjectModal(ss.subject)}
+                            className="p-0.5 rounded text-muted-foreground hover:bg-white/10 hover:text-teal transition-all"
+                            title="Edit Subject"
+                          >
+                            <Edit size={10} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSubject(ss.subject.id, ss.subject.name)}
+                            className="p-0.5 rounded text-muted-foreground hover:bg-white/10 hover:text-coral transition-all"
+                            title="Delete Subject"
+                          >
+                            <Trash2 size={10} />
+                          </button>
+                        </div>
+                      </div>
                       <select
                         value={ss.teacher.id}
                         onChange={(e) => handleUpdateSubjectTeacher(sec.id, ss.subject.id, e.target.value)}
@@ -457,6 +535,89 @@ export default function AdminClassesPage() {
                   className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
                 >
                   {isSubmitting ? "Creating..." : "Create Subject"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT SUBJECT MODAL */}
+      {isEditSubjectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative">
+            <h3 className="text-xl font-bold mb-4">Edit Subject Details</h3>
+            <form onSubmit={handleUpdateSubject} className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Subject Name</label>
+                <input 
+                  type="text" 
+                  value={editingSubject.name} 
+                  onChange={e => setEditingSubject({...editingSubject, name: e.target.value})} 
+                  className="glass-input w-full px-4 py-2 text-sm" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Grade / Standard Level</label>
+                {classes.length > 0 ? (
+                  <select 
+                    value={editingSubject.standard} 
+                    onChange={e => setEditingSubject({...editingSubject, standard: e.target.value})} 
+                    className="glass-input w-full px-4 py-2 text-sm bg-navy-950 text-white" 
+                    required 
+                  >
+                    <option value="" disabled>-- Select a Class/Grade --</option>
+                    {classes.map(c => (
+                      <option key={c.id} value={c.grade.toString()}>{c.name} (Grade {c.grade})</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input 
+                    type="number" 
+                    value={editingSubject.standard} 
+                    onChange={e => setEditingSubject({...editingSubject, standard: e.target.value})} 
+                    className="glass-input w-full px-4 py-2 text-sm" 
+                    required 
+                  />
+                )}
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Subject Code</label>
+                <input 
+                  type="text" 
+                  value={editingSubject.code} 
+                  onChange={e => setEditingSubject({...editingSubject, code: e.target.value})} 
+                  className="glass-input w-full px-4 py-2 text-sm" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Subject Display Color</label>
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="color" 
+                    value={editingSubject.color} 
+                    onChange={e => setEditingSubject({...editingSubject, color: e.target.value})} 
+                    className="w-12 h-10 bg-transparent border border-white/20 rounded cursor-pointer"
+                  />
+                  <span className="text-xs text-muted-foreground">{editingSubject.color}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                <button 
+                  type="button" 
+                  onClick={() => setIsEditSubjectModalOpen(false)}
+                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
+                >
+                  {isSubmitting ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>
