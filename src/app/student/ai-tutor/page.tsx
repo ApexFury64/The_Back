@@ -25,7 +25,7 @@ import {
   Globe, Compass, Rotate3d, CloudSun, MountainSnow, TreePalm,
   Users, MapIcon, Waves, LayoutDashboard, TrainFront,
   Monitor, Wifi, Code, Smartphone, Table, Database, Palette,
-  Shield, Terminal, Brackets, Package,
+  Shield, Terminal, Brackets, Package, Video, Play,
   type LucideIcon
 } from "lucide-react";
 
@@ -324,7 +324,50 @@ function AITutorContent() {
   const [showLabPanel, setShowLabPanel] = useState(false);
   const [activeLabSubject, setActiveLabSubject] = useState<string | null>(null);
   const [activeLabStandard, setActiveLabStandard] = useState<string | null>('8');
+  const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Helper to extract YouTube ID and build clean embed URL
+  const getEmbedUrl = (url: string | null) => {
+    if (!url) return null;
+    let videoId = null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    if (match && match[2].length === 11) {
+      videoId = match[2];
+    } else {
+      const shortMatch = url.trim();
+      if (shortMatch.length === 11) {
+        videoId = shortMatch;
+      }
+    }
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+    }
+    return null;
+  };
+
+  // Sync active video url with the selected syllabus topic
+  useEffect(() => {
+    if (activeTopicTitle && subjects.length > 0) {
+      let foundUrl = null;
+      for (const sub of subjects) {
+        for (const mod of sub.modules) {
+          for (const t of mod.subTopics) {
+            if (t.title === activeTopicTitle) {
+              foundUrl = t.ebookVideoUrl || null;
+              break;
+            }
+          }
+          if (foundUrl) break;
+        }
+        if (foundUrl) break;
+      }
+      setActiveVideoUrl(foundUrl);
+    } else {
+      setActiveVideoUrl(null);
+    }
+  }, [activeTopicTitle, subjects]);
 
   const suggestedPrompts = [
     "Explain Newton's Laws",
@@ -588,7 +631,7 @@ function AITutorContent() {
           onDragLeave={onChatDragLeave}
           onDrop={onChatDrop}
         >
-          <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between glass-navbar absolute top-0 left-0 right-0 z-10 rounded-t-xl">
+          <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between glass-navbar z-10 rounded-t-xl flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-teal">
                 <Bot size={22} />
@@ -621,164 +664,209 @@ function AITutorContent() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 pt-24 pb-6 space-y-6 no-scrollbar relative">
-            {/* Drag overlay */}
-            {isDragOver && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="absolute inset-0 z-30 flex items-center justify-center bg-navy-900/70 backdrop-blur-sm rounded-xl"
-              >
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-teal/20 border-2 border-dashed border-teal flex items-center justify-center">
-                    <Beaker size={28} className="text-teal animate-bounce" />
-                  </div>
-                  <p className="text-teal font-bold text-sm">Drop here to learn!</p>
-                  <p className="text-muted-foreground text-xs mt-1">Release the card to start a lesson</p>
-                </div>
-              </motion.div>
-            )}
-            <AnimatePresence initial={false}>
-              {messages.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    "flex max-w-[80%]",
-                    msg.role === "user" ? "ml-auto justify-end" : "mr-auto"
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            {/* Top Video Section (3/4 height) */}
+            <div className="flex-[3] min-h-0 border-b border-white/5 relative bg-black/40 flex flex-col justify-center items-center overflow-hidden">
+              {activeVideoUrl ? (
+                <div className="w-full h-full relative">
+                  {getEmbedUrl(activeVideoUrl) ? (
+                    <iframe
+                      src={getEmbedUrl(activeVideoUrl) || ""}
+                      className="w-full h-full border-none"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video
+                      src={activeVideoUrl}
+                      controls
+                      autoPlay
+                      className="w-full h-full object-contain"
+                    />
                   )}
+                  {/* Small floating topic title overlay on top of video */}
+                  <div className="absolute top-3 left-3 bg-navy-900/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-xs font-medium text-white flex items-center gap-1.5 pointer-events-none">
+                    <Play size={10} className="text-teal animate-pulse" />
+                    <span className="truncate max-w-[200px]">{activeTopicTitle}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center p-6 max-w-md pointer-events-none">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-teal/10 border border-teal/20 flex items-center justify-center shadow-[0_0_20px_rgba(45,212,191,0.05)]">
+                    <Video size={28} className="text-teal animate-pulse" />
+                  </div>
+                  <h3 className="text-sm font-bold text-white mb-2">Select a topic to start video lesson</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Choose a topic from the syllabus to watch its explanation video. Your AI Tutor will be here to guide you and answer questions.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom AI Chat Section (1/4 height) */}
+            <div className="flex-[1] min-h-[250px] flex flex-col relative min-h-0">
+              {/* Drag overlay */}
+              {isDragOver && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="absolute inset-0 z-30 flex items-center justify-center bg-navy-900/70 backdrop-blur-sm rounded-xl"
                 >
-                  <div className={cn(
-                    "flex gap-3",
-                    msg.role === "user" ? "flex-row-reverse" : "flex-row"
-                  )}>
-                    <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1",
-                      msg.role === "ai" 
-                        ? "bg-gradient-to-br from-teal to-cyan text-navy-900" 
-                        : "bg-white/10 text-white"
-                    )}>
-                      {msg.role === "ai" ? <Bot size={16} /> : "AR"}
+                  <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-teal/20 border-2 border-dashed border-teal flex items-center justify-center">
+                      <Beaker size={28} className="text-teal animate-bounce" />
                     </div>
-                    
-                    <div>
+                    <p className="text-teal font-bold text-sm">Drop here to learn!</p>
+                    <p className="text-muted-foreground text-xs mt-1">Release the card to start a lesson</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Messages Stream */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar relative">
+                <AnimatePresence initial={false}>
+                  {messages.map((msg) => (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={cn(
+                        "flex max-w-[80%]",
+                        msg.role === "user" ? "ml-auto justify-end" : "mr-auto"
+                      )}
+                    >
                       <div className={cn(
-                        "p-4 rounded-2xl relative group",
-                        msg.role === "user" 
-                          ? "bg-teal text-navy-900 rounded-tr-none" 
-                          : "bg-white/5 border border-white/5 rounded-tl-none shadow-lg backdrop-blur-md"
+                        "flex gap-3",
+                        msg.role === "user" ? "flex-row-reverse" : "flex-row"
                       )}>
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.role === 'ai' ? parseMarkdown(msg.content) : msg.content}</p>
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1",
+                          msg.role === "ai" 
+                            ? "bg-gradient-to-br from-teal to-cyan text-navy-900" 
+                            : "bg-white/10 text-white"
+                        )}>
+                          {msg.role === "ai" ? <Bot size={16} /> : "AR"}
+                        </div>
+                        
+                        <div>
+                          <div className={cn(
+                            "p-4 rounded-2xl relative group",
+                            msg.role === "user" 
+                              ? "bg-teal text-navy-900 rounded-tr-none" 
+                              : "bg-white/5 border border-white/5 rounded-tl-none shadow-lg backdrop-blur-md"
+                          )}>
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.role === 'ai' ? parseMarkdown(msg.content) : msg.content}</p>
+                          </div>
+                          <p className={cn(
+                            "text-[10px] text-muted-foreground mt-1 px-1",
+                            msg.role === "user" ? "text-right" : "text-left"
+                          )}>
+                            {msg.time}
+                          </p>
+                        </div>
                       </div>
-                      <p className={cn(
-                        "text-[10px] text-muted-foreground mt-1 px-1",
-                        msg.role === "user" ? "text-right" : "text-left"
-                      )}>
-                        {msg.time}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-              
-              {isTyping && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex max-w-[80%] mr-auto">
-                  <div className="flex gap-3 flex-row">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 bg-gradient-to-br from-teal to-cyan text-navy-900">
-                      <Bot size={16} />
-                    </div>
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 rounded-tl-none shadow-lg backdrop-blur-md flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-teal animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-2 h-2 rounded-full bg-teal animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-2 h-2 rounded-full bg-teal animate-bounce" style={{ animationDelay: '300ms' }} />
-                    </div>
-                  </div>
+                    </motion.div>
+                  ))}
+                  
+                  {isTyping && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex max-w-[80%] mr-auto">
+                      <div className="flex gap-3 flex-row">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 bg-gradient-to-br from-teal to-cyan text-navy-900">
+                          <Bot size={16} />
+                        </div>
+                        <div className="p-4 rounded-2xl bg-white/5 border border-white/5 rounded-tl-none shadow-lg backdrop-blur-md flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-teal animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-2 h-2 rounded-full bg-teal animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-2 h-2 rounded-full bg-teal animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </AnimatePresence>
+              </div>
+
+              {messages.length === 1 && !isTyping && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute bottom-28 left-0 right-0 flex justify-center gap-2 pointer-events-none z-10">
+                  {suggestedPrompts.map((p, i) => (
+                    <button key={i} onClick={() => { setInput(p); handleSend(p); }} className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] text-muted-foreground hover:text-white hover:bg-white/10 transition-colors pointer-events-auto backdrop-blur-md">
+                      {p}
+                    </button>
+                  ))}
                 </motion.div>
               )}
-              <div ref={messagesEndRef} />
-            </AnimatePresence>
-          </div>
 
-          {messages.length === 1 && !isTyping && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute bottom-28 left-0 right-0 flex justify-center gap-2 pointer-events-none">
-              {suggestedPrompts.map((p, i) => (
-                <button key={i} onClick={() => { setInput(p); handleSend(p); }} className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-muted-foreground hover:text-white hover:bg-white/10 transition-colors pointer-events-auto backdrop-blur-md">
-                  {p}
-                </button>
-              ))}
-            </motion.div>
-          )}
-
-          <div className="p-6 bg-background/80 backdrop-blur-xl border-t border-white/5 z-20">
-            <div className="flex gap-2 mb-3 px-1 overflow-x-auto no-scrollbar">
-              <button 
-                onClick={() => setInput("Solve this math problem step by step: ")}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-colors whitespace-nowrap"
-              >
-                <Calculator size={12} className="text-teal" /> Solve Math
-              </button>
-              <button 
-                onClick={() => setInput("Explain this concept in simple terms: ")}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-colors whitespace-nowrap"
-              >
-                <BrainCircuit size={12} className="text-cyan" /> Explain Concept
-              </button>
-              <button 
-                onClick={() => setInput("Summarize the following notes: ")}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-colors whitespace-nowrap"
-              >
-                <FileText size={12} className="text-purple" /> Summarize Notes
-              </button>
-              {activeTopicTitle && urlSubject && (
-                <button 
-                  onClick={() => completeTopic(urlSubject, activeTopicTitle)}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-teal text-navy-900 font-bold hover:opacity-90 transition-opacity whitespace-nowrap ml-auto shadow-[0_0_10px_rgba(45,212,191,0.2)]"
-                >
-                  Mark Topic Complete
-                </button>
-              )}
+              {/* Chat Input Area */}
+              <div className="p-4 bg-background/80 backdrop-blur-xl border-t border-white/5 z-20 flex-shrink-0">
+                <div className="flex gap-2 mb-3 px-1 overflow-x-auto no-scrollbar">
+                  <button 
+                    onClick={() => setInput("Solve this math problem step by step: ")}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-colors whitespace-nowrap"
+                  >
+                    <Calculator size={12} className="text-teal" /> Solve Math
+                  </button>
+                  <button 
+                    onClick={() => setInput("Explain this concept in simple terms: ")}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-colors whitespace-nowrap"
+                  >
+                    <BrainCircuit size={12} className="text-cyan" /> Explain Concept
+                  </button>
+                  <button 
+                    onClick={() => setInput("Summarize the following notes: ")}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-colors whitespace-nowrap"
+                  >
+                    <FileText size={12} className="text-purple" /> Summarize Notes
+                  </button>
+                  {activeTopicTitle && urlSubject && (
+                    <button 
+                      onClick={() => completeTopic(urlSubject, activeTopicTitle)}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-teal text-navy-900 font-bold hover:opacity-90 transition-opacity whitespace-nowrap ml-auto shadow-[0_0_10px_rgba(45,212,191,0.2)]"
+                    >
+                      Mark Topic Complete
+                    </button>
+                  )}
+                </div>
+                
+                {/* Chat Input Box */}
+                <div className="relative flex items-end gap-2 bg-white/5 border border-white/10 rounded-2xl p-2 focus-within:border-teal/50 focus-within:bg-white/10 transition-all">
+                  <button className="p-2 text-muted-foreground hover:text-foreground rounded-xl hover:bg-white/10 transition-colors mb-0.5">
+                    <Paperclip size={20} />
+                  </button>
+                  <button className="p-2 text-muted-foreground hover:text-foreground rounded-xl hover:bg-white/10 transition-colors mb-0.5">
+                    <ImageIcon size={20} />
+                  </button>
+                  
+                  <textarea 
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    placeholder="Ask your AI Tutor anything..."
+                    className="flex-1 bg-transparent border-none outline-none resize-none max-h-32 min-h-[44px] py-3 text-sm"
+                    rows={1}
+                  />
+                  
+                  <button className="p-2 text-muted-foreground hover:text-foreground rounded-xl hover:bg-white/10 transition-colors mb-0.5">
+                    <Mic size={20} />
+                  </button>
+                  <button 
+                    onClick={() => handleSend()}
+                    disabled={!input.trim() || isTyping}
+                    className="p-2.5 bg-gradient-to-r from-teal to-cyan text-navy-900 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mb-0.5"
+                  >
+                    <Send size={18} />
+                  </button>
+                </div>
+                <p className="text-center text-[10px] text-muted-foreground mt-2">
+                  AI Tutor can make mistakes. Consider verifying important information.
+                </p>
+              </div>
             </div>
-            
-            {/* Chat Input */}
-            <div className="relative flex items-end gap-2 bg-white/5 border border-white/10 rounded-2xl p-2 focus-within:border-teal/50 focus-within:bg-white/10 transition-all">
-              <button className="p-2 text-muted-foreground hover:text-foreground rounded-xl hover:bg-white/10 transition-colors mb-0.5">
-                <Paperclip size={20} />
-              </button>
-              <button className="p-2 text-muted-foreground hover:text-foreground rounded-xl hover:bg-white/10 transition-colors mb-0.5">
-                <ImageIcon size={20} />
-              </button>
-              
-              <textarea 
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-                placeholder="Ask your AI Tutor anything..."
-                className="flex-1 bg-transparent border-none outline-none resize-none max-h-32 min-h-[44px] py-3 text-sm"
-                rows={1}
-              />
-              
-              <button className="p-2 text-muted-foreground hover:text-foreground rounded-xl hover:bg-white/10 transition-colors mb-0.5">
-                <Mic size={20} />
-              </button>
-              <button 
-                onClick={() => handleSend()}
-                disabled={!input.trim() || isTyping}
-                className="p-2.5 bg-gradient-to-r from-teal to-cyan text-navy-900 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mb-0.5"
-              >
-                <Send size={18} />
-              </button>
-            </div>
-            <p className="text-center text-[10px] text-muted-foreground mt-3">
-              AI Tutor can make mistakes. Consider verifying important information.
-            </p>
           </div>
-
         </div>
 
         {/* Right Panel — AI Lab */}

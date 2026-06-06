@@ -146,10 +146,16 @@ export async function GET() {
                   subjectId: subject.id,
                   title: topicData.title,
                   icon: topicData.icon,
-                  order: i
+                  order: i,
+                  unitTitle: module.title
                 }
               });
               createdTopicsCount++;
+            } else {
+              await prisma.topic.update({
+                where: { id: existingTopic.id },
+                data: { unitTitle: module.title }
+              });
             }
           }
         }

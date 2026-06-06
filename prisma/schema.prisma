@@ -399,6 +399,7 @@ model Topic {
   
   ebookHtml     String?  @db.Text
   ebookVideoUrl String?
+  unitTitle     String?
   
   progresses  TopicProgress[]
   

@@ -175,7 +175,8 @@ export async function POST(request: Request) {
             icon: t.icon || 'BookOpen',
             order: t.order !== undefined && t.order !== null ? parseInt(t.order) : (startOrder + i),
             ebookHtml: t.ebookHtml || null,
-            ebookVideoUrl: t.ebookVideoUrl || null
+            ebookVideoUrl: t.ebookVideoUrl || null,
+            unitTitle: t.unitTitle || null
           }
         });
         created.push(topic);

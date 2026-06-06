@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAppStore } from "@/lib/store";
-import { BookOpen, Upload, Download, Plus, Trash2, ArrowRight, FileText, ChevronRight, HelpCircle } from "lucide-react";
+import { BookOpen, Upload, Download, Plus, Trash2, ArrowRight, FileText, ChevronRight, HelpCircle, PlayCircle, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,6 +19,7 @@ export default function TeacherSyllabusPage() {
   // Add Topic Form State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newTopic, setNewTopic] = useState({
+    unitTitle: "",
     title: "",
     description: "",
     order: "",
@@ -31,6 +32,7 @@ export default function TeacherSyllabusPage() {
   const [selectedTopicForEbook, setSelectedTopicForEbook] = useState<any>(null);
   const [ebookContent, setEbookContent] = useState({ ebookHtml: "", ebookVideoUrl: "" });
   const [isSavingEbook, setIsSavingEbook] = useState(false);
+  const [uploadingTopicId, setUploadingTopicId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,10 +65,10 @@ export default function TeacherSyllabusPage() {
   };
 
   const downloadTemplate = () => {
-    const csvContent = 'title,description,order,icon,ebookHtml,ebookVideoUrl\n' +
-      '"Introduction to Algebra","Basic equations and graphing",1,"Sparkles","<h3>1. What is Algebra?</h3><p>Algebra is a branch of mathematics dealing with symbols and the rules for manipulating those symbols. In its simplest form, algebra involves solving equations where variables stand in for unknown values.</p><h4>Key Concepts</h4><ul><li><b>Variables:</b> Letters like x or y used to represent numbers.</li><li><b>Coefficients:</b> The numbers multiplying the variables.</li></ul>","https://www.youtube.com/watch?v=NybHckSEQBI"\n' +
-      '"Linear Functions","Slopes and intercepts",2,"BookOpen","<h3>Linear Equations & Graphs</h3><p>A linear equation is an equation for a straight line. The standard form is y = mx + c, where m is the slope of the line and c is the y-intercept (the point where the line crosses the y-axis).</p>","https://www.youtube.com/watch?v=9_C8pY4c2rc"\n' +
-      '"Quadratic Equations","Solving formulas",3,"FileText","<h3>Quadratic Formula</h3><p>A quadratic equation is a second-order polynomial equation in a single variable. The general form is ax² + bx + c = 0. We can solve for x using the quadratic formula: x = (-b ± √(b² - 4ac)) / 2a.</p>","https://www.youtube.com/watch?v=i7idZhlqkyw"\n';
+    const csvContent = 'unitTitle,title,description,order,icon,ebookHtml,ebookVideoUrl\n' +
+      '"Algebra & Equations","Introduction to Algebra","Basic equations and graphing",1,"Sparkles","<h3>1. What is Algebra?</h3><p>Algebra is a branch of mathematics dealing with symbols and the rules for manipulating those symbols. In its simplest form, algebra involves solving equations where variables stand in for unknown values.</p><h4>Key Concepts</h4><ul><li><b>Variables:</b> Letters like x or y used to represent numbers.</li><li><b>Coefficients:</b> The numbers multiplying the variables.</li></ul>","https://www.youtube.com/watch?v=NybHckSEQBI"\n' +
+      '"Algebra & Equations","Linear Functions","Slopes and intercepts",2,"BookOpen","<h3>Linear Equations & Graphs</h3><p>A linear equation is an equation for a straight line. The standard form is y = mx + c, where m is the slope of the line and c is the y-intercept (the point where the line crosses the y-axis).</p>","https://www.youtube.com/watch?v=9_C8pY4c2rc"\n' +
+      '"Quadratic Equations","Quadratic Equations","Solving formulas",3,"FileText","<h3>Quadratic Formula</h3><p>A quadratic equation is a second-order polynomial equation in a single variable. The general form is ax² + bx + c = 0. We can solve for x using the quadratic formula: x = (-b ± √(b² - 4ac)) / 2a.</p>","https://www.youtube.com/watch?v=i7idZhlqkyw"\n';
       
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -119,6 +121,7 @@ export default function TeacherSyllabusPage() {
           return;
         }
 
+        const unitTitleIndex = headers.indexOf("unittitle") !== -1 ? headers.indexOf("unittitle") : headers.indexOf("unit");
         const descIndex = headers.indexOf("description");
         const orderIndex = headers.indexOf("order");
         const iconIndex = headers.indexOf("icon");
@@ -131,6 +134,7 @@ export default function TeacherSyllabusPage() {
           if (cols[titleIndex]) {
             parsedTopics.push({
               title: cols[titleIndex],
+              unitTitle: unitTitleIndex !== -1 ? cols[unitTitleIndex] : "",
               description: descIndex !== -1 ? cols[descIndex] : "",
               order: orderIndex !== -1 && cols[orderIndex] ? parseInt(cols[orderIndex]) : i,
               icon: iconIndex !== -1 ? cols[iconIndex] : "BookOpen",
@@ -183,6 +187,7 @@ export default function TeacherSyllabusPage() {
       const payload = {
         subjectId: selectedSubject.id,
         topics: [{
+          unitTitle: newTopic.unitTitle,
           title: newTopic.title,
           description: newTopic.description,
           order: newTopic.order ? parseInt(newTopic.order) : undefined,
@@ -200,7 +205,7 @@ export default function TeacherSyllabusPage() {
       if (res.ok) {
         toast.success("Topic added to syllabus!");
         setIsAddModalOpen(false);
-        setNewTopic({ title: "", description: "", order: "", icon: "BookOpen" });
+        setNewTopic({ unitTitle: "", title: "", description: "", order: "", icon: "BookOpen" });
         fetchSubjects();
       } else {
         const err = await res.json();
@@ -235,6 +240,26 @@ export default function TeacherSyllabusPage() {
     }
   };
 
+  const handleEbookHtmlFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      setEbookContent(prev => ({
+        ...prev,
+        ebookHtml: text
+      }));
+      toast.success("eBook HTML file loaded successfully!");
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read HTML file");
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
   const handleSaveEbookSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTopicForEbook) return;
@@ -265,6 +290,46 @@ export default function TeacherSyllabusPage() {
     } finally {
       setIsSavingEbook(false);
     }
+  };
+
+  const handleDirectEbookUpload = async (topicId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingTopicId(topicId);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const htmlContent = event.target?.result as string;
+        const res = await fetch("/api/teacher/ebook", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topicId,
+            ebookHtml: htmlContent
+          })
+        });
+
+        if (res.ok) {
+          toast.success("eBook HTML uploaded and saved successfully!");
+          fetchSubjects();
+        } else {
+          const err = await res.json();
+          toast.error(err.error || "Failed to save eBook content");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Error saving eBook content");
+      } finally {
+        setUploadingTopicId(null);
+      }
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read HTML file");
+      setUploadingTopicId(null);
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   return (
@@ -366,45 +431,117 @@ export default function TeacherSyllabusPage() {
 
               {/* Topics Container */}
               <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-                {selectedSubject.topics?.map((topic: any, idx: number) => (
-                  <div
-                    key={topic.id}
-                    className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-xl flex items-center justify-between hover:border-teal/20 transition-all duration-200 group"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="w-8 h-8 rounded-lg bg-teal/15 text-teal flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-                        {topic.order || (idx + 1)}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-sm text-navy-900 dark:text-white">{topic.title}</h4>
-                        <p className="text-xs text-muted-foreground mt-0.5">{topic.description || "No description provided."}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => {
-                          setSelectedTopicForEbook(topic);
-                          setEbookContent({
-                            ebookHtml: topic.ebookHtml || "",
-                            ebookVideoUrl: topic.ebookVideoUrl || ""
-                          });
-                          setIsEbookModalOpen(true);
-                        }}
-                        className="p-1.5 rounded-lg hover:bg-teal/15 text-muted-foreground hover:text-teal transition-colors"
-                        title="Manage eBook Content"
-                      >
-                        <BookOpen size={15} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTopic(topic.id)}
-                        className="p-1.5 rounded-lg hover:bg-coral/10 text-muted-foreground hover:text-coral transition-colors"
-                        title="Delete Topic"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                {(() => {
+                  const missingEbookCount = selectedSubject.topics?.filter((t: any) => !t.ebookHtml).length || 0;
+                  return (
+                    <>
+                      {missingEbookCount > 0 && (
+                        <div className="mb-4 p-4 rounded-xl border border-teal/20 bg-teal/5 text-teal-800 dark:text-teal-300 flex items-start gap-3 shrink-0">
+                          <div className="w-8 h-8 rounded-lg bg-teal/15 flex items-center justify-center shrink-0 text-teal mt-0.5">
+                            <BookOpen size={16} />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-teal-900 dark:text-teal">Syllabus eBook Setup Helper</h4>
+                            <p className="text-xs mt-1 text-muted-foreground leading-relaxed">
+                              This syllabus has <strong className="text-teal">{missingEbookCount} topic(s)</strong> missing eBook companions. Click the <strong className="text-teal">Upload HTML</strong> button on any topic below to directly save its lesson content.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedSubject.topics?.map((topic: any, idx: number) => (
+                        <div
+                          key={topic.id}
+                          className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-teal/20 transition-all duration-200 group"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="w-8 h-8 rounded-lg bg-teal/15 text-teal flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                              {topic.order || (idx + 1)}
+                            </div>
+                            <div>
+                              {topic.unitTitle && (
+                                <div className="mb-1">
+                                  <span className="text-[9px] uppercase font-bold text-teal-700 dark:text-teal bg-teal/10 px-1.5 py-0.5 rounded tracking-wider">
+                                    {topic.unitTitle}
+                                  </span>
+                                </div>
+                              )}
+                              <h4 className="font-semibold text-sm text-navy-900 dark:text-white">{topic.title}</h4>
+                              <p className="text-xs text-muted-foreground mt-0.5">{topic.description || "No description provided."}</p>
+                              
+                              {/* Status Badges */}
+                              <div className="flex flex-wrap items-center gap-2 mt-2">
+                                {topic.ebookHtml ? (
+                                  <span className="text-[10px] text-teal-700 dark:text-teal bg-teal/10 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 border border-teal/20">
+                                    <CheckCircle size={10} /> eBook Active
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-amber-700 dark:text-amber bg-amber-500/10 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 border border-amber-500/10">
+                                    <HelpCircle size={10} /> Needs eBook
+                                  </span>
+                                )}
+                                {topic.ebookVideoUrl && (
+                                  <span className="text-[10px] text-indigo-700 dark:text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 border border-indigo-500/10">
+                                    <PlayCircle size={10} /> Video Active
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Topic Actions */}
+                          <div className="flex items-center gap-3 self-end sm:self-auto">
+                            {/* Direct Upload HTML button if eBook is missing */}
+                            {!topic.ebookHtml && (
+                              <div className="shrink-0">
+                                <label className={cn(
+                                  "cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all shadow-sm",
+                                  uploadingTopicId === topic.id
+                                    ? "bg-black/10 border-black/10 dark:bg-white/10 dark:border-white/10 text-muted-foreground animate-pulse cursor-not-allowed"
+                                    : "bg-teal border-none text-navy-900 hover:opacity-90 font-bold"
+                                )}>
+                                  <Upload size={12} />
+                                  {uploadingTopicId === topic.id ? "Uploading..." : "Upload HTML"}
+                                  <input
+                                    type="file"
+                                    accept=".html,.htm"
+                                    onChange={(e) => handleDirectEbookUpload(topic.id, e)}
+                                    disabled={uploadingTopicId === topic.id}
+                                    className="hidden"
+                                  />
+                                </label>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => {
+                                  setSelectedTopicForEbook(topic);
+                                  setEbookContent({
+                                    ebookHtml: topic.ebookHtml || "",
+                                    ebookVideoUrl: topic.ebookVideoUrl || ""
+                                  });
+                                  setIsEbookModalOpen(true);
+                                }}
+                                className="p-2 rounded-lg hover:bg-teal/15 text-muted-foreground hover:text-teal transition-colors"
+                                title="Manage eBook Content"
+                              >
+                                <BookOpen size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTopic(topic.id)}
+                                className="p-2 rounded-lg hover:bg-coral/10 text-muted-foreground hover:text-coral transition-colors"
+                                title="Delete Topic"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  );
+                })()}
 
                 {(!selectedSubject.topics || selectedSubject.topics.length === 0) && (
                   <div className="text-center py-20 border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-6 flex flex-col items-center">
@@ -441,6 +578,17 @@ export default function TeacherSyllabusPage() {
           >
             <h3 className="text-lg font-bold mb-4 text-navy-900 dark:text-white">Add Topic to Syllabus</h3>
             <form onSubmit={handleAddTopicSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Unit / Module Title</label>
+                <input
+                  type="text"
+                  value={newTopic.unitTitle}
+                  onChange={e => setNewTopic({ ...newTopic, unitTitle: e.target.value })}
+                  placeholder="e.g. Algebra & Equations"
+                  className="glass-input w-full px-4 py-2 text-sm"
+                />
+              </div>
+
               <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">Topic Title</label>
                 <input
@@ -535,7 +683,19 @@ export default function TeacherSyllabusPage() {
               
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs text-muted-foreground font-medium block">eBook Content (HTML Format)</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-muted-foreground font-medium block">eBook Content (HTML Format)</label>
+                    <label className="cursor-pointer text-[10px] bg-teal/10 hover:bg-teal/20 text-teal-700 dark:text-teal px-2 py-0.5 rounded font-bold transition-all flex items-center gap-1">
+                      <Upload size={10} />
+                      Upload HTML File
+                      <input
+                        type="file"
+                        accept=".html,.htm"
+                        onChange={handleEbookHtmlFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
                   <span className="text-[10px] text-teal-800 dark:text-teal font-medium">Supports inline HTML, &lt;img&gt;, &lt;p&gt;, &lt;h3&gt;, etc.</span>
                 </div>
                 <textarea

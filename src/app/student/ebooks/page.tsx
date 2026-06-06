@@ -136,7 +136,8 @@ export default function StudentEbookPage() {
     );
   }
 
-  const embedUrl = ebookData?.ebookVideoUrl ? getYoutubeEmbedUrl(ebookData.ebookVideoUrl) : null;
+  const rawVideoUrl = ebookData?.ebookVideoUrl || null;
+  const embedUrl = rawVideoUrl ? getYoutubeEmbedUrl(rawVideoUrl) : null;
 
   return (
     <DashboardLayout
@@ -219,19 +220,27 @@ export default function StudentEbookPage() {
                 ) : ebookData?.ebookHtml || embedUrl ? (
                   <div className="space-y-6">
                     {/* Embedded Video Explanation */}
-                    {embedUrl && (
+                    {rawVideoUrl && (
                       <div className="space-y-2">
                         <h4 className="text-xs font-bold uppercase tracking-wider text-teal-800 dark:text-teal flex items-center gap-1.5">
                           <PlayCircle size={14} /> Video Explanation
                         </h4>
                         <div className="relative aspect-video w-full max-w-3xl mx-auto rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 shadow-lg bg-black">
-                          <iframe
-                            src={embedUrl}
-                            title={`${selectedTopic.title} Explanation Video`}
-                            className="absolute inset-0 w-full h-full"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
+                          {embedUrl ? (
+                            <iframe
+                              src={embedUrl}
+                              title={`${selectedTopic.title} Explanation Video`}
+                              className="absolute inset-0 w-full h-full"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            />
+                          ) : (
+                            <video
+                              src={rawVideoUrl}
+                              controls
+                              className="absolute inset-0 w-full h-full object-contain"
+                            />
+                          )}
                         </div>
                       </div>
                     )}

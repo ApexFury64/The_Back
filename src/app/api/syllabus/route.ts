@@ -50,25 +50,47 @@ export async function GET(request: Request) {
       let totalTopics = sub.topics.length;
       let completedTopics = 0;
 
-      const mockModules = [
-        {
-          id: `mod_${sub.id}`,
-          title: 'Main Topics',
-          status: 'in-progress',
-          subTopics: sub.topics.map((t, tIndex) => {
-            const progress = userProgressMap[t.id];
-            const status = progress ? progress.status : (tIndex === 0 ? 'in-progress' : 'locked');
-            if (status === 'completed') completedTopics++;
-
-            return {
-              id: t.id,
-              title: t.title,
-              icon: t.icon || 'circle',
-              status
-            };
-          })
+      // Group topics by unitTitle dynamically
+      const topicsByUnit: Record<string, any[]> = {};
+      sub.topics.forEach((t) => {
+        const unitName = t.unitTitle || 'General Units';
+        if (!topicsByUnit[unitName]) {
+          topicsByUnit[unitName] = [];
         }
-      ];
+        topicsByUnit[unitName].push(t);
+      });
+
+      let overallTopicIndex = 0;
+      const actualModules = Object.entries(topicsByUnit).map(([unitName, topics], uIndex) => {
+        const subTopics = topics.map((t) => {
+          const progress = userProgressMap[t.id];
+          const status = progress ? progress.status : (overallTopicIndex === 0 ? 'in-progress' : 'locked');
+          if (status === 'completed') completedTopics++;
+          overallTopicIndex++;
+
+          return {
+            id: t.id,
+            title: t.title,
+            icon: t.icon || 'circle',
+            status,
+            ebookVideoUrl: t.ebookVideoUrl
+          };
+        });
+
+        let unitStatus = 'locked';
+        if (subTopics.every(st => st.status === 'completed')) {
+          unitStatus = 'completed';
+        } else if (subTopics.some(st => st.status === 'completed' || st.status === 'in-progress')) {
+          unitStatus = 'in-progress';
+        }
+
+        return {
+          id: `mod_${sub.id}_${uIndex}`,
+          title: unitName,
+          status: unitStatus,
+          subTopics
+        };
+      });
 
       const progressPercent = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
       const grade = progressPercent > 90 ? 'A+' : progressPercent > 80 ? 'A' : progressPercent > 70 ? 'B+' : 'B';
@@ -81,7 +103,7 @@ export async function GET(request: Request) {
         standard: sub.standard,
         progress: progressPercent,
         grade: userRole === 'STUDENT' ? grade : 'N/A', // Only show grades for students
-        modules: mockModules
+        modules: actualModules
       };
     });
 
