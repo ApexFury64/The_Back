@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const classRooms = await prisma.classRoom.findMany({
       where: { schoolId },
       include: {
-        students: { select: { id: true } },
+        students: { select: { id: true, name: true, email: true } },
         classTeacher: { select: { name: true } },
       }
     });

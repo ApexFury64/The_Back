@@ -535,7 +535,7 @@ export default function AdminClassesPage() {
                         <div key={student.id} className="flex items-center justify-between p-2.5 bg-white/3 border border-white/5 rounded-xl hover:border-white/10 transition-all">
                           <div className="flex items-center gap-2.5">
                             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-[10px] font-bold text-teal flex-shrink-0">
-                              {student.name.split(" ").map((n: string) => n[0]).join("")}
+                              {(student.name || "Unknown").split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
                             </div>
                             <div>
                               <p className="text-xs font-semibold text-foreground">{student.name}</p>
