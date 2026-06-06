@@ -316,6 +316,7 @@ function AITutorContent() {
   };
 
   const [activeTab, setActiveTab] = useState<'history'|'syllabus'|'quizzes'>('syllabus');
+  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -429,7 +430,8 @@ function AITutorContent() {
     setActiveLabSubject(subjectName);
     const sub = subjects.find(s => s.name === subjectName);
     if (sub?.standard) setActiveLabStandard(sub.standard);
-    setShowLabPanel(true);
+    setIsNavCollapsed(true);
+    setShowLabPanel(false);
 
     const userMsg = {
       id: Date.now(),
@@ -706,94 +708,104 @@ function AITutorContent() {
     >
       <div className="h-[calc(100vh-120px)] flex gap-6">
         {/* Left Navigation Accordion */}
-        <div className="hidden lg:flex w-80 flex-col gap-4 flex-shrink-0">
-          <button className="glass-button w-full flex items-center justify-center gap-2">
-            <Plus size={18} /> New Chat
-          </button>
-          
-          <div className="glass-card flex-1 p-4 flex flex-col overflow-hidden">
-            <div className="flex items-center gap-2 p-1 bg-white/5 rounded-xl mb-4 flex-shrink-0">
-              {['History', 'Syllabus', 'Quizzes'].map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab.toLowerCase() as 'history'|'syllabus'|'quizzes')}
-                  className={cn(
-                    "flex-1 text-xs font-bold py-1.5 rounded-lg transition-all",
-                    activeTab === tab.toLowerCase() ? "bg-teal text-navy-900 shadow-md scale-105" : "text-muted-foreground hover:text-teal hover:bg-white/5"
+        <AnimatePresence>
+          {!isNavCollapsed && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 320, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              className="hidden lg:flex w-80 flex-col gap-4 flex-shrink-0 overflow-hidden"
+            >
+              <button className="glass-button w-full flex items-center justify-center gap-2">
+                <Plus size={18} /> New Chat
+              </button>
+              
+              <div className="glass-card flex-1 p-4 flex flex-col overflow-hidden">
+                <div className="flex items-center gap-2 p-1 bg-white/5 rounded-xl mb-4 flex-shrink-0">
+                  {['History', 'Syllabus', 'Quizzes'].map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab.toLowerCase() as 'history'|'syllabus'|'quizzes')}
+                      className={cn(
+                        "flex-1 text-xs font-bold py-1.5 rounded-lg transition-all",
+                        activeTab === tab.toLowerCase() ? "bg-teal text-navy-900 shadow-md scale-105" : "text-muted-foreground hover:text-teal hover:bg-white/5"
+                      )}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex-1 overflow-y-auto no-scrollbar">
+                  {activeTab === 'history' && (
+                    <div className="space-y-2">
+                      <div className="relative mb-4">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                        <input 
+                          type="text" 
+                          placeholder="Search history..." 
+                          className="glass-input w-full pl-9 pr-4 py-2 text-sm"
+                        />
+                      </div>
+                      {subjects.slice(0, 4).map((sub: any) => {
+                        const inProgressTopic = sub.modules?.flatMap((m: any) => m.subTopics || []).find((t: any) => t.status === 'in-progress');
+                        const topicName = inProgressTopic?.title || sub.name;
+                        return (
+                          <div
+                            key={sub.id}
+                            onClick={() => handleTopicSelect(topicName, sub.name)}
+                            className="p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-colors group relative border border-transparent hover:border-white/5"
+                          >
+                            <p className="text-sm font-medium truncate pr-6">Help with {topicName}</p>
+                            <div className="flex items-center justify-between mt-1">
+                              <p className="text-[10px] text-teal">{sub.name}</p>
+                              <p className="text-[10px] text-muted-foreground">{sub.progress}% done</p>
+                            </div>
+                            <button className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-coral transition-all">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
 
-            <div className="flex-1 overflow-y-auto no-scrollbar">
-              {activeTab === 'history' && (
-                <div className="space-y-2">
-                  <div className="relative mb-4">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                    <input 
-                      type="text" 
-                      placeholder="Search history..." 
-                      className="glass-input w-full pl-9 pr-4 py-2 text-sm"
+                  {activeTab === 'syllabus' && (
+                    <SyllabusAccordion 
+                      subjects={subjects}
+                      onSelectTopic={handleTopicSelect} 
+                      defaultSubjectName={urlSubject}
+                      activeTopicTitle={activeTopicTitle}
                     />
-                  </div>
-                  {subjects.slice(0, 4).map((sub: any) => {
-                    const inProgressTopic = sub.modules?.flatMap((m: any) => m.subTopics || []).find((t: any) => t.status === 'in-progress');
-                    const topicName = inProgressTopic?.title || sub.name;
-                    return (
-                      <div
-                        key={sub.id}
-                        onClick={() => handleTopicSelect(topicName, sub.name)}
-                        className="p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-colors group relative border border-transparent hover:border-white/5"
-                      >
-                        <p className="text-sm font-medium truncate pr-6">Help with {topicName}</p>
-                        <div className="flex items-center justify-between mt-1">
-                          <p className="text-[10px] text-teal">{sub.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{sub.progress}% done</p>
-                        </div>
-                        <button className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-coral transition-all">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                  )}
 
-              {activeTab === 'syllabus' && (
-                <SyllabusAccordion 
-                  subjects={subjects}
-                  onSelectTopic={handleTopicSelect} 
-                  defaultSubjectName={urlSubject}
-                  activeTopicTitle={activeTopicTitle}
-                />
-              )}
-
-              {activeTab === 'quizzes' && (
-                <div className="space-y-2">
-                  {quizzes.map((quiz: any) => {
-                    const isCompleted = quiz.attempts && quiz.attempts.length > 0;
-                    return (
-                      <div key={quiz.id} className="p-3 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer transition-colors border border-white/5">
-                        <p className="text-sm font-medium leading-tight mb-1">{quiz.title}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground">{quiz.subject?.name}</span>
-                          <span className={cn(
-                            "text-[10px] px-1.5 py-0.5 rounded-full",
-                            isCompleted ? "bg-teal/20 text-teal" : "bg-coral/20 text-coral"
-                          )}>
-                            {isCompleted ? 'completed' : 'pending'}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {activeTab === 'quizzes' && (
+                    <div className="space-y-2">
+                      {quizzes.map((quiz: any) => {
+                        const isCompleted = quiz.attempts && quiz.attempts.length > 0;
+                        return (
+                          <div key={quiz.id} className="p-3 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer transition-colors border border-white/5">
+                            <p className="text-sm font-medium leading-tight mb-1">{quiz.title}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] text-muted-foreground">{quiz.subject?.name}</span>
+                              <span className={cn(
+                                "text-[10px] px-1.5 py-0.5 rounded-full",
+                                isCompleted ? "bg-teal/20 text-teal" : "bg-coral/20 text-coral"
+                              )}>
+                                {isCompleted ? 'completed' : 'pending'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* MAIN CONSOLE AREA */}
         <div
@@ -807,8 +819,20 @@ function AITutorContent() {
         >
           {/* Header */}
           <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between glass-navbar z-10 rounded-t-xl flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-teal">
+            <div className="flex items-center gap-3.5">
+              <button 
+                onClick={() => setIsNavCollapsed(!isNavCollapsed)}
+                className={cn(
+                  "p-2 rounded-xl transition-all duration-200 border flex-shrink-0",
+                  isNavCollapsed 
+                    ? "bg-teal/10 border-teal/20 text-teal hover:bg-teal/20" 
+                    : "bg-white/5 border-white/5 text-muted-foreground hover:text-white hover:bg-white/10"
+                )}
+                title={isNavCollapsed ? "Expand Syllabus Navigation" : "Collapse Syllabus Navigation"}
+              >
+                <BookOpen size={16} />
+              </button>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-teal flex-shrink-0">
                 <Bot size={22} />
               </div>
               <div>
