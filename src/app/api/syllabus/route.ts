@@ -6,13 +6,54 @@ import { authOptions } from '@/lib/auth';
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role;
-    const schoolId = (session?.user as any)?.schoolId;
-    const studentId = (session?.user as any)?.id;
-    const standard = (session?.user as any)?.standard || '10'; // Default to 10 for teachers/admins without specific standard context right now
+    const { searchParams } = new URL(request.url);
+    const queryEmail = searchParams.get('userEmail');
+
+    let userRole = (session?.user as any)?.role;
+    let schoolId = (session?.user as any)?.schoolId;
+    let studentId = (session?.user as any)?.id;
+    let standard = (session?.user as any)?.standard;
+
+    // Resolve user details using query parameter or session email
+    const targetEmail = queryEmail || session?.user?.email;
+
+    if (targetEmail) {
+      const dbUser = await prisma.user.findUnique({
+        where: { email: targetEmail },
+        include: {
+          class: true
+        }
+      });
+      if (dbUser) {
+        if (!userRole) userRole = dbUser.role;
+        if (!schoolId) schoolId = dbUser.schoolId;
+        if (!studentId && dbUser.role === 'STUDENT') studentId = dbUser.id;
+        if (!standard && dbUser.class?.standard) {
+          standard = dbUser.class.standard;
+        }
+      }
+    }
+
+    // Secondary fallback using database lookup via session studentId
+    if (!standard && userRole === 'STUDENT' && studentId) {
+      const studentUser = await prisma.user.findUnique({
+        where: { id: studentId },
+        include: {
+          class: true
+        }
+      });
+      if (studentUser?.class?.standard) {
+        standard = studentUser.class.standard;
+      }
+    }
+
+    // Default to '8' since most syllabus seed data is for 8th standard
+    if (!standard) {
+      standard = '8';
+    }
 
     if (!session || !schoolId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized: School context missing' }, { status: 401 });
     }
 
     const colors: Record<string, string> = {
