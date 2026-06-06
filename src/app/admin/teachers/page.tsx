@@ -1,28 +1,38 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Plus, MoreHorizontal, Mail, Phone, BookOpen, Trash2, Edit } from "lucide-react";
+import { 
+  Search, Plus, Trash2, Edit, Mail, Phone, BookOpen, UserCheck, 
+  Lock, ShieldAlert, Award, Check, X, Clipboard
+} from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { toast } from "sonner";
 import AcademicNavigationTabs from "@/components/ui/AcademicNavigationTabs";
+import { cn } from "@/lib/utils";
 
 export default function AdminTeachersPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newTeacher, setNewTeacher] = useState({ name: "", email: "", password: "", phone: "", employeeId: "", primarySubject: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState<{isOpen: boolean; id: string; name: string}>({isOpen: false, id: '', name: ''});
-  
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingTeacher, setEditingTeacher] = useState({ id: "", name: "", email: "", password: "", phone: "", employeeId: "", primarySubject: "" });
-
   const userName = useAppStore(s => s.userName);
   const userEmail = useAppStore(s => s.userEmail);
   const schoolName = useAppStore(s => s.schoolName);
+
+  const [teachers, setTeachers] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTeacherId, setActiveTeacherId] = useState<string | null>(null);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newTeacher, setNewTeacher] = useState({ name: "", email: "", password: "", phone: "", employeeId: "", primarySubject: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState({ id: "", name: "", email: "", password: "", phone: "", employeeId: "", primarySubject: "" });
+  
+  const [confirmDelete, setConfirmDelete] = useState<{isOpen: boolean; id: string; name: string}>({isOpen: false, id: '', name: ''});
+  const [teacherPasswordResetVal, setTeacherPasswordResetVal] = useState("");
+  const [isResettingTeacher, setIsResettingTeacher] = useState(false);
 
   const handleOpenEditModal = (teacher: any) => {
     setEditingTeacher({
@@ -49,7 +59,7 @@ export default function AdminTeachersPage() {
       if (res.ok) {
         toast.success("Teacher details updated successfully");
         setIsEditModalOpen(false);
-        fetchTeachers();
+        fetchData();
       } else {
         const data = await res.json();
         toast.error(data.error || "Failed to update teacher");
@@ -61,19 +71,34 @@ export default function AdminTeachersPage() {
     setIsSubmitting(false);
   };
 
-  const fetchTeachers = () => {
-    fetch('/api/admin/teachers')
-      .then(res => res.json())
-      .then(d => {
-        if (d.teachers) setTeachers(d.teachers);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+  const fetchData = async () => {
+    try {
+      const [teachersRes, classesRes] = await Promise.all([
+        fetch('/api/admin/teachers'),
+        fetch(`/api/admin/classes?adminEmail=${userEmail || 'admin@dps-hyd.edu'}`)
+      ]);
+      const teachersData = await teachersRes.json();
+      const classesData = await classesRes.json();
+      
+      if (teachersData.teachers) {
+        setTeachers(teachersData.teachers);
+        if (teachersData.teachers.length > 0) {
+          setActiveTeacherId(prev => prev || teachersData.teachers[0].id);
+        }
+      }
+      if (classesData.classes) {
+        setClasses(classesData.classes);
+      }
+    } catch (err) {
+      console.error("Error fetching workspace data:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchTeachers();
-  }, []);
+    fetchData();
+  }, [userEmail]);
 
   const handleAddTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,7 +113,7 @@ export default function AdminTeachersPage() {
         toast.success("Teacher added successfully");
         setIsAddModalOpen(false);
         setNewTeacher({ name: "", email: "", password: "", phone: "", employeeId: "", primarySubject: "" });
-        fetchTeachers(); // Refresh list
+        fetchData();
       } else {
         const data = await res.json();
         toast.error(data.error || "Failed to add teacher");
@@ -112,7 +137,11 @@ export default function AdminTeachersPage() {
       });
       if (res.ok) {
         toast.success("Teacher deleted successfully");
-        fetchTeachers();
+        // Clear active selection if it was the deleted teacher
+        if (activeTeacherId === teacherId) {
+          setActiveTeacherId(null);
+        }
+        fetchData();
       } else {
         const err = await res.json();
         toast.error(err.error || "Failed to delete teacher");
@@ -124,11 +153,87 @@ export default function AdminTeachersPage() {
     setConfirmDelete({ isOpen: false, id: '', name: '' });
   };
 
+  const handleResetPassword = async (targetUserId: string) => {
+    if (!teacherPasswordResetVal || teacherPasswordResetVal.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      return;
+    }
+    setIsResettingTeacher(true);
+    try {
+      const res = await fetch('/api/admin/users/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: targetUserId, password: teacherPasswordResetVal })
+      });
+      if (res.ok) {
+        toast.success("Teacher password reset successfully!");
+        setTeacherPasswordResetVal("");
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to reset password");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    } finally {
+      setIsResettingTeacher(false);
+    }
+  };
+
+  // Get teacher subject and section assignments from classes structure
+  const getTeacherAssignments = (teacherId: string) => {
+    const assignments: any[] = [];
+    classes.forEach(c => {
+      c.sections.forEach((sec: any) => {
+        // Check if teacher is class teacher
+        const isClassTeacher = sec.classTeacherId === teacherId || sec.classTeacher?.name === teachers.find(t => t.id === teacherId)?.name;
+        
+        // Scan sectionSubjects
+        let taughtAny = false;
+        sec.sectionSubjects?.forEach((ss: any) => {
+          if (ss.teacher?.id === teacherId) {
+            assignments.push({
+              classId: sec.id,
+              className: c.name,
+              sectionName: sec.name,
+              standard: c.grade,
+              subjectId: ss.subject.id,
+              subjectName: ss.subject.name,
+              subjectCode: ss.subject.code,
+              subjectColor: ss.subject.color,
+              isClassTeacher
+            });
+            taughtAny = true;
+          }
+        });
+
+        // If class teacher but doesn't teach any subject in this section, add as supervisory assignment
+        if (isClassTeacher && !taughtAny) {
+          assignments.push({
+            classId: sec.id,
+            className: c.name,
+            sectionName: sec.name,
+            standard: c.grade,
+            subjectId: "class-teacher-role",
+            subjectName: "Class Supervision",
+            subjectCode: "MGMT",
+            subjectColor: "#14b8a6",
+            isClassTeacher: true
+          });
+        }
+      });
+    });
+    return assignments;
+  };
+
+  // Filter teachers list by search input
   const filteredTeachers = teachers.filter((t) => 
     t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     t.subjects?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const activeTeacher = teachers.find(t => t.id === activeTeacherId);
+  const activeAssignments = activeTeacher ? getTeacherAssignments(activeTeacher.id) : [];
 
   if (loading) {
     return (
@@ -147,78 +252,223 @@ export default function AdminTeachersPage() {
       pageSubtitle="Manage your school's classes, curriculum, teachers, and students in a single workspace."
     >
       <AcademicNavigationTabs />
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="relative w-full sm:w-80">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search teachers by name or subject..." 
-              className="glass-input pl-10 pr-4 py-2 w-full text-sm" 
-            />
+
+      <div className="grid lg:grid-cols-12 gap-6 items-start">
+        {/* LEFT DIRECTORY TREE LIST (40% width / 5 cols) */}
+        <div className="lg:col-span-4 bg-black/20 border border-white/5 rounded-2xl flex flex-col overflow-hidden max-h-[75vh]">
+          <div className="p-4 border-b border-white/5 bg-white/3 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <BookOpen size={14} className="text-teal" /> Faculty Directory
+              </h3>
+              <button 
+                onClick={() => setIsAddModalOpen(true)}
+                className="text-[10px] bg-teal/10 hover:bg-teal/20 text-teal px-2.5 py-1.5 rounded-xl border border-teal/20 transition-all flex items-center gap-1 font-semibold"
+              >
+                <Plus size={12}/> Add Teacher
+              </button>
+            </div>
+            
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search name or subject..." 
+                className="glass-input pl-9 pr-3 py-1.5 w-full text-xs rounded-xl" 
+              />
+            </div>
           </div>
-          <button 
-            onClick={() => setIsAddModalOpen(true)}
-            className="glass-button px-4 py-2 flex items-center gap-2 text-sm w-full sm:w-auto justify-center"
-          >
-            <Plus size={16} /> Add Teacher
-          </button>
+
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar">
+            {filteredTeachers.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic text-center p-6">No teachers found matching criteria.</p>
+            ) : (
+              filteredTeachers.map((teacher) => {
+                const isActive = activeTeacherId === teacher.id;
+                return (
+                  <button
+                    key={teacher.id}
+                    onClick={() => {
+                      setActiveTeacherId(teacher.id);
+                      setTeacherPasswordResetVal("");
+                    }}
+                    className={cn(
+                      "w-full p-3 rounded-xl border text-left transition-all duration-200 flex items-center gap-3 relative overflow-hidden group",
+                      isActive
+                        ? "bg-teal/10 border-teal/30 text-teal"
+                        : "bg-white/3 border-white/5 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-xs font-bold text-teal flex-shrink-0 border border-teal/10">
+                      {teacher.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold truncate text-foreground">{teacher.name}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] bg-white/10 text-teal/80 px-1.5 py-0.2 rounded-md font-medium border border-teal/10 uppercase tracking-tight">
+                          {teacher.subjects}
+                        </span>
+                        {teacher.classes !== "None" && (
+                          <span className="text-[9px] text-muted-foreground/80 truncate max-w-[100px]">
+                            • Class Teacher
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {isActive && (
+                      <div className="absolute top-0 right-0 w-2 h-2 rounded-bl bg-teal" />
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTeachers.map((teacher) => (
-            <div key={teacher.id} className="glass-card-static p-6 rounded-2xl relative overflow-hidden group">
-              <div className="absolute top-4 right-4 flex items-center gap-1">
-                <button 
-                  onClick={() => handleOpenEditModal(teacher)}
-                  className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-teal transition-colors"
-                  title="Edit Teacher"
-                >
-                  <Edit size={14} />
-                </button>
-                <button 
-                  onClick={() => handleDeleteTeacher(teacher.id, teacher.name)}
-                  className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-coral transition-colors"
-                  title="Delete Teacher"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-              
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-lg font-bold text-teal flex-shrink-0">
-                  {teacher.name.split(" ").map((n: string) => n[0]).join("").substring(0,2)}
+        {/* RIGHT DETAIL WORKSPACE CARD (60% width / 8 cols) */}
+        <div className="lg:col-span-8 bg-black/10 border border-white/5 rounded-2xl flex flex-col overflow-hidden min-h-[50vh]">
+          {activeTeacher ? (
+            <>
+              {/* Header profile cards */}
+              <div className="p-5 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/3">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-base font-bold text-teal border border-teal/30 shadow-inner">
+                    {activeTeacher.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-foreground">{activeTeacher.name}</h2>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] bg-teal/10 border border-teal/20 text-teal px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                        {activeTeacher.subjects} SPECIALIST
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-mono">ID: {activeTeacher.employeeId}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg">{teacher.name}</h3>
-                  <p className="text-sm text-teal font-medium truncate w-40" title={teacher.primarySubject || teacher.subjects}>
-                    {teacher.primarySubject || teacher.subjects}
-                  </p>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleOpenEditModal(activeTeacher)}
+                    className="glass-button text-[11px] px-3.5 py-2 flex items-center gap-1.5"
+                    title="Edit Profile details"
+                  >
+                    <Edit size={12} /> Edit Details
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTeacher(activeTeacher.id, activeTeacher.name)}
+                    className="glass-button text-[11px] border-coral/30 text-coral hover:bg-coral/10 px-3.5 py-2 flex items-center gap-1.5"
+                    title="Delete Teacher Registry"
+                  >
+                    <Trash2 size={12} /> Remove Teacher
+                  </button>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-3">
-                    <BookOpen size={16} className="text-foreground/50 shrink-0" />
-                    <span className="truncate" title={teacher.classes}>Classes: {teacher.classes}</span>
+              {/* Profile body Workspace layout */}
+              <div className="p-5 space-y-6">
+                {/* Contact grid */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-white/3 border border-white/5 rounded-xl space-y-2.5">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Official Contact</span>
+                    
+                    <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+                      <Mail size={14} className="text-teal shrink-0" />
+                      <a href={`mailto:${activeTeacher.email}`} className="text-foreground hover:underline truncate">{activeTeacher.email}</a>
+                    </div>
+                    <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+                      <Phone size={14} className="text-teal shrink-0" />
+                      <span className="text-foreground">{activeTeacher.phone}</span>
+                    </div>
+                  </div>
+
+                  {/* Password Reset Section */}
+                  <div className="p-4 bg-white/3 border border-white/5 rounded-xl space-y-3.5">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block flex items-center gap-1.5">
+                      <Lock size={12} className="text-teal" /> Reset Password
+                    </span>
+                    <div className="flex gap-2">
+                      <input
+                        type="password"
+                        placeholder="Enter new password"
+                        value={teacherPasswordResetVal}
+                        onChange={(e) => setTeacherPasswordResetVal(e.target.value)}
+                        className="glass-input flex-1 px-3 py-1.5 text-xs rounded-xl"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleResetPassword(activeTeacher.id)}
+                        disabled={isResettingTeacher || !teacherPasswordResetVal}
+                        className="glass-button text-xs px-3.5 py-1.5 rounded-xl disabled:opacity-50"
+                      >
+                        {isResettingTeacher ? "Saving..." : "Reset"}
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Mail size={16} className="text-foreground/50 shrink-0" />
-                  <span className="truncate" title={teacher.email}>{teacher.email}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Phone size={16} className="text-foreground/50 shrink-0" />
-                  <span>{teacher.phone}</span>
+
+                {/* Matrix Active Teaching Assignments */}
+                <div className="space-y-3.5">
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2 pl-1">
+                    <UserCheck size={14} className="text-teal" /> Active Teaching Assignment Matrix
+                  </h3>
+
+                  <div className="glass-card-static rounded-xl overflow-hidden border border-white/5">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-white/5 border-b border-white/5">
+                          <th className="py-2.5 px-3 text-[10px] font-bold text-muted-foreground uppercase">Classroom Section</th>
+                          <th className="py-2.5 px-3 text-[10px] font-bold text-muted-foreground uppercase">Assigned Subject</th>
+                          <th className="py-2.5 px-3 text-[10px] font-bold text-muted-foreground uppercase">Subject Code</th>
+                          <th className="py-2.5 px-3 text-[10px] font-bold text-muted-foreground uppercase text-right">Role Badge</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {activeAssignments.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="py-8 text-center text-muted-foreground italic">
+                              This teacher is currently not assigned to any standard curriculum subjects or classroom supervisions.
+                            </td>
+                          </tr>
+                        ) : (
+                          activeAssignments.map((assign, index) => (
+                            <tr key={index} className="hover:bg-white/3 transition-colors">
+                              <td className="py-2.5 px-3 font-semibold text-foreground">
+                                Grade {assign.standard} - Section {assign.sectionName}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <span className="inline-flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: assign.subjectColor }} />
+                                  {assign.subjectName}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 font-mono text-muted-foreground uppercase text-[10px]">
+                                {assign.subjectCode}
+                              </td>
+                              <td className="py-2.5 px-3 text-right">
+                                {assign.isClassTeacher ? (
+                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-teal/15 text-teal border border-teal/20">
+                                    Class Teacher
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-white/10 text-muted-foreground">
+                                    Subject Faculty
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-          {filteredTeachers.length === 0 && (
-            <div className="col-span-full text-center py-12 text-muted-foreground">
-              No teachers found matching "{searchQuery}".
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground min-h-[300px] space-y-3">
+              <Clipboard size={36} className="text-muted-foreground/30 animate-pulse" />
+              <p className="text-sm italic">Please select a teacher from the registry list on the left to inspect their academic credentials and assignments matrix.</p>
             </div>
           )}
         </div>
@@ -227,7 +477,7 @@ export default function AdminTeachersPage() {
       {/* ADD TEACHER MODAL */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative border border-white/10">
             <h3 className="text-xl font-bold mb-4">Add New Teacher</h3>
             <form onSubmit={handleAddTeacher} className="space-y-4">
               <div>
@@ -237,6 +487,7 @@ export default function AdminTeachersPage() {
                   value={newTeacher.name} 
                   onChange={e => setNewTeacher({...newTeacher, name: e.target.value})} 
                   className="glass-input w-full px-4 py-2 text-sm" 
+                  placeholder="e.g. Rachel Green"
                   required 
                 />
               </div>
@@ -247,6 +498,7 @@ export default function AdminTeachersPage() {
                   value={newTeacher.email} 
                   onChange={e => setNewTeacher({...newTeacher, email: e.target.value})} 
                   className="glass-input w-full px-4 py-2 text-sm" 
+                  placeholder="e.g. rachel@school.edu"
                   required 
                 />
               </div>
@@ -270,6 +522,7 @@ export default function AdminTeachersPage() {
                     value={newTeacher.phone} 
                     onChange={e => setNewTeacher({...newTeacher, phone: e.target.value})} 
                     className="glass-input w-full px-4 py-2 text-sm" 
+                    placeholder="e.g. +123456789"
                   />
                 </div>
                 <div>
@@ -279,11 +532,12 @@ export default function AdminTeachersPage() {
                     value={newTeacher.employeeId} 
                     onChange={e => setNewTeacher({...newTeacher, employeeId: e.target.value})} 
                     className="glass-input w-full px-4 py-2 text-sm" 
+                    placeholder="e.g. EMP-202"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-xs text-muted-foreground font-medium mb-1 block">Default Subject</label>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Primary Subject Speciality</label>
                 <input 
                   type="text" 
                   value={newTeacher.primarySubject} 
@@ -292,7 +546,7 @@ export default function AdminTeachersPage() {
                   className="glass-input w-full px-4 py-2 text-sm" 
                 />
               </div>
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+              <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-6">
                 <button 
                   type="button" 
                   onClick={() => setIsAddModalOpen(false)}
@@ -316,7 +570,7 @@ export default function AdminTeachersPage() {
       {/* EDIT TEACHER MODAL */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative border border-white/10">
             <h3 className="text-xl font-bold mb-4">Edit Teacher Details</h3>
             <form onSubmit={handleEditTeacher} className="space-y-4">
               <div>
@@ -371,7 +625,7 @@ export default function AdminTeachersPage() {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-muted-foreground font-medium mb-1 block">Default Subject</label>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Primary Subject Speciality</label>
                 <input 
                   type="text" 
                   value={editingTeacher.primarySubject} 
@@ -380,7 +634,7 @@ export default function AdminTeachersPage() {
                   className="glass-input w-full px-4 py-2 text-sm" 
                 />
               </div>
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+              <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-6">
                 <button 
                   type="button" 
                   onClick={() => setIsEditModalOpen(false)}

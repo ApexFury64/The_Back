@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Plus, Users, BookOpen, UserPlus, BookCopy, ChevronDown, Check, Trash2, Filter, Edit } from "lucide-react";
+import { Plus, Users, BookOpen, UserPlus, BookCopy, ChevronDown, Check, Trash2, Filter, Edit, School } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import AcademicNavigationTabs from "@/components/ui/AcademicNavigationTabs";
+import { cn } from "@/lib/utils";
 
 export default function AdminClassesPage() {
   const [classes, setClasses] = useState<any[]>([]);
@@ -13,6 +14,7 @@ export default function AdminClassesPage() {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [unassignedStudents, setUnassignedStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
   const [newClass, setNewClass] = useState({ name: "", grade: "", sections: "A,B,C" });
@@ -49,7 +51,14 @@ export default function AdminClassesPage() {
       const subjectsData = await subjectsRes.json();
       const studentsData = await studentsRes.json();
       
-      if (classesData.classes) setClasses(classesData.classes);
+      if (classesData.classes) {
+        setClasses(classesData.classes);
+        // Set first section active if none is active
+        const allSecs = classesData.classes.flatMap((c: any) => c.sections);
+        if (allSecs.length > 0) {
+          setActiveSectionId(prev => prev || allSecs[0].id);
+        }
+      }
       if (teachersData.teachers) setTeachers(teachersData.teachers);
       if (subjectsData.subjects) setSubjects(subjectsData.subjects);
       
@@ -307,20 +316,22 @@ export default function AdminClassesPage() {
     ? allSections 
     : allSections.filter(s => s.classGrade.toString() === selectedGradeFilter);
 
+  const activeSection = allSections.find(s => s.id === activeSectionId);
   const grades = ["All", ...Array.from(new Set(allSections.map(s => s.classGrade.toString()))).sort((a: any, b: any) => a - b)];
 
   return (
-    <DashboardLayout role="admin" userName={userName || "Admin"} schoolName={schoolName || "AI Tutor"} pageTitle="Academic Workspace" pageSubtitle="Manage your school's classes, curriculum, teachers, and students in a single workspace.">
+    <DashboardLayout role="admin" userName={userName || "Admin"} schoolName={schoolName || "AI Tutor"} pageTitle="Academic Workspace" pageSubtitle="Manage your school's classes, curriculum, teachers, and students.">
       <AcademicNavigationTabs />
 
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+      {/* Grade Level filter bar for the Sidebar Structure */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter size={16} className="text-muted-foreground shrink-0" />
-          <span className="text-xs font-semibold text-muted-foreground mr-1">Grade Level:</span>
+          <Filter size={14} className="text-muted-foreground shrink-0" />
+          <span className="text-xs font-semibold text-muted-foreground mr-1">Filter Sidebar:</span>
           <select
             value={selectedGradeFilter}
             onChange={(e) => setSelectedGradeFilter(e.target.value)}
-            className="glass-input px-3 py-1.5 text-xs bg-navy-950 text-teal font-medium border border-white/10 rounded-xl"
+            className="glass-input px-2.5 py-1 text-xs bg-navy-950 text-teal font-medium border border-white/10 rounded-xl"
           >
             {grades.map(grade => (
               <option key={grade} value={grade} className="bg-navy-950 text-white">
@@ -329,132 +340,253 @@ export default function AdminClassesPage() {
             ))}
           </select>
         </div>
-
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-          <button 
-            onClick={() => setIsCreateSubjectModalOpen(true)}
-            className="glass-button px-4 py-2 flex items-center gap-2 border border-teal/30 text-teal hover:bg-teal/10 text-xs"
-          >
-            <BookOpen size={14}/> Create Subject
-          </button>
-          <button 
-            onClick={() => setIsAddClassModalOpen(true)}
-            className="glass-button px-4 py-2 flex items-center gap-2 text-xs"
-          >
-            <Plus size={14}/> Create New Class
-          </button>
-        </div>
       </div>
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {sections.map(sec => (
-          <div key={sec.id} className="glass-card-static p-6 rounded-2xl space-y-4 relative">
-            <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-2">
-              <div>
-                <h3 className="text-xl font-bold flex items-center gap-2">
-                  {sec.className} - {sec.name} 
-                  <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full font-normal">Grade {sec.classGrade}</span>
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                  <Users size={12}/> {sec.students.length} Enrolled Students
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-teal/20 text-teal flex items-center justify-center shrink-0">
-                  <BookOpen size={20} />
-                </div>
-                <button
-                  onClick={() => handleDeleteClass(sec.id)}
-                  title="Delete Class Section"
-                  className="w-8 h-8 rounded-lg text-muted-foreground hover:bg-coral/20 hover:text-coral flex items-center justify-center transition-colors"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-
-            {/* Class Teacher Block */}
-            <div className="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5">
-              <div>
-                <div className="text-xs text-muted-foreground">Class Teacher</div>
-                <div className="font-semibold text-teal mt-0.5">
-                  {sec.classTeacher ? sec.classTeacher.name : <span className="text-amber italic font-normal">Unassigned</span>}
-                </div>
-              </div>
-              <button 
-                onClick={() => {
-                  setAssignData({ sectionId: sec.id, teacherId: sec.classTeacherId || "", sectionName: sec.name, className: sec.className });
-                  setIsAssignModalOpen(true);
-                }}
-                className="text-[10px] bg-white/10 hover:bg-white/20 text-muted-foreground px-2 py-1 rounded transition-colors flex items-center gap-1"
-              >
-                <UserPlus size={10} /> Assign Class Teacher
-              </button>
-            </div>
-
-            {/* Subject Teachers Block */}
-            <div className="space-y-2 pt-2">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-muted-foreground">Subjects Taught</h4>
-              </div>
-              
-              <div className="flex flex-col gap-2 mt-2">
-                {sec.sectionSubjects && sec.sectionSubjects.length > 0 ? (
-                  sec.sectionSubjects.map((ss: any) => (
-                    <div key={ss.id} className="text-xs flex items-center justify-between p-2 bg-white/5 border border-white/10 rounded-md group/sub animate-fade-in">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{ss.subject.name}</span>
-                        <div className="opacity-0 group-hover/sub:opacity-100 flex items-center gap-1 transition-opacity">
+      <div className="grid lg:grid-cols-12 gap-6 items-start">
+        {/* Left Tree Selection Sidebar (33% width / 4 cols) */}
+        <div className="lg:col-span-4 bg-black/20 border border-white/5 rounded-2xl flex flex-col overflow-hidden max-h-[70vh]">
+          <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/3">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <School size={14} className="text-teal" /> Class Structure
+            </h3>
+            <button 
+              onClick={() => setIsAddClassModalOpen(true)}
+              className="text-[10px] bg-teal/10 hover:bg-teal/20 text-teal px-2 py-1 rounded-md border border-teal/20 transition-all flex items-center gap-1 font-semibold"
+            >
+              <Plus size={10}/> Create Class
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+            {classes.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic text-center p-4">No classes found.</p>
+            ) : (
+              classes
+                .filter(c => selectedGradeFilter === "All" || c.grade.toString() === selectedGradeFilter)
+                .map(cls => (
+                  <div key={cls.id} className="space-y-1.5">
+                    <div className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-wider pl-1 flex items-center justify-between">
+                      <span>{cls.name}</span>
+                      <span className="text-[9px] font-normal lowercase text-muted-foreground/40">{cls.sections.length} sections</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {cls.sections.map((sec: any) => {
+                        const isActive = activeSectionId === sec.id;
+                        return (
                           <button
-                            onClick={() => handleOpenEditSubjectModal(ss.subject)}
-                            className="p-0.5 rounded text-muted-foreground hover:bg-white/10 hover:text-teal transition-all"
-                            title="Edit Subject"
+                            key={sec.id}
+                            onClick={() => {
+                              setActiveSectionId(sec.id);
+                              // Clear add student checks
+                              setAddStudentsData(prev => ({ ...prev, selectedStudentIds: [] }));
+                            }}
+                            className={cn(
+                              "p-3 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between h-20 group relative overflow-hidden",
+                              isActive
+                                ? "bg-teal/10 border-teal/30 text-teal"
+                                : "bg-white/3 border-white/5 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                            )}
                           >
-                            <Edit size={10} />
+                            <span className="text-xs font-bold block">Section {sec.name}</span>
+                            <span className="text-[10px] text-muted-foreground/80 mt-1">{sec.students?.length || 0} students</span>
+                            {isActive && (
+                              <div className="absolute top-0 right-0 w-2 h-2 rounded-bl-lg bg-teal" />
+                            )}
                           </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
+            )}
+          </div>
+        </div>
+
+        {/* Right Detail Workspace Panel (67% width / 8 cols) */}
+        <div className="lg:col-span-8 bg-black/10 border border-white/5 rounded-2xl flex flex-col overflow-hidden min-h-[50vh]">
+          {activeSection ? (
+            <>
+              {/* Header Details */}
+              <div className="p-5 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-foreground">{activeSection.className} - {activeSection.name}</h2>
+                    <span className="text-[10px] bg-teal/10 border border-teal/20 text-teal px-2 py-0.5 rounded-full font-semibold">Grade {activeSection.classGrade}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Class Teacher: <span className="font-semibold text-teal">{activeSection.classTeacher?.name || "Unassigned"}</span>
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => {
+                      setAssignData({ sectionId: activeSection.id, teacherId: activeSection.classTeacherId || "", sectionName: activeSection.name, className: activeSection.className });
+                      setIsAssignModalOpen(true);
+                    }}
+                    className="glass-button text-[11px] px-3 py-1.5 flex items-center gap-1"
+                  >
+                    <UserPlus size={12} /> Assign Class Teacher
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClass(activeSection.id)}
+                    className="glass-button text-[11px] border-coral/30 text-coral hover:bg-coral/10 px-3 py-1.5 flex items-center gap-1"
+                    title="Delete Class Section"
+                  >
+                    <Trash2 size={12} /> Delete Section
+                  </button>
+                </div>
+              </div>
+
+              {/* Console Workspace Tabs grid */}
+              <div className="p-5 grid md:grid-cols-2 gap-6 items-start">
+                
+                {/* Column 1: Curriculum / Subject Teacher Assignment */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <BookOpen size={14} className="text-teal" /> Subjects & Teachers
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setNewSubject(prev => ({ ...prev, standard: activeSection.classGrade.toString() }));
+                        setIsCreateSubjectModalOpen(true);
+                      }}
+                      className="text-[10px] text-teal hover:underline flex items-center gap-0.5"
+                    >
+                      <Plus size={10} /> Add Subject
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {activeSection.sectionSubjects && activeSection.sectionSubjects.length > 0 ? (
+                      activeSection.sectionSubjects.map((ss: any) => (
+                        <div key={ss.id} className="text-xs flex items-center justify-between p-3 bg-white/3 border border-white/5 rounded-xl group/sub transition-all hover:border-white/10">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-semibold text-foreground flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: ss.subject.color }} />
+                              {ss.subject.name}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground font-mono">{ss.subject.code}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {/* Hover Actions */}
+                            <div className="opacity-0 group-hover/sub:opacity-100 flex items-center gap-0.5 transition-opacity">
+                              <button
+                                onClick={() => handleOpenEditSubjectModal(ss.subject)}
+                                className="p-1 rounded text-muted-foreground hover:bg-white/10 hover:text-teal transition-all"
+                                title="Edit Subject"
+                              >
+                                <Edit size={12} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSubject(ss.subject.id, ss.subject.name)}
+                                className="p-1 rounded text-muted-foreground hover:bg-white/10 hover:text-coral transition-all"
+                                title="Delete Subject"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+
+                            <select
+                              value={ss.teacher.id}
+                              onChange={(e) => handleUpdateSubjectTeacher(activeSection.id, ss.subject.id, e.target.value)}
+                              className="bg-black/20 text-teal border border-white/5 rounded-lg focus:outline-none focus:ring-0 max-w-[120px] p-1 text-[11px] cursor-pointer hover:border-white/10 font-medium"
+                            >
+                              <option value="unassigned" className="bg-navy-950 text-muted-foreground">Unassigned</option>
+                              {teachers.map(t => (
+                                <option key={t.id} value={t.id} className="bg-navy-950 text-white">
+                                  {t.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-xs text-muted-foreground italic p-4 bg-white/3 rounded-xl border border-dashed border-white/5 text-center">
+                        No subjects added for Grade {activeSection.classGrade}.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Column 2: Enrolled Students List */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Users size={14} className="text-teal" /> Enrolled Students ({activeSection.students?.length || 0})
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setAddStudentsData({ sectionId: activeSection.id, sectionName: activeSection.name, className: activeSection.className, selectedStudentIds: [] });
+                        setIsAddStudentsModalOpen(true);
+                      }}
+                      className="text-[10px] text-teal hover:underline flex items-center gap-0.5"
+                    >
+                      <Plus size={10} /> Add Students
+                    </button>
+                  </div>
+
+                  <div className="space-y-2 max-h-80 overflow-y-auto pr-1 no-scrollbar">
+                    {activeSection.students && activeSection.students.length > 0 ? (
+                      activeSection.students.map((student: any) => (
+                        <div key={student.id} className="flex items-center justify-between p-2.5 bg-white/3 border border-white/5 rounded-xl hover:border-white/10 transition-all">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-[10px] font-bold text-teal flex-shrink-0">
+                              {student.name.split(" ").map((n: string) => n[0]).join("")}
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-foreground">{student.name}</p>
+                              <p className="text-[9px] text-muted-foreground">{student.email}</p>
+                            </div>
+                          </div>
+                          
                           <button
-                            onClick={() => handleDeleteSubject(ss.subject.id, ss.subject.name)}
-                            className="p-0.5 rounded text-muted-foreground hover:bg-white/10 hover:text-coral transition-all"
-                            title="Delete Subject"
+                            onClick={async () => {
+                              if (window.confirm(`Are you sure you want to unassign ${student.name} from this class section?`)) {
+                                try {
+                                  const res = await fetch('/api/admin/sections/remove-student', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ studentId: student.id })
+                                  });
+                                  if (res.ok) {
+                                    toast.success("Student removed from section");
+                                    fetchData();
+                                  } else {
+                                    toast.error("Failed to remove student");
+                                  }
+                                } catch (err) {
+                                  toast.error("Network error");
+                                }
+                              }
+                            }}
+                            className="p-1 rounded text-muted-foreground hover:bg-white/10 hover:text-coral transition-all"
+                            title="Remove student from class"
                           >
-                            <Trash2 size={10} />
+                            <Trash2 size={12} />
                           </button>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-xs text-muted-foreground italic p-4 bg-white/3 rounded-xl border border-dashed border-white/5 text-center">
+                        No students enrolled in this section yet.
                       </div>
-                      <select
-                        value={ss.teacher.id}
-                        onChange={(e) => handleUpdateSubjectTeacher(sec.id, ss.subject.id, e.target.value)}
-                        className="bg-transparent text-teal border-none focus:outline-none focus:ring-0 max-w-[150px] text-right cursor-pointer hover:text-teal font-medium text-xs"
-                      >
-                        <option value="unassigned" className="bg-navy-950 text-muted-foreground">Unassigned</option>
-                        {teachers.map(t => (
-                          <option key={t.id} value={t.id} className="bg-navy-950 text-white">
-                            {t.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-xs text-muted-foreground italic p-2 bg-white/5 rounded border border-white/5 text-center">No subjects added yet. Create a subject for this class above.</div>
-                )}
+                    )}
+                  </div>
+                </div>
+
               </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground min-h-[300px] space-y-3">
+              <School size={36} className="text-muted-foreground/30 animate-pulse" />
+              <p className="text-sm italic">Please select a class section from the structure tree to view and manage curriculum assignments.</p>
             </div>
-            
-            {/* Add Students Button */}
-            <div className="pt-2">
-               <button 
-                  onClick={() => {
-                    setAddStudentsData({ sectionId: sec.id, sectionName: sec.name, className: sec.className, selectedStudentIds: [] });
-                    setIsAddStudentsModalOpen(true);
-                  }}
-                  className="w-full text-xs bg-white/5 hover:bg-white/10 text-muted-foreground px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 border border-white/10"
-                >
-                  <Users size={12} /> Manage Students
-                </button>
-            </div>
-          </div>
-        ))}
+          )}
+        </div>
       </div>
 
       {/* CREATE SUBJECT MODAL */}
