@@ -48,13 +48,51 @@ export async function GET(request: Request) {
       submissions: a.submissions.length
     }));
 
-    const totalStudents = teacherData.taughtClasses.reduce((acc, c) => acc + c.students.length, 0);
+    const baseConditions: any[] = [
+      { classTeacherId: teacherData.id },
+      { assignments: { some: { teacherId: teacherData.id } } }
+    ];
+
+    if (teacherData.schoolId) {
+      const settingKey = `section_subject_teachers_${teacherData.schoolId}`;
+      const setting = await prisma.setting.findUnique({ where: { key: settingKey } });
+      if (setting) {
+        try {
+          const mappings: Record<string, string> = JSON.parse(setting.value);
+          const assignedClassIds: string[] = [];
+          for (const [key, val] of Object.entries(mappings)) {
+            if (val === teacherData.id) {
+              const [classId] = key.split('_');
+              if (classId) {
+                assignedClassIds.push(classId);
+              }
+            }
+          }
+          if (assignedClassIds.length > 0) {
+            baseConditions.push({ id: { in: assignedClassIds } });
+          }
+        } catch (e) {
+          console.error('Error parsing settings for dashboard:', e);
+        }
+      }
+    }
+
+    const assignedClassRooms = await prisma.classRoom.findMany({
+      where: {
+        OR: baseConditions
+      },
+      include: {
+        students: true
+      }
+    });
+
+    const totalStudents = assignedClassRooms.reduce((acc, c) => acc + c.students.length, 0);
 
     const teacherStats = [
-      { title: 'Total Students', value: totalStudents.toString(), trend: `Across ${teacherData.taughtClasses.length} classes`, icon: 'Users', trendUp: true },
+      { title: 'Total Students', value: totalStudents.toString(), trend: `Across ${assignedClassRooms.length} classes`, icon: 'Users', trendUp: true },
       { title: 'Avg Class Score', value: '84%', trend: 'Good performance', icon: 'TrendingUp', trendUp: true },
       { title: 'Pending Grades', value: '0', trend: 'Needs attention', icon: 'FileCheck', trendUp: false },
-      { title: 'Classes Assigned', value: teacherData.taughtClasses.length.toString(), trend: 'Subject teacher', icon: 'School', trendUp: true },
+      { title: 'Classes Assigned', value: assignedClassRooms.length.toString(), trend: 'Subject teacher', icon: 'School', trendUp: true },
     ];
 
     const performanceData = [
@@ -65,7 +103,7 @@ export async function GET(request: Request) {
       { name: 'Week 5', value: 82, value2: 79 },
     ];
     
-    const teacherClasses = teacherData.taughtClasses.map(c => ({
+    const teacherClasses = assignedClassRooms.map(c => ({
       id: c.id,
       name: c.name,
       grade: parseInt(c.standard) || 0,

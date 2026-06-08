@@ -9,16 +9,44 @@ export async function GET(request: Request) {
     const userRole = (session?.user as any)?.role;
     const teacherId = (session?.user as any)?.id;
 
+    const schoolId = (session?.user as any)?.schoolId;
+
     if (!session || userRole !== 'TEACHER' || !teacherId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const baseConditions: any[] = [
+      { classTeacherId: teacherId },
+      { assignments: { some: { teacherId } } }
+    ];
+
+    if (schoolId) {
+      const settingKey = `section_subject_teachers_${schoolId}`;
+      const setting = await prisma.setting.findUnique({ where: { key: settingKey } });
+      if (setting) {
+        try {
+          const mappings: Record<string, string> = JSON.parse(setting.value);
+          const assignedClassIds: string[] = [];
+          for (const [key, val] of Object.entries(mappings)) {
+            if (val === teacherId) {
+              const [classId] = key.split('_');
+              if (classId) {
+                assignedClassIds.push(classId);
+              }
+            }
+          }
+          if (assignedClassIds.length > 0) {
+            baseConditions.push({ id: { in: assignedClassIds } });
+          }
+        } catch (e) {
+          console.error('Error parsing section subject teachers settings for students:', e);
+        }
+      }
+    }
+
     const classRooms = await prisma.classRoom.findMany({
       where: {
-        OR: [
-          { classTeacherId: teacherId },
-          { assignments: { some: { teacherId } } }
-        ]
+        OR: baseConditions
       },
       include: {
         students: {

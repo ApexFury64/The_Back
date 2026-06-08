@@ -49,18 +49,107 @@ export async function GET(request: Request) {
     }));
 
     // For creating an assignment, a teacher needs a list of classes and subjects they can assign to.
-    const classes = teacher.taughtClasses;
+    const baseConditions: any[] = [
+      { classTeacherId: teacher.id },
+      { assignments: { some: { teacherId: teacher.id } } }
+    ];
+
+    if (teacher.schoolId) {
+      const settingKey = `section_subject_teachers_${teacher.schoolId}`;
+      const setting = await prisma.setting.findUnique({ where: { key: settingKey } });
+      if (setting) {
+        try {
+          const mappings: Record<string, string> = JSON.parse(setting.value);
+          const assignedClassIds: string[] = [];
+          for (const [key, val] of Object.entries(mappings)) {
+            if (val === teacher.id) {
+              const [classId] = key.split('_');
+              if (classId) {
+                assignedClassIds.push(classId);
+              }
+            }
+          }
+          if (assignedClassIds.length > 0) {
+            baseConditions.push({ id: { in: assignedClassIds } });
+          }
+        } catch (e) {
+          console.error('Error parsing settings for teacher assignments:', e);
+        }
+      }
+    }
+
+    const classes = await prisma.classRoom.findMany({
+      where: {
+        OR: baseConditions
+      }
+    });
+
     const subjects = await prisma.subject.findMany({ where: { schoolId: teacher.schoolId } });
 
     const sectionSubjects: any[] = [];
-    classes.forEach(c => {
+    const addedKeys = new Set<string>();
+
+    // 1. Process explicit subject-teacher assignments from Settings
+    if (teacher.schoolId) {
+      const settingKey = `section_subject_teachers_${teacher.schoolId}`;
+      const setting = await prisma.setting.findUnique({ where: { key: settingKey } });
+      if (setting) {
+        try {
+          const mappings: Record<string, string> = JSON.parse(setting.value);
+          for (const [key, val] of Object.entries(mappings)) {
+            if (val === teacher.id) {
+              const [cId, sId] = key.split('_');
+              const targetClass = classes.find(cr => cr.id === cId);
+              const targetSubject = subjects.find(sub => sub.id === sId);
+              if (targetClass && targetSubject) {
+                const comboKey = `${targetClass.id}_${targetSubject.id}`;
+                if (!addedKeys.has(comboKey)) {
+                  addedKeys.add(comboKey);
+                  sectionSubjects.push({
+                    id: comboKey,
+                    section: { name: targetClass.section, class: { name: `Class ${targetClass.standard}` } },
+                    subject: { name: targetSubject.name }
+                  });
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing settings for teacher assignments combo:', e);
+        }
+      }
+    }
+
+    // 2. Process class teacher classroom assignments (all subjects for their standard)
+    const classTeacherRooms = classes.filter(c => c.classTeacherId === teacher.id);
+    classTeacherRooms.forEach(c => {
       subjects.filter(s => s.standard === c.standard).forEach(s => {
-        sectionSubjects.push({
-          id: `${c.id}_${s.id}`, // Custom composite ID for the dropdown
-          section: { name: c.section, class: { name: `Class ${c.standard}` } },
-          subject: { name: s.name }
-        });
+        const comboKey = `${c.id}_${s.id}`;
+        if (!addedKeys.has(comboKey)) {
+          addedKeys.add(comboKey);
+          sectionSubjects.push({
+            id: comboKey,
+            section: { name: c.section, class: { name: `Class ${c.standard}` } },
+            subject: { name: s.name }
+          });
+        }
       });
+    });
+
+    // 3. Fallback: Include any classroom/subject combinations from previous assignments
+    formattedAssignments.forEach(a => {
+      const dbAssignment = assignments.find(da => da.id === a.id);
+      if (dbAssignment) {
+        const comboKey = `${dbAssignment.classId}_${dbAssignment.subjectId}`;
+        if (!addedKeys.has(comboKey)) {
+          addedKeys.add(comboKey);
+          sectionSubjects.push({
+            id: comboKey,
+            section: { name: dbAssignment.class.section, class: { name: `Class ${dbAssignment.class.standard}` } },
+            subject: { name: dbAssignment.subject.name }
+          });
+        }
+      }
     });
 
     return NextResponse.json({ assignments: formattedAssignments, sectionSubjects });
