@@ -261,33 +261,34 @@ export default function TeacherAssignmentsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-muted-foreground font-medium mb-1 block">Assign to Class Section</label>
-                  <select 
-                    value={newAssignment.sectionSubjectId}
-                    onChange={e => setNewAssignment({...newAssignment, sectionSubjectId: e.target.value})}
-                    className="glass-input w-full px-4 py-2 text-sm bg-navy-900" 
-                    required
-                  >
-                    <option value="" disabled>-- Select a Section --</option>
-                    {sectionSubjects.map(ss => (
-                      <option key={ss.id} value={ss.id}>
-                        {ss.section.class.name}-{ss.section.name} ({ss.subject.name})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground font-medium mb-1 block">Due Date</label>
-                  <input 
-                    type="date" 
-                    value={newAssignment.dueDate}
-                    onChange={e => setNewAssignment({...newAssignment, dueDate: e.target.value})}
-                    className="glass-input w-full px-4 py-2 text-sm bg-navy-900 [color-scheme:dark]" 
-                    required
-                  />
-                </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Assign to Class Section</label>
+                <select 
+                  value={newAssignment.sectionSubjectId}
+                  onChange={e => setNewAssignment({...newAssignment, sectionSubjectId: e.target.value})}
+                  className="glass-input w-full px-4 py-2 text-sm" 
+                  required
+                >
+                  <option value="" disabled>-- Select a Section --</option>
+                  {sectionSubjects.map(ss => (
+                    <option key={ss.id} value={ss.id}>
+                      {ss.section.class.name}-{ss.section.name} ({ss.subject.name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Due Date</label>
+                <input 
+                  type="date" 
+                  value={newAssignment.dueDate}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={e => setNewAssignment({...newAssignment, dueDate: e.target.value})}
+                  style={{ colorScheme: 'dark' }}
+                  className="glass-input w-full px-4 py-2.5 text-sm text-foreground bg-white/5 border border-white/10 rounded-xl cursor-pointer" 
+                  required
+                />
               </div>
 
               <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-2">
