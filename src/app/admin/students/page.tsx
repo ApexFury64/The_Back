@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { 
   Search, Plus, Download, Filter, ChevronDown, ChevronRight, GraduationCap,
   X, Mail, Phone, Calendar, Award, Activity, UserCheck, UserX, Lock, ShieldAlert,
-  Percent, ArrowRight, Trash2
+  Percent, ArrowRight, Trash2, Edit
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { cn } from "@/lib/utils";
@@ -52,6 +52,11 @@ export default function AdminStudentsPage() {
   const [isResettingStudent, setIsResettingStudent] = useState(false);
   const [isResettingParent, setIsResettingParent] = useState(false);
 
+  // Edit parent state
+  const [isEditingParent, setIsEditingParent] = useState(false);
+  const [editParentForm, setEditParentForm] = useState({ name: '', email: '', phone: '' });
+  const [isSavingParent, setIsSavingParent] = useState(false);
+
   const fetchStudents = () => {
     fetch('/api/admin/students')
       .then(res => res.json())
@@ -97,6 +102,42 @@ export default function AdminStudentsPage() {
     } finally {
       if (isParent) setIsResettingParent(false);
       else setIsResettingStudent(false);
+    }
+  };
+
+  const handleUpdateParent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStudentForDetails?.parent?.id) return;
+    setIsSavingParent(true);
+    try {
+      const res = await fetch('/api/admin/users/update-parent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parentId: selectedStudentForDetails.parent.id,
+          name: editParentForm.name,
+          email: editParentForm.email,
+          phone: editParentForm.phone,
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success('Parent details updated successfully!');
+        setIsEditingParent(false);
+        // Update local state immediately so UI reflects the change
+        setSelectedStudentForDetails((prev: any) => prev ? {
+          ...prev,
+          parent: { ...prev.parent, ...data.parent }
+        } : null);
+        fetchStudents();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || 'Failed to update parent details');
+      }
+    } catch (err) {
+      toast.error('Network error');
+    } finally {
+      setIsSavingParent(false);
     }
   };
 
@@ -827,24 +868,95 @@ export default function AdminStudentsPage() {
 
                 {/* Parent Contact Details */}
                 <div className="p-4 bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-2xl space-y-3">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Linked Parent / Guardian</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Linked Parent / Guardian</span>
+                    {selectedStudentForDetails.parent && !isEditingParent && (
+                      <button
+                        onClick={() => {
+                          setEditParentForm({
+                            name: selectedStudentForDetails.parent.name || '',
+                            email: selectedStudentForDetails.parent.email || '',
+                            phone: selectedStudentForDetails.parent.phone !== 'N/A' ? (selectedStudentForDetails.parent.phone || '') : '',
+                          });
+                          setIsEditingParent(true);
+                        }}
+                        className="text-[10px] text-teal-700 dark:text-teal hover:underline font-semibold flex items-center gap-1"
+                      >
+                        <Edit size={10} /> Edit Details
+                      </button>
+                    )}
+                  </div>
+
                   {selectedStudentForDetails.parent ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Name:</span>
-                        <span className="font-semibold text-foreground">{selectedStudentForDetails.parent.name}</span>
+                    isEditingParent ? (
+                      <form onSubmit={handleUpdateParent} className="space-y-3 pt-1">
+                        <div>
+                          <label className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider block mb-1">Full Name</label>
+                          <input
+                            type="text"
+                            value={editParentForm.name}
+                            onChange={e => setEditParentForm({ ...editParentForm, name: e.target.value })}
+                            className="glass-input w-full px-3 py-1.5 text-xs rounded-xl border-black/10 dark:border-white/10"
+                            placeholder="Parent full name"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider block mb-1">Email Address</label>
+                          <input
+                            type="email"
+                            value={editParentForm.email}
+                            onChange={e => setEditParentForm({ ...editParentForm, email: e.target.value })}
+                            className="glass-input w-full px-3 py-1.5 text-xs rounded-xl border-black/10 dark:border-white/10"
+                            placeholder="parent@mail.com"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider block mb-1">Phone Number</label>
+                          <input
+                            type="tel"
+                            value={editParentForm.phone}
+                            onChange={e => setEditParentForm({ ...editParentForm, phone: e.target.value })}
+                            className="glass-input w-full px-3 py-1.5 text-xs rounded-xl border-black/10 dark:border-white/10"
+                            placeholder="e.g. +91 98765 43210"
+                          />
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingParent(false)}
+                            className="flex-1 py-1.5 rounded-xl text-xs font-medium bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-muted-foreground"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={isSavingParent}
+                            className="flex-1 glass-button py-1.5 text-xs font-semibold rounded-xl disabled:opacity-50"
+                          >
+                            {isSavingParent ? 'Saving...' : 'Save Changes'}
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Name:</span>
+                          <span className="font-semibold text-foreground">{selectedStudentForDetails.parent.name}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Email:</span>
+                          <span className="font-semibold text-teal-700 dark:text-teal">{selectedStudentForDetails.parent.email}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Phone:</span>
+                          <span className="font-semibold text-foreground">
+                            {selectedStudentForDetails.parent.phone !== 'N/A' ? selectedStudentForDetails.parent.phone : 'Not Provided'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Email:</span>
-                        <span className="font-semibold text-teal-700 dark:text-teal">{selectedStudentForDetails.parent.email}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Phone:</span>
-                        <span className="font-semibold text-foreground">
-                          {selectedStudentForDetails.parent.phone !== 'N/A' ? selectedStudentForDetails.parent.phone : 'Not Provided'}
-                        </span>
-                      </div>
-                    </div>
+                    )
                   ) : (
                     <p className="text-xs text-muted-foreground/60 italic text-center py-2">No linked parent account exists.</p>
                   )}
