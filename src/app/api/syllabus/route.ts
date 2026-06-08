@@ -101,13 +101,45 @@ export async function GET(request: Request) {
         topicsByUnit[unitName].push(t);
       });
 
+      // Sort units/chapters numerically
+      const sortedUnitEntries = Object.entries(topicsByUnit).sort(([aTitle], [bTitle]) => {
+        const getChapterNumber = (title: string): number => {
+          const match = title.match(/(?:chapter|unit|ch|ch\.)\s*(\d+)/i);
+          return match ? parseInt(match[1], 10) : Infinity;
+        };
+        const aNum = getChapterNumber(aTitle);
+        const bNum = getChapterNumber(bTitle);
+        if (aNum !== bNum) {
+          return aNum - bNum;
+        }
+        return aTitle.localeCompare(bTitle);
+      });
+
       let overallTopicIndex = 0;
-      const actualModules = Object.entries(topicsByUnit).map(([unitName, topics], uIndex) => {
-        const subTopics = topics.map((t) => {
+      const actualModules = sortedUnitEntries.map(([unitName, topics], uIndex) => {
+        // Sort subtopics inside the unit by order ascending
+        const sortedTopics = [...topics].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        const subTopics = sortedTopics.map((t) => {
           const progress = userProgressMap[t.id];
-          const status = progress ? progress.status : (overallTopicIndex === 0 ? 'in-progress' : 'locked');
-          if (status === 'completed') completedTopics++;
-          overallTopicIndex++;
+          let status = 'locked';
+          
+          if (progress) {
+            status = progress.status;
+          } else if (overallTopicIndex === 0 && t.ebookHtml) {
+            status = 'in-progress';
+          }
+          
+          // A topic is unlocked only if it has ebookHtml
+          if (!t.ebookHtml && status !== 'completed') {
+            status = 'locked';
+          }
+
+          if (status === 'completed') {
+            completedTopics++;
+          } else {
+            overallTopicIndex++;
+          }
 
           return {
             id: t.id,

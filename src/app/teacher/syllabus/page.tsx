@@ -452,6 +452,20 @@ export default function TeacherSyllabusPage() {
                     topicsByUnit[unitName].push(topic);
                   });
 
+                  // Sort units/chapters numerically
+                  const sortedUnitEntries = Object.entries(topicsByUnit).sort(([aTitle], [bTitle]) => {
+                    const getChapterNumber = (title: string): number => {
+                      const match = title.match(/(?:chapter|unit|ch|ch\.)\s*(\d+)/i);
+                      return match ? parseInt(match[1], 10) : Infinity;
+                    };
+                    const aNum = getChapterNumber(aTitle);
+                    const bNum = getChapterNumber(bTitle);
+                    if (aNum !== bNum) {
+                      return aNum - bNum;
+                    }
+                    return aTitle.localeCompare(bTitle);
+                  });
+
                   return (
                     <div className="space-y-6">
                       {missingEbookCount > 0 && (
@@ -468,7 +482,7 @@ export default function TeacherSyllabusPage() {
                         </div>
                       )}
 
-                      {Object.entries(topicsByUnit).map(([unitName, unitTopics]) => (
+                      {sortedUnitEntries.map(([unitName, unitTopics]) => (
                         <div key={unitName} className="space-y-3">
                           {/* Unit Title Header */}
                           <h4 className="text-xs font-bold text-teal dark:text-teal/90 uppercase tracking-wider pl-2 border-l-2 border-teal/50 mt-6 first:mt-0">
@@ -476,7 +490,7 @@ export default function TeacherSyllabusPage() {
                           </h4>
                           
                           <div className="space-y-2">
-                            {unitTopics.map((topic: any, idx: number) => (
+                            {unitTopics.slice().sort((a: any, b: any) => (a.order || 0) - (b.order || 0)).map((topic: any, idx: number) => (
                               <div
                                 key={topic.id}
                                 className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-teal/20 transition-all duration-200 group"
