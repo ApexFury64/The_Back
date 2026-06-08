@@ -200,9 +200,9 @@ export default function AdminStudentsPage() {
 
   const downloadCsvTemplate = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
-      + "Student Name,Student Email,Standard,Section,Parent Name,Parent Email,Parent Phone\n"
-      + "John Doe,john.doe@school.com,8,A,Robert Doe,robert.doe@mail.com,+1234567890\n"
-      + "Jane Smith,jane.smith@school.com,8,B,Sarah Smith,sarah.smith@mail.com,+1987654321\n";
+      + "Student Name,Student Email,Student Password,Standard,Section,Parent Name,Parent Email,Parent Phone,Parent Password\n"
+      + "John Doe,john.doe@school.com,studentpass123,8,A,Robert Doe,robert.doe@mail.com,+1234567890,parentpass123\n"
+      + "Jane Smith,jane.smith@school.com,studentpass456,8,B,Sarah Smith,sarah.smith@mail.com,+1987654321,parentpass456\n";
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);

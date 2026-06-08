@@ -52,11 +52,13 @@ export async function POST(request: Request) {
     // Find header indices
     const studentNameIdx = headers.findIndex(h => h.includes('student name') || h === 'name');
     const studentEmailIdx = headers.findIndex(h => h.includes('student email') || h === 'email');
+    const studentPasswordIdx = headers.findIndex(h => h.includes('student password') || h === 'password');
     const standardIdx = headers.findIndex(h => h.includes('standard') || h === 'grade' || h === 'class');
     const sectionIdx = headers.findIndex(h => h.includes('section'));
     const parentNameIdx = headers.findIndex(h => h.includes('parent name'));
     const parentEmailIdx = headers.findIndex(h => h.includes('parent email'));
     const parentPhoneIdx = headers.findIndex(h => h.includes('parent phone') || h.includes('parent mobile') || h === 'phone');
+    const parentPasswordIdx = headers.findIndex(h => h.includes('parent password'));
 
     if (studentNameIdx === -1 || studentEmailIdx === -1 || standardIdx === -1 || sectionIdx === -1) {
       return NextResponse.json({ 
@@ -101,6 +103,12 @@ export async function POST(request: Request) {
         });
       }
 
+      // Hash student password if provided, else use default
+      let studentHash = defaultPassword;
+      if (studentPasswordIdx !== -1 && columns[studentPasswordIdx]?.trim()) {
+        studentHash = await bcrypt.hash(columns[studentPasswordIdx].trim(), 10);
+      }
+
       // Find or create student
       let studentUser = await prisma.user.findFirst({
         where: { email: { equals: studentEmail, mode: 'insensitive' } }
@@ -111,7 +119,7 @@ export async function POST(request: Request) {
           data: {
             name: studentName,
             email: studentEmail,
-            password: defaultPassword,
+            password: studentHash,
             role: 'STUDENT',
             schoolId,
             classId: classRoom.id
@@ -130,13 +138,19 @@ export async function POST(request: Request) {
           where: { email: { equals: parentEmail, mode: 'insensitive' } }
         });
 
+        // Hash parent password if provided, else use default
+        let parentHash = defaultPassword;
+        if (parentPasswordIdx !== -1 && columns[parentPasswordIdx]?.trim()) {
+          parentHash = await bcrypt.hash(columns[parentPasswordIdx].trim(), 10);
+        }
+
         if (!parentUser) {
           parentUser = await prisma.user.create({
             data: {
               name: parentName || `Parent of ${studentName}`,
               email: parentEmail,
               phone: parentPhone || null,
-              password: defaultPassword,
+              password: parentHash,
               role: 'PARENT',
               schoolId
             }
