@@ -24,19 +24,30 @@ const subjectColors: Record<string, string> = {
 export const curriculumData: Record<string, Record<number, { title: string; topics: { title: string; icon: string; prompt?: string }[] }[]>> = {
   Mathematics: {
     6: [
-      { title: 'Numbers & Integers', topics: [
+      { title: 'Numbers & Operations', topics: [
         { title: 'Whole Numbers', icon: 'hash', prompt: 'Explain whole numbers — natural numbers, place values, and basic operations with large numbers.' },
         { title: 'Playing with Numbers', icon: 'dices', prompt: 'Teach me about factors, multiples, divisibility rules, HCF and LCM.' },
         { title: 'Negative Numbers & Integers', icon: 'minus-circle', prompt: 'Explain integers — positive, negative numbers, number line, and operations on integers.' },
+        { title: 'HCF & LCM', icon: 'split', prompt: 'Explain Highest Common Factor and Lowest Common Multiple — methods and word problems.' },
+        { title: 'Roman Numerals', icon: 'list-ordered', prompt: 'Teach me Roman numeral system — I, V, X, L, C, D, M — reading and writing.' },
+      ]},
+      { title: 'Fractions & Decimals', topics: [
+        { title: 'Fractions', icon: 'divide', prompt: 'Explain fractions — types, comparing, adding, subtracting, and simplifying fractions.' },
+        { title: 'Decimals', icon: 'percent', prompt: 'Teach me decimals — place values, conversion to fractions, and decimal operations.' },
+        { title: 'Comparing Fractions', icon: 'scale', prompt: 'Teach me how to compare and order fractions using LCM and cross-multiplication.' },
+        { title: 'Fraction Arithmetic', icon: 'calculator', prompt: 'Explain addition, subtraction, multiplication, and division of fractions with examples.' },
       ]},
       { title: 'Geometry & Shapes', topics: [
         { title: 'Basic Geometrical Ideas', icon: 'triangle', prompt: 'Teach me about points, lines, rays, line segments, angles, and polygons.' },
         { title: 'Symmetry', icon: 'flip-horizontal', prompt: 'Explain symmetry — line of symmetry, reflection, and rotational symmetry.' },
         { title: 'Practical Geometry', icon: 'ruler', prompt: 'Teach geometric constructions — drawing shapes with compass and ruler.' },
+        { title: 'Understanding Shapes', icon: 'hexagon', prompt: 'Explain 2D shapes — triangles, quadrilaterals, circles — properties and classifications.' },
+        { title: 'Angles & Types', icon: 'crosshair', prompt: 'Explain types of angles — acute, obtuse, right, reflex — and angle measurement.' },
       ]},
-      { title: 'Fractions & Decimals', topics: [
-        { title: 'Fractions', icon: 'divide', prompt: 'Explain fractions — types, comparing, adding, subtracting, and simplifying fractions.' },
-        { title: 'Decimals', icon: 'percent', prompt: 'Teach me decimals — place values, conversion to fractions, and decimal operations.' },
+      { title: 'Ratio & Algebra Basics', topics: [
+        { title: 'Ratio & Proportion', icon: 'bar-chart-3', prompt: 'Teach me ratios — simplification, equivalent ratios, and proportion.' },
+        { title: 'Introduction to Algebra', icon: 'variable', prompt: 'Explain what algebra is — variables, constants, expressions, and simple substitution.' },
+        { title: 'Perimeter & Area', icon: 'square', prompt: 'Teach me perimeter and area of rectangles, squares, and triangles.' },
       ]},
     ],
     7: [
@@ -44,68 +55,128 @@ export const curriculumData: Record<string, Record<number, { title: string; topi
         { title: 'Algebraic Expressions', icon: 'variable', prompt: 'Explain algebraic expressions — variables, constants, coefficients, and simplification.' },
         { title: 'Simple Equations', icon: 'equal', prompt: 'Teach me how to solve simple linear equations step by step.' },
         { title: 'Exponents & Powers', icon: 'superscript', prompt: 'Explain exponents — laws of exponents, powers, and scientific notation.' },
+        { title: 'Forming & Solving Equations', icon: 'function-square', prompt: 'Teach me to form equations from word problems and solve them systematically.' },
       ]},
-      { title: 'Ratio & Proportion', topics: [
+      { title: 'Ratio, Proportion & Percentages', topics: [
         { title: 'Ratios', icon: 'scale', prompt: 'Explain ratios, simplification, and direct/inverse proportion.' },
         { title: 'Comparing Quantities', icon: 'bar-chart-3', prompt: 'Teach me percentages, profit & loss, and simple interest.' },
+        { title: 'Simple Interest', icon: 'trending-up', prompt: 'Explain simple interest formula — Principal, Rate, Time — with word problems.' },
+        { title: 'Profit & Loss', icon: 'percent', prompt: 'Teach me to calculate profit, loss, and percentage profit/loss in transactions.' },
       ]},
-      { title: 'Data Handling', topics: [
+      { title: 'Geometry', topics: [
+        { title: 'Lines & Angles', icon: 'ruler', prompt: 'Explain parallel lines, transversals, alternate angles, and corresponding angles.' },
+        { title: 'Triangle Properties', icon: 'triangle', prompt: 'Teach me triangle types — equilateral, isosceles, scalene — and angle sum property.' },
+        { title: 'Congruence of Triangles', icon: 'flip-horizontal', prompt: 'Explain congruence criteria — SSS, SAS, ASA — with diagrams and proofs.' },
+      ]},
+      { title: 'Data & Probability', topics: [
         { title: 'Mean, Median & Mode', icon: 'pie-chart', prompt: 'Explain measures of central tendency — mean, median, mode, and range.' },
         { title: 'Probability Intro', icon: 'dices', prompt: 'Teach me basic probability — experiments, outcomes, and calculating probability.' },
+        { title: 'Bar Graphs & Pictographs', icon: 'bar-chart-3', prompt: 'Explain how to read, draw, and interpret bar graphs and pictographs.' },
+      ]},
+      { title: 'Mensuration', topics: [
+        { title: 'Area of Triangles & Parallelograms', icon: 'triangle', prompt: 'Teach me to calculate areas of triangles, parallelograms, and composite shapes.' },
+        { title: 'Perimeter of Shapes', icon: 'square', prompt: 'Explain perimeter of squares, rectangles, and irregular polygons.' },
       ]},
     ],
     8: [
       { title: 'Linear Equations', topics: [
         { title: 'Linear Equations in One Variable', icon: 'trending-up', prompt: 'Explain how to solve linear equations in one variable step by step.' },
         { title: 'Graphing Linear Equations', icon: 'line-chart', prompt: 'Teach me to plot and graph linear equations on a coordinate plane.' },
+        { title: 'Word Problems — Equations', icon: 'calculator', prompt: 'Teach me to translate word problems into linear equations and solve them.' },
       ]},
       { title: 'Quadrilaterals & Polygons', topics: [
         { title: 'Understanding Quadrilaterals', icon: 'square', prompt: 'Explain types of quadrilaterals — parallelograms, rectangles, rhombus, trapezium.' },
         { title: 'Polygons & Angle Sums', icon: 'hexagon', prompt: 'Teach the angle sum property of polygons and exterior angles.' },
+        { title: 'Properties of Parallelogram', icon: 'split', prompt: 'Explain diagonals, opposite sides and angles of a parallelogram.' },
       ]},
       { title: 'Mensuration', topics: [
         { title: 'Surface Area & Volume', icon: 'box', prompt: 'Explain surface area and volume of cubes, cuboids, and cylinders.' },
         { title: 'Area of Trapezium & Polygon', icon: 'pentagon', prompt: 'Teach me how to calculate areas of trapezium and general polygons.' },
+        { title: 'Volume of Cylinders & Cones', icon: 'circle', prompt: 'Explain formulas for volume and surface area of cylinders and cones.' },
       ]},
       { title: 'Algebra II', topics: [
         { title: 'Factorisation', icon: 'split', prompt: 'Explain factorisation of algebraic expressions using common factors and identities.' },
         { title: 'Algebraic Identities', icon: 'braces', prompt: 'Teach me standard algebraic identities and how to apply them.' },
+        { title: 'Division of Algebraic Expressions', icon: 'divide', prompt: 'Teach me to divide polynomials and simplify algebraic fractions.' },
+        { title: 'Rational Numbers', icon: 'percent', prompt: 'Explain rational numbers — representation, ordering, and operations on number line.' },
+      ]},
+      { title: 'Data & Statistics', topics: [
+        { title: 'Pie Charts & Bar Graphs', icon: 'pie-chart', prompt: 'Teach me to draw and interpret pie charts and bar graphs from data.' },
+        { title: 'Probability', icon: 'dices', prompt: 'Explain chance and probability — events, sample space, and calculations.' },
+      ]},
+      { title: 'Number Theory', topics: [
+        { title: 'Cubes & Cube Roots', icon: 'box', prompt: 'Explain perfect cubes, cube roots, and methods to find them.' },
+        { title: 'Squares & Square Roots', icon: 'sigma', prompt: 'Teach me perfect squares, square roots, and the long division method.' },
+        { title: 'Exponents & Powers', icon: 'superscript', prompt: 'Explain integer exponents, laws of exponents, and scientific notation.' },
       ]},
     ],
     9: [
       { title: 'Number Systems', topics: [
         { title: 'Real Numbers', icon: 'infinity', prompt: 'Explain real numbers — rational, irrational, and their properties.' },
         { title: 'Irrational Numbers', icon: 'sigma', prompt: 'Teach me about irrational numbers, surds, and rationalising denominators.' },
+        { title: 'Representing Reals on Number Line', icon: 'ruler', prompt: 'Explain how to represent real numbers including surds on the number line.' },
+        { title: 'Laws of Exponents for Reals', icon: 'superscript', prompt: 'Teach me exponent rules applied to real numbers, including fractional exponents.' },
       ]},
       { title: 'Polynomials', topics: [
         { title: 'Polynomials & Zeroes', icon: 'function-square', prompt: 'Explain polynomials — degree, zeroes, and remainder theorem.' },
         { title: 'Remainder Theorem', icon: 'calculator', prompt: 'Teach me the remainder theorem and factor theorem with examples.' },
+        { title: 'Factorising Polynomials', icon: 'split', prompt: 'Teach me to factorise polynomials using splitting the middle term and identities.' },
+        { title: 'Algebraic Identities', icon: 'braces', prompt: 'Explain advanced algebraic identities — (a+b)³, a³+b³, and their applications.' },
       ]},
       { title: 'Coordinate Geometry', topics: [
-        { title: 'Cartesian Plane', icon: 'axis-3d', prompt: 'Explain the Cartesian coordinate system — axes, quadrants, and plotting.' },
-        { title: 'Plotting Points', icon: 'crosshair', prompt: 'Teach me to plot ordered pairs and read coordinates from graphs.' },
+        { title: 'Cartesian Plane', icon: 'crosshair', prompt: 'Explain the Cartesian coordinate system — axes, quadrants, and plotting.' },
+        { title: 'Plotting Points', icon: 'circle', prompt: 'Teach me to plot ordered pairs and read coordinates from graphs.' },
+        { title: 'Distance Between Points', icon: 'ruler', prompt: 'Explain the distance formula between two points on a Cartesian plane.' },
       ]},
       { title: 'Geometry & Proofs', topics: [
+        { title: 'Lines & Angles', icon: 'triangle', prompt: 'Teach me angle pairs — complementary, supplementary, vertically opposite, and transversal angles.' },
         { title: 'Triangles & Congruence', icon: 'triangle', prompt: 'Explain triangle congruence — SSS, SAS, ASA, RHS criteria and proofs.' },
         { title: 'Circle Theorems', icon: 'circle', prompt: 'Teach me circle theorems — tangent, chord, and arc properties.' },
+        { title: 'Quadrilaterals', icon: 'square', prompt: 'Explain properties of parallelograms, rectangles, squares, and the mid-point theorem.' },
+        { title: 'Heron\'s Formula', icon: 'calculator', prompt: 'Teach me Heron\'s formula to find area of a triangle given three sides.' },
+      ]},
+      { title: 'Statistics & Probability', topics: [
+        { title: 'Statistics — Frequency', icon: 'bar-chart-3', prompt: 'Explain frequency distribution tables, histograms, and frequency polygons.' },
+        { title: 'Mean of Grouped Data', icon: 'pie-chart', prompt: 'Teach me to calculate mean from grouped data using direct and assumed mean methods.' },
+        { title: 'Probability Basics', icon: 'dices', prompt: 'Explain probability of simple events, sample space, and coin/dice problems.' },
+      ]},
+      { title: 'Surface Areas & Volumes', topics: [
+        { title: 'Surface Area of Solids', icon: 'box', prompt: 'Teach me surface areas of cuboids, cylinders, cones, and spheres.' },
+        { title: 'Volume of Solids', icon: 'pentagon', prompt: 'Explain volumes of cuboids, cylinders, cones, and spheres with formulas.' },
       ]},
     ],
     10: [
+      { title: 'Number Theory', topics: [
+        { title: 'Real Numbers & Euclid\'s Algorithm', icon: 'infinity', prompt: 'Explain Euclid\'s division lemma and algorithm for finding HCF.' },
+        { title: 'Fundamental Theorem of Arithmetic', icon: 'sigma', prompt: 'Teach me unique prime factorisation, HCF, LCM, and irrationality proofs.' },
+      ]},
       { title: 'Algebra III', topics: [
-        { title: 'Quadratic Equations', icon: 'square-function', prompt: 'Explain quadratic equations — factoring, completing the square, and the quadratic formula.' },
+        { title: 'Quadratic Equations', icon: 'function-square', prompt: 'Explain quadratic equations — factoring, completing the square, and the quadratic formula.' },
         { title: 'Arithmetic Progressions', icon: 'list-ordered', prompt: 'Teach me AP — nth term, sum of n terms, and word problems.' },
+        { title: 'Pair of Linear Equations', icon: 'equal', prompt: 'Teach me systems of linear equations — graphical, substitution, elimination, and cross-multiplication methods.' },
+        { title: 'Nature of Roots', icon: 'calculator', prompt: 'Explain the discriminant — how to determine the nature of roots of a quadratic equation.' },
       ]},
       { title: 'Trigonometry', topics: [
         { title: 'Trigonometric Ratios', icon: 'triangle', prompt: 'Explain sin, cos, tan and their use in right-angled triangles.' },
         { title: 'Heights & Distances', icon: 'mountain', prompt: 'Teach me to solve heights and distances problems using trigonometry.' },
+        { title: 'Trigonometric Identities', icon: 'braces', prompt: 'Explain sin²θ + cos²θ = 1 and other fundamental identities with proofs.' },
+        { title: 'Complementary Angles', icon: 'flip-horizontal', prompt: 'Teach me trigonometric ratios of complementary angles and their applications.' },
+      ]},
+      { title: 'Geometry', topics: [
+        { title: 'Similar Triangles', icon: 'triangle', prompt: 'Explain similarity criteria — AA, SSS, SAS — and the Basic Proportionality Theorem.' },
+        { title: 'Circles & Tangents', icon: 'circle', prompt: 'Teach me tangents to a circle — length of tangent, angle in alternate segment.' },
+        { title: 'Constructions', icon: 'ruler', prompt: 'Explain geometric constructions — dividing a line segment, tangents to circles.' },
       ]},
       { title: 'Statistics & Probability', topics: [
-        { title: 'Statistics', icon: 'bar-chart-3', prompt: 'Explain grouped data — mean, median, mode, and ogive.' },
+        { title: 'Statistics — Mean, Median, Mode', icon: 'bar-chart-3', prompt: 'Explain grouped data — mean, median, mode, and ogive.' },
         { title: 'Probability', icon: 'dices', prompt: 'Teach probability of events, complementary events, and problems.' },
+        { title: 'Cumulative Frequency', icon: 'trending-up', prompt: 'Teach me to draw ogive curves and find median from cumulative frequency.' },
       ]},
-      { title: 'Coordinate Geometry II', topics: [
-        { title: 'Distance & Section Formula', icon: 'ruler', prompt: 'Explain distance formula, section formula, and midpoint.' },
-        { title: 'Area of Triangle', icon: 'triangle', prompt: 'Teach me to find area of a triangle using coordinate geometry.' },
+      { title: 'Mensuration', topics: [
+        { title: 'Areas of Circles & Sectors', icon: 'pie-chart', prompt: 'Explain area of circle, sector, segment, and combinations with other shapes.' },
+        { title: 'Surface Areas of Combined Solids', icon: 'box', prompt: 'Teach me surface area and volume of combined solids — cone on cylinder, etc.' },
+        { title: 'Distance & Section Formula', icon: 'crosshair', prompt: 'Explain distance formula, section formula, and midpoint in coordinate geometry.' },
+        { title: 'Area of Triangle (Coordinate)', icon: 'triangle', prompt: 'Teach me to find area of a triangle using coordinate geometry formula.' },
       ]},
     ],
   },
