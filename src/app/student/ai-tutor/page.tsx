@@ -284,11 +284,18 @@ function AITutorContent() {
     const email = userEmail || 'arjun@dps.edu';
     fetch(`/api/syllabus?userEmail=${email}`)
       .then(res => res.json())
-      .then(data => setSubjects(Array.isArray(data) ? data : []));
+      .then(data => {
+        if (Array.isArray(data)) {
+          setSubjects(data);
+          if (data.length > 0 && !urlSubject && !activeLabSubject) {
+            setActiveLabSubject(data[0].name);
+          }
+        }
+      });
     fetch(`/api/quizzes?userEmail=${email}`)
       .then(res => res.json())
       .then(data => { if (Array.isArray(data)) setQuizzes(data); });
-  }, [userEmail]);
+  }, [userEmail, urlSubject]);
 
   const completeTopic = async (subjectName: string, topicTitle: string) => {
     let topicId = null;
@@ -391,6 +398,7 @@ function AITutorContent() {
       
       let topicTitle = decodedMsg.replace("Let's study ", "").replace("Let's take the quiz on ", "").replace("Help me submit assignment: ", "");
       setActiveTopicTitle(topicTitle);
+      setActiveLabSubject(decodedSub);
 
       const userMsg = {
         id: Date.now(),
@@ -930,10 +938,7 @@ function AITutorContent() {
                 activeSubject={activeLabSubject}
                 activeStandard={activeLabStandard}
                 activeTopicTitle={activeTopicTitle}
-                setActiveSubject={setActiveLabSubject}
-                setActiveStandard={setActiveLabStandard}
                 onClose={() => setShowLabPanel(false)}
-                allowedSubjects={subjects.map(s => s.name)}
               />
             </motion.div>
           )}
