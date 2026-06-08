@@ -29,7 +29,16 @@ export default function AdminStudentsPage() {
   const [selectedStatus, setSelectedStatus] = useState("All"); // All, Assigned, Unassigned
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newStudent, setNewStudent] = useState({ name: "", email: "", classId: "" });
+  const [newStudent, setNewStudent] = useState({ 
+    name: "", 
+    email: "", 
+    classId: "",
+    studentPassword: "",
+    parentName: "",
+    parentEmail: "",
+    parentPhone: "",
+    parentPassword: ""
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
@@ -101,9 +110,18 @@ export default function AdminStudentsPage() {
         body: JSON.stringify(newStudent)
       });
       if (res.ok) {
-        toast.success("Student added successfully");
+        toast.success("Student and parent details added successfully");
         setIsAddModalOpen(false);
-        setNewStudent({ name: "", email: "", classId: "" });
+        setNewStudent({ 
+          name: "", 
+          email: "", 
+          classId: "",
+          studentPassword: "",
+          parentName: "",
+          parentEmail: "",
+          parentPhone: "",
+          parentPassword: ""
+        });
         fetchStudents();
       } else {
         const err = await res.json();
@@ -294,7 +312,19 @@ export default function AdminStudentsPage() {
               <Download size={14} /> Bulk Import
             </button>
             <button 
-              onClick={() => setIsAddModalOpen(true)}
+              onClick={() => {
+                setNewStudent({
+                  name: "",
+                  email: "",
+                  classId: "",
+                  studentPassword: "",
+                  parentName: "",
+                  parentEmail: "",
+                  parentPhone: "",
+                  parentPassword: ""
+                });
+                setIsAddModalOpen(true);
+              }}
               className="glass-button px-4 py-2.5 flex items-center justify-center gap-2 text-xs font-semibold rounded-xl transition-all"
             >
               <Plus size={14} /> Add Student
@@ -468,51 +498,125 @@ export default function AdminStudentsPage() {
       {/* ADD STUDENT MODAL */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative border border-white/10">
-            <h3 className="text-xl font-bold mb-4">Add New Student</h3>
-            <form onSubmit={handleAddStudent} className="space-y-4">
-              <div>
-                <label className="text-xs text-muted-foreground font-medium mb-1 block">Full Name</label>
-                <input 
-                  type="text" 
-                  value={newStudent.name} 
-                  onChange={e => setNewStudent({...newStudent, name: e.target.value})} 
-                  className="glass-input w-full px-4 py-2 text-sm" 
-                  placeholder="e.g. Arjun Kumar"
-                  required 
-                />
+          <div className="glass-card w-full max-w-2xl p-6 rounded-2xl relative border border-black/10 dark:border-white/10 shadow-2xl">
+            <h3 className="text-xl font-bold mb-6">Add New Student</h3>
+            <form onSubmit={handleAddStudent} className="space-y-6">
+              {/* Section 1: Student Details */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold text-teal-700 dark:text-teal uppercase tracking-wider border-b border-black/5 dark:border-white/5 pb-1">
+                  Student Account Credentials
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium mb-1 block">Student Full Name</label>
+                    <input 
+                      type="text" 
+                      value={newStudent.name} 
+                      onChange={e => setNewStudent({...newStudent, name: e.target.value})} 
+                      className="glass-input w-full px-4 py-2 text-sm" 
+                      placeholder="e.g. Arjun Kumar"
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium mb-1 block">Student Email Address</label>
+                    <input 
+                      type="email" 
+                      value={newStudent.email} 
+                      onChange={e => setNewStudent({...newStudent, email: e.target.value})} 
+                      className="glass-input w-full px-4 py-2 text-sm" 
+                      placeholder="e.g. student@school.edu"
+                      required 
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium mb-1 block">Student Password</label>
+                    <input 
+                      type="password" 
+                      value={newStudent.studentPassword} 
+                      onChange={e => setNewStudent({...newStudent, studentPassword: e.target.value})} 
+                      className="glass-input w-full px-4 py-2 text-sm" 
+                      placeholder="Min 6 chars (default: password123)"
+                      minLength={6}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium mb-1 block">Class & Section Assignment</label>
+                    <select 
+                      value={newStudent.classId} 
+                      onChange={e => setNewStudent({...newStudent, classId: e.target.value})} 
+                      className="glass-input w-full px-4 py-2 text-sm bg-white dark:bg-navy-950 text-slate-800 dark:text-white border-black/10 dark:border-white/10" 
+                      required 
+                    >
+                      <option value="" disabled className="bg-white dark:bg-navy-950 text-muted-foreground">-- Select a Class Section --</option>
+                      {flatClassRooms.map((room) => (
+                        <option key={room.id} value={room.id} className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">
+                          {room.name}
+                        </option>
+                      ))}
+                    </select>
+                    {flatClassRooms.length === 0 && (
+                      <p className="text-xs text-coral mt-2">No active classes found. Create a class section first.</p>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground font-medium mb-1 block">Email Address</label>
-                <input 
-                  type="email" 
-                  value={newStudent.email} 
-                  onChange={e => setNewStudent({...newStudent, email: e.target.value})} 
-                  className="glass-input w-full px-4 py-2 text-sm" 
-                  placeholder="e.g. student@school.edu"
-                  required 
-                />
+
+              {/* Section 2: Parent / Guardian Details */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold text-teal-700 dark:text-teal uppercase tracking-wider border-b border-black/5 dark:border-white/5 pb-1">
+                  Parent / Guardian Connection (Optional)
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium mb-1 block">Parent Full Name</label>
+                    <input 
+                      type="text" 
+                      value={newStudent.parentName} 
+                      onChange={e => setNewStudent({...newStudent, parentName: e.target.value})} 
+                      className="glass-input w-full px-4 py-2 text-sm" 
+                      placeholder="e.g. Ramesh Kumar"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium mb-1 block">Parent Email Address</label>
+                    <input 
+                      type="email" 
+                      value={newStudent.parentEmail} 
+                      onChange={e => setNewStudent({...newStudent, parentEmail: e.target.value})} 
+                      className="glass-input w-full px-4 py-2 text-sm" 
+                      placeholder="e.g. parent@mail.com"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium mb-1 block">Parent Phone Number</label>
+                    <input 
+                      type="tel" 
+                      value={newStudent.parentPhone} 
+                      onChange={e => setNewStudent({...newStudent, parentPhone: e.target.value})} 
+                      className="glass-input w-full px-4 py-2 text-sm" 
+                      placeholder="e.g. +91 98765 43210"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium mb-1 block">Parent Password</label>
+                    <input 
+                      type="password" 
+                      value={newStudent.parentPassword} 
+                      onChange={e => setNewStudent({...newStudent, parentPassword: e.target.value})} 
+                      className="glass-input w-full px-4 py-2 text-sm" 
+                      placeholder="Min 6 chars (default: same as student)"
+                      minLength={6}
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground font-medium mb-1 block">Class & Section Assignment</label>
-                <select 
-                  value={newStudent.classId} 
-                  onChange={e => setNewStudent({...newStudent, classId: e.target.value})} 
-                  className="glass-input w-full px-4 py-2 text-sm bg-white dark:bg-navy-950 text-slate-800 dark:text-white border-black/10 dark:border-white/10" 
-                  required 
-                >
-                  <option value="" disabled className="bg-white dark:bg-navy-950 text-muted-foreground">-- Select a Class Section --</option>
-                  {flatClassRooms.map((room) => (
-                    <option key={room.id} value={room.id}>
-                      {room.name}
-                    </option>
-                  ))}
-                </select>
-                {flatClassRooms.length === 0 && (
-                  <p className="text-xs text-coral mt-2">No active classes found. Create a class section first.</p>
-                )}
-              </div>
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-6">
+
+              <div className="flex items-center gap-3 pt-4 border-t border-black/5 dark:border-white/10 mt-6">
                 <button 
                   type="button" 
                   onClick={() => setIsAddModalOpen(false)}
@@ -525,7 +629,7 @@ export default function AdminStudentsPage() {
                   disabled={isSubmitting || !newStudent.classId}
                   className="flex-1 glass-button px-4 py-2 text-sm justify-center disabled:opacity-50"
                 >
-                  {isSubmitting ? "Adding..." : "Add Student"}
+                  {isSubmitting ? "Adding..." : "Add Student & Parent"}
                 </button>
               </div>
             </form>
