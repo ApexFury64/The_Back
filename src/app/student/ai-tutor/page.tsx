@@ -439,7 +439,7 @@ function AITutorContent() {
     const sub = subjects.find(s => s.name === subjectName);
     if (sub?.standard) setActiveLabStandard(sub.standard);
     setIsNavCollapsed(true);
-    setShowLabPanel(false);
+    setShowLabPanel(true);
 
     const userMsg = {
       id: Date.now(),
@@ -929,9 +929,11 @@ function AITutorContent() {
                 onAssetSelect={handleLabAssetDrop}
                 activeSubject={activeLabSubject}
                 activeStandard={activeLabStandard}
+                activeTopicTitle={activeTopicTitle}
                 setActiveSubject={setActiveLabSubject}
                 setActiveStandard={setActiveLabStandard}
                 onClose={() => setShowLabPanel(false)}
+                allowedSubjects={subjects.map(s => s.name)}
               />
             </motion.div>
           )}

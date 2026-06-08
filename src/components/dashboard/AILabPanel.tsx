@@ -75,18 +75,22 @@ interface AILabPanelProps {
   onAssetSelect: (asset: LabAsset) => void;
   activeSubject: string | null;
   activeStandard: string | null;
+  activeTopicTitle?: string | null;
   setActiveSubject?: (subj: string | null) => void;
   setActiveStandard?: (std: string | null) => void;
   onClose: () => void;
+  allowedSubjects?: string[];
 }
 
 export default function AILabPanel({
   onAssetSelect,
   activeSubject,
   activeStandard,
+  activeTopicTitle,
   setActiveSubject,
   setActiveStandard,
-  onClose
+  onClose,
+  allowedSubjects
 }: AILabPanelProps) {
   // Filter by active standard, then by active subject if provided
   let filtered = labAssets;
@@ -164,26 +168,28 @@ export default function AILabPanel({
             >
               All
             </button>
-            {Object.keys(subjectColors).map((sub) => {
-              const color = subjectColors[sub];
-              const isSelected = activeSubject === sub;
-              return (
-                <button
-                  key={sub}
-                  onClick={() => setActiveSubject?.(sub)}
-                  style={{
-                    borderColor: isSelected ? color : "transparent",
-                    backgroundColor: isSelected ? color + "20" : "rgba(255,255,255,0.05)"
-                  }}
-                  className={cn(
-                    "px-2 py-0.5 text-[9px] rounded-full font-semibold border transition-all",
-                    isSelected ? "text-white shadow-sm" : "text-muted-foreground hover:bg-white/10 hover:text-white"
-                  )}
-                >
-                  {sub}
-                </button>
-              );
-            })}
+            {Object.keys(subjectColors)
+              .filter((sub) => !allowedSubjects || allowedSubjects.length === 0 || allowedSubjects.includes(sub))
+              .map((sub) => {
+                const color = subjectColors[sub];
+                const isSelected = activeSubject === sub;
+                return (
+                  <button
+                    key={sub}
+                    onClick={() => setActiveSubject?.(sub)}
+                    style={{
+                      borderColor: isSelected ? color : "transparent",
+                      backgroundColor: isSelected ? color + "20" : "rgba(255,255,255,0.05)"
+                    }}
+                    className={cn(
+                      "px-2 py-0.5 text-[9px] rounded-full font-semibold border transition-all",
+                      isSelected ? "text-white shadow-sm" : "text-muted-foreground hover:bg-white/10 hover:text-white"
+                    )}
+                  >
+                    {sub}
+                  </button>
+                );
+              })}
           </div>
         </div>
       </div>
@@ -227,12 +233,19 @@ export default function AILabPanel({
                         onClick={() => onAssetSelect(asset)}
                         className={cn(
                           "group relative flex flex-col items-center gap-2 p-4 rounded-xl",
-                          "bg-white/5 border border-white/5 hover:border-white/20",
                           "hover:bg-white/10 transition-all cursor-grab active:cursor-grabbing",
-                          "hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] hover:scale-[1.04]"
+                          "hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] hover:scale-[1.04]",
+                          activeTopicTitle === asset.title
+                            ? "bg-teal/10 border-teal shadow-[0_0_15px_rgba(45,212,191,0.25)] scale-[1.04]"
+                            : "bg-white/5 border border-white/5 hover:border-white/20"
                         )}
                         title={asset.description}
                       >
+                        {activeTopicTitle === asset.title && (
+                          <span className="absolute top-2 left-2 px-1.5 py-0.5 bg-teal text-navy-900 text-[8px] uppercase tracking-wider font-extrabold rounded-md shadow-md animate-pulse">
+                            Selected
+                          </span>
+                        )}
                         {/* Icon */}
                         <div
                           className="w-16 h-16 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110"
