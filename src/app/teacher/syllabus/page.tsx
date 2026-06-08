@@ -532,7 +532,7 @@ export default function TeacherSyllabusPage() {
                                       uploadingTopicId === topic.id
                                         ? "bg-black/10 border-black/10 dark:bg-white/10 dark:border-white/10 text-muted-foreground animate-pulse cursor-not-allowed"
                                         : topic.ebookHtml
-                                        ? "bg-white/5 hover:bg-white/10 border-white/10 text-slate-200"
+                                        ? "bg-teal/10 hover:bg-teal/20 border-teal/20 text-teal-700 dark:bg-teal/5 dark:hover:bg-teal/10 dark:border-teal/20 dark:text-teal"
                                         : "bg-teal border-none text-navy-900 hover:opacity-90 font-bold"
                                     )}>
                                       <Upload size={12} />
