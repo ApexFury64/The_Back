@@ -823,32 +823,22 @@ export default function AdminClassesPage() {
             <p className="text-xs text-muted-foreground mb-4">For {assignData.className} - {assignData.sectionName}</p>
             <form onSubmit={handleAssignTeacher} className="space-y-4">
               <div>
-                <label className="text-xs text-muted-foreground font-medium mb-1 block">Select Teacher (from assigned Subject Teachers)</label>
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Select Teacher</label>
                 <select 
                   value={assignData.teacherId} 
                   onChange={e => setAssignData({...assignData, teacherId: e.target.value})} 
-                  className="glass-input w-full px-4 py-2 text-sm bg-white dark:bg-navy-950" 
+                  className="glass-input w-full px-4 py-2 text-sm bg-white dark:bg-navy-950 text-slate-800 dark:text-white border-black/10 dark:border-white/10" 
                   required 
                 >
-                  <option value="" disabled>-- Select a Teacher --</option>
-                  {Array.from(new Map(
-                    (sections.find(s => s.id === assignData.sectionId)?.sectionSubjects || [])
-                      .filter((ss: any) => ss?.teacher?.id)
-                      .map((ss: any) => [ss.teacher.id, { id: ss.teacher.id, name: ss.teacher.name, subjects: [] }])
-                  ).values()).map((teacher: any) => {
-                    const subjects = (sections.find(s => s.id === assignData.sectionId)?.sectionSubjects || [])
-                      .filter((ss: any) => ss.teacher?.id === teacher.id)
-                      .map((ss: any) => ss.subject.name)
-                      .join(', ');
-                    return (
-                      <option key={teacher.id} value={teacher.id}>
-                        {teacher.name} ({subjects})
-                      </option>
-                    );
-                  })}
+                  <option value="" disabled className="bg-white dark:bg-navy-950 text-muted-foreground">-- Select a Teacher --</option>
+                  {teachers.map((teacher: any) => (
+                    <option key={teacher.id} value={teacher.id} className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">
+                      {teacher.name} ({teacher.subjects || 'General'})
+                    </option>
+                  ))}
                 </select>
-                {(!sections.find(s => s.id === assignData.sectionId)?.sectionSubjects || sections.find(s => s.id === assignData.sectionId)?.sectionSubjects?.length === 0) && (
-                  <p className="text-xs text-coral mt-2">There are no subject teachers assigned to this section yet. Assign a subject teacher first.</p>
+                {teachers.length === 0 && (
+                  <p className="text-xs text-coral mt-2">No teachers found in registry. Please add a teacher to your school first.</p>
                 )}
               </div>
               <div className="flex items-center gap-3 pt-4 border-t border-black/5 dark:border-white/10">
