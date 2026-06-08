@@ -344,8 +344,8 @@ export default function AdminClassesPage() {
 
       <div className="grid lg:grid-cols-12 gap-6 items-start">
         {/* Left Tree Selection Sidebar (33% width / 4 cols) */}
-        <div className="lg:col-span-4 bg-black/5 dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-2xl flex flex-col overflow-hidden max-h-[70vh]">
-          <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/3">
+        <div className="lg:col-span-4 glass-card-static flex flex-col overflow-hidden max-h-[70vh]">
+          <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/5">
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
               <School size={14} className="text-teal-700 dark:text-teal" /> Class Structure
             </h3>
@@ -384,7 +384,7 @@ export default function AdminClassesPage() {
                               "p-3 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between h-20 group relative overflow-hidden",
                               isActive
                                 ? "bg-teal/10 dark:bg-teal/20 border-teal/30 text-teal-700 dark:text-teal font-bold"
-                                : "bg-black/5 dark:bg-white/3 border-black/5 dark:border-white/5 text-muted-foreground hover:bg-black/10 dark:hover:bg-white/5 hover:text-foreground"
+                                : "bg-black/[0.03] dark:bg-white/5 border-black/5 dark:border-white/5 text-muted-foreground hover:bg-black/10 dark:hover:bg-white/5 hover:text-foreground"
                             )}
                           >
                             <span className="text-xs font-bold block">Section {sec.name}</span>
@@ -403,11 +403,11 @@ export default function AdminClassesPage() {
         </div>
 
         {/* Right Detail Workspace Panel (67% width / 8 cols) */}
-        <div className="lg:col-span-8 bg-black/[0.03] dark:bg-black/10 border border-black/5 dark:border-white/5 rounded-2xl flex flex-col overflow-hidden min-h-[50vh]">
+        <div className="lg:col-span-8 glass-card-static flex flex-col overflow-hidden min-h-[50vh]">
           {activeSection ? (
             <>
               {/* Header Details */}
-              <div className="p-5 border-b border-black/5 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-black/[0.02] dark:bg-white/3">
+              <div className="p-5 border-b border-black/5 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-black/[0.02] dark:bg-white/5">
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-bold text-foreground">{activeSection.className} - {activeSection.name}</h2>
@@ -430,7 +430,7 @@ export default function AdminClassesPage() {
                   </button>
                   <button
                     onClick={() => handleDeleteClass(activeSection.id)}
-                    className="glass-button text-[11px] border-coral/30 text-coral hover:bg-coral/10 px-3 py-1.5 flex items-center gap-1"
+                    className="glass-button-danger text-[11px] px-3 py-1.5 flex items-center gap-1"
                     title="Delete Class Section"
                   >
                     <Trash2 size={12} /> Delete Section
@@ -461,7 +461,7 @@ export default function AdminClassesPage() {
                   <div className="space-y-2">
                     {activeSection.sectionSubjects && activeSection.sectionSubjects.length > 0 ? (
                       activeSection.sectionSubjects.map((ss: any) => (
-                        <div key={ss.id} className="text-xs flex items-center justify-between p-3 bg-white/3 border border-white/5 rounded-xl group/sub transition-all hover:border-white/10">
+                        <div key={ss.id} className="text-xs flex items-center justify-between p-3 bg-black/[0.02] dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-xl group/sub transition-all hover:border-black/10 dark:hover:border-white/10">
                           <div className="flex flex-col gap-0.5">
                             <span className="font-semibold text-foreground flex items-center gap-1.5">
                               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: ss.subject.color }} />
@@ -505,7 +505,7 @@ export default function AdminClassesPage() {
                         </div>
                       ))
                     ) : (
-                      <div className="text-xs text-muted-foreground italic p-4 bg-white/3 rounded-xl border border-dashed border-white/5 text-center">
+                      <div className="text-xs text-muted-foreground italic p-4 bg-black/[0.02] dark:bg-white/3 rounded-xl border border-dashed border-black/5 dark:border-white/5 text-center">
                         No subjects added for Grade {activeSection.classGrade}.
                       </div>
                     )}
@@ -532,7 +532,7 @@ export default function AdminClassesPage() {
                   <div className="space-y-2 max-h-80 overflow-y-auto pr-1 no-scrollbar">
                     {activeSection.students && activeSection.students.length > 0 ? (
                       activeSection.students.map((student: any) => (
-                        <div key={student.id} className="flex items-center justify-between p-2.5 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-xl hover:border-black/15 dark:hover:border-white/10 transition-all">
+                        <div key={student.id} className="flex items-center justify-between p-2.5 bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl hover:border-black/10 dark:hover:bg-white/10 transition-all">
                           <div className="flex items-center gap-2.5">
                             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-[10px] font-bold text-teal-700 dark:text-teal flex-shrink-0 border border-teal/10 dark:border-teal/20">
                               {(student.name || "Unknown").split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
@@ -571,7 +571,7 @@ export default function AdminClassesPage() {
                         </div>
                       ))
                     ) : (
-                      <div className="text-xs text-muted-foreground italic p-4 bg-white/3 rounded-xl border border-dashed border-white/5 text-center">
+                      <div className="text-xs text-muted-foreground italic p-4 bg-black/[0.02] dark:bg-white/3 rounded-xl border border-dashed border-black/5 dark:border-white/5 text-center">
                         No students enrolled in this section yet.
                       </div>
                     )}
@@ -653,11 +653,11 @@ export default function AdminClassesPage() {
                   <span className="text-xs text-muted-foreground">{newSubject.color}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+              <div className="flex items-center gap-3 pt-4 border-t border-black/5 dark:border-white/10">
                 <button 
                   type="button" 
                   onClick={() => setIsCreateSubjectModalOpen(false)}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </button>
@@ -736,11 +736,11 @@ export default function AdminClassesPage() {
                   <span className="text-xs text-muted-foreground">{editingSubject.color}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+              <div className="flex items-center gap-3 pt-4 border-t border-black/5 dark:border-white/10">
                 <button 
                   type="button" 
                   onClick={() => setIsEditSubjectModalOpen(false)}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </button>
@@ -794,11 +794,11 @@ export default function AdminClassesPage() {
                 />
                 <p className="text-[10px] text-muted-foreground mt-1">E.g. A, B, C. These will be created automatically.</p>
               </div>
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+              <div className="flex items-center gap-3 pt-4 border-t border-black/5 dark:border-white/10">
                 <button 
                   type="button" 
                   onClick={() => setIsAddClassModalOpen(false)}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </button>
@@ -827,7 +827,7 @@ export default function AdminClassesPage() {
                 <select 
                   value={assignData.teacherId} 
                   onChange={e => setAssignData({...assignData, teacherId: e.target.value})} 
-                  className="glass-input w-full px-4 py-2 text-sm bg-navy-900" 
+                  className="glass-input w-full px-4 py-2 text-sm bg-white dark:bg-navy-950" 
                   required 
                 >
                   <option value="" disabled>-- Select a Teacher --</option>
@@ -851,11 +851,11 @@ export default function AdminClassesPage() {
                   <p className="text-xs text-coral mt-2">There are no subject teachers assigned to this section yet. Assign a subject teacher first.</p>
                 )}
               </div>
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+              <div className="flex items-center gap-3 pt-4 border-t border-black/5 dark:border-white/10">
                 <button 
                   type="button" 
                   onClick={() => setIsAssignModalOpen(false)}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </button>
@@ -883,11 +883,11 @@ export default function AdminClassesPage() {
             <form onSubmit={handleAssignStudents} className="space-y-4">
               <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                 {unassignedStudents.length === 0 ? (
-                  <p className="text-sm text-muted-foreground italic p-4 text-center border border-dashed border-white/10 rounded-lg">No unassigned students available in the system.</p>
+                  <p className="text-sm text-muted-foreground italic p-4 text-center border border-dashed border-black/10 dark:border-white/10 rounded-lg">No unassigned students available in the system.</p>
                 ) : (
                   unassignedStudents.map(student => (
-                    <label key={student.id} className="flex items-center gap-3 p-3 rounded-lg border border-white/5 hover:bg-white/5 cursor-pointer transition-colors group">
-                      <div className="relative flex items-center justify-center w-5 h-5 rounded border border-white/20 bg-black/20 overflow-hidden">
+                     <label key={student.id} className="flex items-center gap-3 p-3 rounded-lg border border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition-colors group">
+                       <div className="relative flex items-center justify-center w-5 h-5 rounded border border-black/20 dark:border-white/20 bg-black/5 dark:bg-black/20 overflow-hidden">
                         <input 
                           type="checkbox" 
                           className="opacity-0 absolute inset-0 cursor-pointer"
@@ -911,11 +911,11 @@ export default function AdminClassesPage() {
                 )}
               </div>
               
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+              <div className="flex items-center gap-3 pt-4 border-t border-black/5 dark:border-white/10">
                 <button 
                   type="button" 
                   onClick={() => setIsAddStudentsModalOpen(false)}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </button>

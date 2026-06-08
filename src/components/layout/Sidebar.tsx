@@ -107,7 +107,7 @@ export default function Sidebar({ role, userName = "User", schoolName = "AI Tuto
         className="glass-sidebar hidden lg:flex flex-col h-screen sticky top-0 z-40"
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-white/5">
+        <div className="flex items-center gap-3 px-4 py-5 border-b border-black/5 dark:border-white/5">
           <div className="flex items-center justify-center flex-shrink-0">
             <AILogo size={36} />
           </div>
@@ -141,8 +141,8 @@ export default function Sidebar({ role, userName = "User", schoolName = "AI Tuto
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
                     isActive
-                      ? "bg-teal/10 text-teal"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                      ? "bg-teal/10 text-teal-700 dark:text-teal"
+                      : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                   )}
                 >
                   {isActive && (
@@ -169,8 +169,8 @@ export default function Sidebar({ role, userName = "User", schoolName = "AI Tuto
                     <span className={cn(
                       "ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full",
                       item.badge === "AI"
-                        ? "bg-gradient-to-r from-teal/20 to-cyan/20 text-teal"
-                        : "bg-coral/15 text-coral"
+                        ? "bg-gradient-to-r from-teal/10 to-cyan/10 dark:from-teal/20 dark:to-cyan/20 text-teal-700 dark:text-teal"
+                        : "bg-coral/10 dark:bg-coral/15 text-destructive dark:text-coral"
                     )}>
                       {item.badge}
                     </span>
@@ -182,9 +182,9 @@ export default function Sidebar({ role, userName = "User", schoolName = "AI Tuto
         </nav>
 
         {/* User Info */}
-        <div className="px-3 py-4 border-t border-white/5">
+        <div className="px-3 py-4 border-t border-black/5 dark:border-white/5">
           <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal/30 to-cyan/30 flex items-center justify-center flex-shrink-0 text-xs font-bold text-teal">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center flex-shrink-0 text-xs font-bold text-teal-700 dark:text-teal">
               {userName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
             </div>
             {!collapsed && (
@@ -212,14 +212,14 @@ export default function Sidebar({ role, userName = "User", schoolName = "AI Tuto
         {/* Collapse Toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-navy-700 border border-white/10 flex items-center justify-center text-muted-foreground hover:text-teal hover:border-teal/30 transition-all z-50"
+          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-white dark:bg-navy-700 border border-black/10 dark:border-white/10 flex items-center justify-center text-muted-foreground hover:text-teal-700 dark:hover:text-teal hover:border-teal/30 transition-all z-50 shadow-sm"
         >
           {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
         </button>
       </motion.aside>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-navbar border-t border-white/5">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-navbar border-t border-black/5 dark:border-white/5">
         <div className="flex items-center justify-around px-2 py-2">
           {config.items.slice(0, 5).map((item) => {
             const isActive = 
@@ -229,11 +229,11 @@ export default function Sidebar({ role, userName = "User", schoolName = "AI Tuto
               <Link key={item.href} href={item.href}>
                 <div className={cn(
                   "flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all",
-                  isActive ? "text-teal" : "text-muted-foreground"
+                  isActive ? "text-teal-700 dark:text-teal" : "text-muted-foreground"
                 )}>
                   {item.icon}
                   <span className="text-[9px] font-medium">{item.label}</span>
-                  {isActive && <div className="w-1 h-1 rounded-full bg-teal" />}
+                  {isActive && <div className="w-1 h-1 rounded-full bg-teal-700 dark:bg-teal" />}
                 </div>
               </Link>
             );

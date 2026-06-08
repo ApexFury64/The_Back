@@ -275,7 +275,7 @@ export default function AdminStudentsPage() {
       <AcademicNavigationTabs />
 
       {/* FILTER HUB & SEARCH BAR */}
-      <div className="bg-black/20 border border-white/5 p-4 rounded-2xl mb-6 space-y-4">
+      <div className="glass-card-static p-4 mb-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -404,7 +404,7 @@ export default function AdminStudentsPage() {
                     </td>
                     <td className="py-3 px-4">
                       {student.class ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal/10 text-teal-850 dark:text-teal border border-teal/20 dark:border-teal/30">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal/10 text-teal-800 dark:text-teal border border-teal/20 dark:border-teal/30">
                           Grade {student.class.standard} - {student.class.section}
                         </span>
                       ) : (
@@ -435,10 +435,10 @@ export default function AdminStudentsPage() {
                     </td>
                     <td className="py-3 px-4">
                       <span className={cn(
-                        "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold",
-                        student.aiUsage === "High" ? "bg-cyan/15 text-cyan border border-cyan/20" : 
-                        student.aiUsage === "Medium" ? "bg-amber/15 text-amber border border-amber/20" : 
-                        "bg-white/10 text-muted-foreground border border-white/5"
+                        "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border",
+                        student.aiUsage === "High" ? "bg-cyan/10 dark:bg-cyan/15 text-cyan-700 dark:text-cyan border-cyan/20 dark:border-transparent" : 
+                        student.aiUsage === "Medium" ? "bg-amber/10 dark:bg-amber/15 text-amber-800 dark:text-amber border-amber/20 dark:border-transparent" : 
+                        "bg-black/5 dark:bg-white/10 text-muted-foreground border-black/5 dark:border-white/5"
                       )}>
                         {student.aiUsage}
                       </span>
@@ -516,7 +516,7 @@ export default function AdminStudentsPage() {
                 <button 
                   type="button" 
                   onClick={() => setIsAddModalOpen(false)}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </button>
@@ -540,7 +540,7 @@ export default function AdminStudentsPage() {
             <h3 className="text-xl font-bold mb-1">Bulk Import Students</h3>
             <p className="text-xs text-muted-foreground mb-4">Upload a CSV file to add multiple students and link their parents automatically.</p>
             <form onSubmit={handleBulkImport} className="space-y-4">
-              <div className="p-4 bg-white/5 border border-white/10 rounded-xl space-y-3">
+              <div className="p-4 bg-black/[0.02] dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl space-y-3">
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   First, download the template CSV file. Fill in the student and parent details, then upload the file back here.
                 </p>
@@ -559,19 +559,19 @@ export default function AdminStudentsPage() {
                   type="file" 
                   accept=".csv"
                   onChange={e => setSelectedFile(e.target.files?.[0] || null)}
-                  className="glass-input w-full px-4 py-2 text-sm text-muted-foreground file:bg-white/10 file:border-none file:text-white file:px-3 file:py-1 file:rounded-md file:mr-3 file:cursor-pointer" 
+                  className="glass-input w-full px-4 py-2 text-sm text-muted-foreground file:bg-black/5 dark:file:bg-white/10 file:border-none file:text-foreground dark:file:text-white file:px-3 file:py-1 file:rounded-md file:mr-3 file:cursor-pointer" 
                   required 
                 />
               </div>
 
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-6">
+              <div className="flex items-center gap-3 pt-4 border-t border-black/5 dark:border-white/10 mt-6">
                 <button 
                   type="button" 
                   onClick={() => {
                      setIsBulkModalOpen(false);
                      setSelectedFile(null);
                   }}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </button>
@@ -603,7 +603,7 @@ export default function AdminStudentsPage() {
 
           <div className="absolute inset-y-0 right-0 pl-10 max-w-full flex">
             {/* Drawer Container */}
-            <div className="w-screen max-w-md bg-[#090d16] border-l border-white/10 flex flex-col justify-between shadow-2xl relative">
+            <div className="w-screen max-w-md bg-white dark:bg-navy-950 border-l border-black/10 dark:border-white/10 flex flex-col justify-between shadow-2xl relative">
               <div className="flex-1 py-6 overflow-y-auto px-6 space-y-6 no-scrollbar">
                 
                 {/* Header details */}
@@ -623,7 +623,7 @@ export default function AdminStudentsPage() {
                       setStudentPasswordResetVal("");
                       setParentPasswordResetVal("");
                     }}
-                    className="p-1 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
+                    className="p-1 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
                   >
                     <X size={20} />
                   </button>
@@ -631,7 +631,7 @@ export default function AdminStudentsPage() {
 
                 {/* Academic Metrics Row */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-2xl space-y-2 relative overflow-hidden">
+                  <div className="p-4 bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-2xl space-y-2 relative overflow-hidden">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>Average Score</span>
                       <Award size={14} className="text-teal-700 dark:text-teal" />
@@ -650,7 +650,7 @@ export default function AdminStudentsPage() {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-2xl space-y-2 relative overflow-hidden">
+                  <div className="p-4 bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-2xl space-y-2 relative overflow-hidden">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>Attendance</span>
                       <Percent size={14} className="text-cyan" />
@@ -669,12 +669,12 @@ export default function AdminStudentsPage() {
                 </div>
 
                 {/* Class Assignment & Reassignment Matrix */}
-                <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-2xl space-y-4">
+                <div className="p-4 bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-2xl space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Class Allocation</span>
                     <span className={cn(
                       "text-[10px] px-2 py-0.5 rounded-full font-bold",
-                      selectedStudentForDetails.class ? "bg-teal/10 text-teal-850 dark:text-teal border border-teal/20 dark:border-teal/30" : "bg-coral/10 text-coral border border-dashed border-coral/30"
+                      selectedStudentForDetails.class ? "bg-teal/10 text-teal-800 dark:text-teal border border-teal/20 dark:border-teal/30" : "bg-coral/10 text-coral border border-dashed border-coral/30"
                     )}>
                       {selectedStudentForDetails.class ? "Enrolled" : "Pending Assignment"}
                     </span>
@@ -700,7 +700,7 @@ export default function AdminStudentsPage() {
                 </div>
 
                 {/* Parent Contact Details */}
-                <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-2xl space-y-3">
+                <div className="p-4 bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-2xl space-y-3">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Linked Parent / Guardian</span>
                   {selectedStudentForDetails.parent ? (
                     <div className="space-y-2">
@@ -725,7 +725,7 @@ export default function AdminStudentsPage() {
                 </div>
 
                 {/* Password reset controls */}
-                <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-2xl space-y-4">
+                <div className="p-4 bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-2xl space-y-4">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block flex items-center gap-1.5">
                     <Lock size={14} className="text-teal-700 dark:text-teal" /> Account Access Management
                   </span>
@@ -742,7 +742,7 @@ export default function AdminStudentsPage() {
                         placeholder="New student password"
                         value={studentPasswordResetVal}
                         onChange={(e) => setStudentPasswordResetVal(e.target.value)}
-                        className="glass-input flex-1 px-3 py-1.5 text-xs rounded-xl"
+                        className="glass-input flex-1 px-3 py-1.5 text-xs rounded-xl border-black/10 dark:border-white/10"
                       />
                       <button
                         type="button"
@@ -768,7 +768,7 @@ export default function AdminStudentsPage() {
                           placeholder="New parent password"
                           value={parentPasswordResetVal}
                           onChange={(e) => setParentPasswordResetVal(e.target.value)}
-                          className="glass-input flex-1 px-3 py-1.5 text-xs rounded-xl"
+                          className="glass-input flex-1 px-3 py-1.5 text-xs rounded-xl border-black/10 dark:border-white/10"
                         />
                         <button
                           type="button"
@@ -786,7 +786,7 @@ export default function AdminStudentsPage() {
               </div>
 
               {/* Bottom drawer controls */}
-              <div className="p-4 bg-white/3 border-t border-white/5 flex items-center justify-end gap-3 shrink-0">
+              <div className="p-4 bg-black/[0.02] dark:bg-white/3 border-t border-black/5 dark:border-white/5 flex items-center justify-end gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => {

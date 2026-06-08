@@ -30,6 +30,9 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
   };
 
   useEffect(() => {
+    const theme = document.documentElement.getAttribute("data-theme") || "light";
+    setIsDark(theme === "dark");
+
     fetch("/api/notifications")
       .then(res => res.json())
       .then(data => {

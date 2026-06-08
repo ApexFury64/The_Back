@@ -255,8 +255,8 @@ export default function AdminTeachersPage() {
 
       <div className="grid lg:grid-cols-12 gap-6 items-start">
         {/* LEFT DIRECTORY TREE LIST (40% width / 5 cols) */}
-        <div className="lg:col-span-4 bg-black/5 dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-2xl flex flex-col overflow-hidden max-h-[75vh]">
-          <div className="p-4 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/3 space-y-3">
+        <div className="lg:col-span-4 glass-card-static flex flex-col overflow-hidden max-h-[75vh]">
+          <div className="p-4 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/5 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                 <BookOpen size={14} className="text-teal-700 dark:text-teal" /> Faculty Directory
@@ -297,7 +297,7 @@ export default function AdminTeachersPage() {
                       "w-full p-3 rounded-xl border text-left transition-all duration-200 flex items-center gap-3 relative overflow-hidden group",
                       isActive
                         ? "bg-teal/10 dark:bg-teal/20 border-teal/30 dark:border-teal/40 text-teal-700 dark:text-teal font-semibold shadow-inner"
-                        : "bg-black/5 dark:bg-white/3 border-black/5 dark:border-white/5 text-muted-foreground hover:bg-black/10 dark:hover:bg-white/5 hover:text-foreground"
+                        : "bg-black/[0.03] dark:bg-white/5 border-black/5 dark:border-white/5 text-muted-foreground hover:bg-black/10 dark:hover:bg-white/5 hover:text-foreground"
                     )}
                   >
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-xs font-bold text-teal-700 dark:text-teal flex-shrink-0 border border-teal/10 dark:border-teal/25">
@@ -327,11 +327,11 @@ export default function AdminTeachersPage() {
         </div>
 
         {/* RIGHT DETAIL WORKSPACE CARD (60% width / 8 cols) */}
-        <div className="lg:col-span-8 bg-black/5 dark:bg-black/10 border border-black/5 dark:border-white/5 rounded-2xl flex flex-col overflow-hidden min-h-[50vh]">
+        <div className="lg:col-span-8 glass-card-static flex flex-col overflow-hidden min-h-[50vh]">
           {activeTeacher ? (
             <>
               {/* Header profile cards */}
-              <div className="p-5 border-b border-black/5 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-black/[0.02] dark:bg-white/3">
+              <div className="p-5 border-b border-black/5 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-black/[0.02] dark:bg-white/5">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-base font-bold text-teal-700 dark:text-teal border border-teal/30 dark:border-teal/40 shadow-inner">
                     {activeTeacher.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
@@ -357,7 +357,7 @@ export default function AdminTeachersPage() {
                   </button>
                   <button
                     onClick={() => handleDeleteTeacher(activeTeacher.id, activeTeacher.name)}
-                    className="glass-button text-[11px] border-coral/30 text-coral hover:bg-coral/10 px-3.5 py-2 flex items-center gap-1.5"
+                    className="glass-button-danger text-[11px] px-3.5 py-2 flex items-center gap-1.5"
                     title="Delete Teacher Registry"
                   >
                     <Trash2 size={12} /> Remove Teacher
@@ -369,7 +369,7 @@ export default function AdminTeachersPage() {
               <div className="p-5 space-y-6">
                 {/* Contact grid */}
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-xl space-y-2.5">
+                  <div className="p-4 bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl space-y-2.5">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Official Contact</span>
                     
                     <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
@@ -383,7 +383,7 @@ export default function AdminTeachersPage() {
                   </div>
 
                   {/* Password Reset Section */}
-                  <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-xl space-y-3.5">
+                  <div className="p-4 bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl space-y-3.5">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block flex items-center gap-1.5">
                       <Lock size={12} className="text-teal-700 dark:text-teal" /> Reset Password
                     </span>
