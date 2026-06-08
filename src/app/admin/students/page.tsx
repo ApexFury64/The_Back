@@ -206,9 +206,8 @@ export default function AdminStudentsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          sectionId, 
-          studentIds: [studentId],
-          adminEmail: userEmail || 'admin@dps-hyd.edu'
+          classId: sectionId, 
+          studentIds: [studentId]
         })
       });
       if (res.ok) {
