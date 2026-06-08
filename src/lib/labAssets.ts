@@ -11,7 +11,7 @@ export interface LabAsset {
 }
 
 // Subject colors — must match syllabus API
-const subjectColors: Record<string, string> = {
+export const subjectColors: Record<string, string> = {
   Mathematics: '#0ea5e9',
   Science: '#00d4aa',
   English: '#a78bfa',

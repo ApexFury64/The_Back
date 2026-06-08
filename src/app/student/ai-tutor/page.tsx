@@ -278,6 +278,7 @@ function AITutorContent() {
   const userEmail = useAppStore(s => s.userEmail);
   const userName = useAppStore(s => s.userName);
   const schoolName = useAppStore(s => s.schoolName);
+  const userStandard = useAppStore(s => s.userStandard);
 
   useEffect(() => {
     const email = userEmail || 'arjun@dps.edu';
@@ -327,6 +328,13 @@ function AITutorContent() {
   const [activeLabStandard, setActiveLabStandard] = useState<string | null>('8');
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Sync activeLabStandard with userStandard once loaded
+  useEffect(() => {
+    if (userStandard) {
+      setActiveLabStandard(userStandard);
+    }
+  }, [userStandard]);
 
   // Helper to extract YouTube ID and build clean embed URL
   const getEmbedUrl = (url: string | null) => {
@@ -921,6 +929,8 @@ function AITutorContent() {
                 onAssetSelect={handleLabAssetDrop}
                 activeSubject={activeLabSubject}
                 activeStandard={activeLabStandard}
+                setActiveSubject={setActiveLabSubject}
+                setActiveStandard={setActiveLabStandard}
                 onClose={() => setShowLabPanel(false)}
               />
             </motion.div>

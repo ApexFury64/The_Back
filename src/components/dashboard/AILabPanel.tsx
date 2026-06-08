@@ -28,7 +28,7 @@ import {
   type LucideIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { labAssets, groupAssetsBySubject, type LabAsset } from "@/lib/labAssets";
+import { labAssets, groupAssetsBySubject, subjectColors, type LabAsset } from "@/lib/labAssets";
 
 // Icon mapping — same as in ai-tutor page
 const iconMap: Record<string, LucideIcon> = {
@@ -75,10 +75,19 @@ interface AILabPanelProps {
   onAssetSelect: (asset: LabAsset) => void;
   activeSubject: string | null;
   activeStandard: string | null;
+  setActiveSubject?: (subj: string | null) => void;
+  setActiveStandard?: (std: string | null) => void;
   onClose: () => void;
 }
 
-export default function AILabPanel({ onAssetSelect, activeSubject, activeStandard, onClose }: AILabPanelProps) {
+export default function AILabPanel({
+  onAssetSelect,
+  activeSubject,
+  activeStandard,
+  setActiveSubject,
+  setActiveStandard,
+  onClose
+}: AILabPanelProps) {
   // Filter by active standard, then by active subject if provided
   let filtered = labAssets;
   if (activeStandard) {
@@ -115,6 +124,68 @@ export default function AILabPanel({ onAssetSelect, activeSubject, activeStandar
         >
           <X size={16} />
         </button>
+      </div>
+
+      {/* Filters Section */}
+      <div className="px-4 py-3 border-b border-white/5 bg-white/2 space-y-3">
+        {/* Standard Selector */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Standard</span>
+          <div className="flex gap-1">
+            {["6", "7", "8", "9", "10"].map((std) => (
+              <button
+                key={std}
+                onClick={() => setActiveStandard?.(std)}
+                className={cn(
+                  "px-2 py-0.5 text-[10px] rounded-md font-semibold border transition-all",
+                  activeStandard === std
+                    ? "bg-teal text-navy-900 border-teal shadow-[0_0_8px_rgba(45,212,191,0.3)]"
+                    : "bg-white/5 border-white/5 text-muted-foreground hover:bg-white/10 hover:text-white"
+                )}
+              >
+                {std}th
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Subject Filter Pills */}
+        <div className="space-y-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Subject</span>
+          <div className="flex flex-wrap gap-1">
+            <button
+              onClick={() => setActiveSubject?.(null)}
+              className={cn(
+                "px-2 py-0.5 text-[9px] rounded-full font-semibold border transition-all",
+                activeSubject === null
+                  ? "bg-white/20 border-white/30 text-white"
+                  : "bg-white/5 border-transparent text-muted-foreground hover:bg-white/10 hover:text-white"
+              )}
+            >
+              All
+            </button>
+            {Object.keys(subjectColors).map((sub) => {
+              const color = subjectColors[sub];
+              const isSelected = activeSubject === sub;
+              return (
+                <button
+                  key={sub}
+                  onClick={() => setActiveSubject?.(sub)}
+                  style={{
+                    borderColor: isSelected ? color : "transparent",
+                    backgroundColor: isSelected ? color + "20" : "rgba(255,255,255,0.05)"
+                  }}
+                  className={cn(
+                    "px-2 py-0.5 text-[9px] rounded-full font-semibold border transition-all",
+                    isSelected ? "text-white shadow-sm" : "text-muted-foreground hover:bg-white/10 hover:text-white"
+                  )}
+                >
+                  {sub}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Hint */}
