@@ -28,7 +28,7 @@ export default function AcademicNavigationTabs() {
             className={cn(
               "flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 whitespace-nowrap border border-transparent",
               isActive
-                ? "bg-teal/10 text-teal border-teal/20 shadow-lg shadow-teal/5"
+                ? "bg-teal/10 text-teal-700 dark:text-teal border-teal/20 dark:border-teal/20 shadow-lg shadow-teal/5"
                 : "text-muted-foreground hover:text-foreground hover:bg-white/5"
             )}
           >

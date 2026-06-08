@@ -289,7 +289,7 @@ export default function AdminStudentsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <button 
               onClick={() => setIsBulkModalOpen(true)}
-              className="glass-button-secondary px-4 py-2.5 flex items-center justify-center gap-2 text-xs font-semibold rounded-xl border border-teal/20 text-teal hover:bg-teal/10 transition-all"
+              className="glass-button-secondary px-4 py-2.5 flex items-center justify-center gap-2 text-xs font-semibold rounded-xl border border-teal/20 dark:border-teal/30 text-teal-700 dark:text-teal hover:bg-teal/10 dark:hover:bg-teal/20 transition-all"
             >
               <Download size={14} /> Bulk Import
             </button>
@@ -303,17 +303,17 @@ export default function AdminStudentsPage() {
         </div>
 
         {/* Dropdown Filters row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-white/5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-black/5 dark:border-white/5">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] text-muted-foreground/80 font-bold uppercase tracking-wider pl-1">Grade Level</span>
             <select
               value={selectedGrade}
               onChange={(e) => setSelectedGrade(e.target.value)}
-              className="glass-input w-full px-3 py-1.5 text-xs bg-navy-950 text-teal border-white/10 rounded-xl"
+              className="glass-input w-full px-3 py-1.5 text-xs bg-white dark:bg-navy-950 text-teal-700 dark:text-teal border-black/10 dark:border-white/10 rounded-xl"
             >
-              <option value="All">All Grades</option>
+              <option value="All" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">All Grades</option>
               {uniqueGrades.map(grade => (
-                <option key={grade} value={grade}>Grade {grade}</option>
+                <option key={grade} value={grade} className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">Grade {grade}</option>
               ))}
             </select>
           </div>
@@ -323,11 +323,11 @@ export default function AdminStudentsPage() {
             <select
               value={selectedSection}
               onChange={(e) => setSelectedSection(e.target.value)}
-              className="glass-input w-full px-3 py-1.5 text-xs bg-navy-950 text-teal border-white/10 rounded-xl"
+              className="glass-input w-full px-3 py-1.5 text-xs bg-white dark:bg-navy-950 text-teal-700 dark:text-teal border-black/10 dark:border-white/10 rounded-xl"
             >
-              <option value="All">All Sections</option>
+              <option value="All" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">All Sections</option>
               {uniqueSections.map(sec => (
-                <option key={sec} value={sec}>Section {sec}</option>
+                <option key={sec} value={sec} className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">Section {sec}</option>
               ))}
             </select>
           </div>
@@ -337,12 +337,12 @@ export default function AdminStudentsPage() {
             <select
               value={selectedAiUsage}
               onChange={(e) => setSelectedAiUsage(e.target.value)}
-              className="glass-input w-full px-3 py-1.5 text-xs bg-navy-950 text-teal border-white/10 rounded-xl"
+              className="glass-input w-full px-3 py-1.5 text-xs bg-white dark:bg-navy-950 text-teal-700 dark:text-teal border-black/10 dark:border-white/10 rounded-xl"
             >
-              <option value="All">All Activity Levels</option>
-              <option value="High">High Activity</option>
-              <option value="Medium">Medium Activity</option>
-              <option value="Low">Low Activity</option>
+              <option value="All" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">All Activity Levels</option>
+              <option value="High" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">High Activity</option>
+              <option value="Medium" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">Medium Activity</option>
+              <option value="Low" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">Low Activity</option>
             </select>
           </div>
 
@@ -351,22 +351,22 @@ export default function AdminStudentsPage() {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="glass-input w-full px-3 py-1.5 text-xs bg-navy-950 text-teal border-white/10 rounded-xl"
+              className="glass-input w-full px-3 py-1.5 text-xs bg-white dark:bg-navy-950 text-teal-700 dark:text-teal border-black/10 dark:border-white/10 rounded-xl"
             >
-              <option value="All">All Students</option>
-              <option value="Assigned">Assigned to Class</option>
-              <option value="Unassigned">Unassigned (Pending)</option>
+              <option value="All" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">All Students</option>
+              <option value="Assigned" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">Assigned to Class</option>
+              <option value="Unassigned" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">Unassigned (Pending)</option>
             </select>
           </div>
         </div>
       </div>
 
       {/* STUDENT DATATABLE */}
-      <div className="glass-card-static rounded-2xl overflow-hidden border border-white/5">
+      <div className="glass-card-static rounded-2xl overflow-hidden border border-black/5 dark:border-white/5">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-white/5 border-b border-white/5">
+              <tr className="bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/5">
                 <th className="py-3 px-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Student Details</th>
                 <th className="py-3 px-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Classroom Room</th>
                 <th className="py-3 px-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">System ID</th>
@@ -376,7 +376,7 @@ export default function AdminStudentsPage() {
                 <th className="py-3 px-4 text-xs font-bold text-muted-foreground uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-black/5 dark:divide-white/5">
               {filteredStudents.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-muted-foreground italic text-sm">
@@ -385,16 +385,16 @@ export default function AdminStudentsPage() {
                 </tr>
               ) : (
                 filteredStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-white/3 transition-colors">
+                  <tr key={student.id} className="hover:bg-black/[0.03] dark:hover:bg-white/3 transition-colors">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-xs font-bold text-teal flex-shrink-0 border border-teal/10">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-xs font-bold text-teal-700 dark:text-teal flex-shrink-0 border border-teal/10 dark:border-teal/20">
                           {student.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
                         </div>
                         <div>
                           <p 
                             onClick={() => setSelectedStudentForDetails(student)}
-                            className="text-sm font-semibold text-foreground hover:text-teal cursor-pointer hover:underline"
+                            className="text-sm font-semibold text-foreground hover:text-teal-700 dark:hover:text-teal cursor-pointer hover:underline"
                           >
                             {student.name}
                           </p>
@@ -404,7 +404,7 @@ export default function AdminStudentsPage() {
                     </td>
                     <td className="py-3 px-4">
                       {student.class ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal/10 text-teal border border-teal/20">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal/10 text-teal-850 dark:text-teal border border-teal/20 dark:border-teal/30">
                           Grade {student.class.standard} - {student.class.section}
                         </span>
                       ) : (
@@ -428,7 +428,7 @@ export default function AdminStudentsPage() {
                     </td>
                     <td className="py-3 px-4 font-semibold text-sm">
                       <span className={cn(
-                        student.avgScore >= 80 ? "text-teal" : student.avgScore >= 60 ? "text-amber" : "text-coral"
+                        student.avgScore >= 80 ? "text-teal-700 dark:text-teal" : student.avgScore >= 60 ? "text-amber-800 dark:text-amber" : "text-coral"
                       )}>
                         {student.avgScore}%
                       </span>
@@ -459,9 +459,9 @@ export default function AdminStudentsPage() {
         </div>
         
         {/* Table footer with counts */}
-        <div className="bg-white/3 px-4 py-3 border-t border-white/5 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="bg-black/5 dark:bg-white/3 px-4 py-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-xs text-muted-foreground">
           <span>Showing {filteredStudents.length} of {students.length} students</span>
-          <span className="font-semibold text-teal">{students.filter(s => !s.class).length} unassigned students pending classroom allocation</span>
+          <span className="font-semibold text-teal-700 dark:text-teal">{students.filter(s => !s.class).length} unassigned students pending classroom allocation</span>
         </div>
       </div>
 
@@ -498,10 +498,10 @@ export default function AdminStudentsPage() {
                 <select 
                   value={newStudent.classId} 
                   onChange={e => setNewStudent({...newStudent, classId: e.target.value})} 
-                  className="glass-input w-full px-4 py-2 text-sm bg-navy-900" 
+                  className="glass-input w-full px-4 py-2 text-sm bg-white dark:bg-navy-950 text-slate-800 dark:text-white border-black/10 dark:border-white/10" 
                   required 
                 >
-                  <option value="" disabled>-- Select a Class Section --</option>
+                  <option value="" disabled className="bg-white dark:bg-navy-950 text-muted-foreground">-- Select a Class Section --</option>
                   {flatClassRooms.map((room) => (
                     <option key={room.id} value={room.id}>
                       {room.name}
@@ -547,7 +547,7 @@ export default function AdminStudentsPage() {
                 <button
                   type="button"
                   onClick={downloadCsvTemplate}
-                  className="w-full glass-button-secondary py-2 text-xs flex items-center justify-center gap-2 border border-teal/20 text-teal"
+                  className="w-full glass-button-secondary py-2 text-xs flex items-center justify-center gap-2 border border-teal/20 dark:border-teal/30 text-teal-700 dark:text-teal hover:bg-teal/10 dark:hover:bg-teal/20 transition-colors"
                 >
                   <Download size={14} /> Download Example CSV Template
                 </button>
@@ -607,9 +607,9 @@ export default function AdminStudentsPage() {
               <div className="flex-1 py-6 overflow-y-auto px-6 space-y-6 no-scrollbar">
                 
                 {/* Header details */}
-                <div className="flex items-start justify-between border-b border-white/5 pb-4">
+                <div className="flex items-start justify-between border-b border-black/5 dark:border-white/5 pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-teal/20 text-teal flex items-center justify-center border border-teal/30 shadow-inner">
+                    <div className="w-12 h-12 rounded-2xl bg-teal/10 dark:bg-teal/20 text-teal-700 dark:text-teal flex items-center justify-center border border-teal/20 dark:border-teal/30 shadow-inner">
                       <GraduationCap size={24} />
                     </div>
                     <div>
@@ -631,18 +631,18 @@ export default function AdminStudentsPage() {
 
                 {/* Academic Metrics Row */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-white/3 border border-white/5 rounded-2xl space-y-2 relative overflow-hidden">
+                  <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-2xl space-y-2 relative overflow-hidden">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>Average Score</span>
-                      <Award size={14} className="text-teal" />
+                      <Award size={14} className="text-teal-700 dark:text-teal" />
                     </div>
                     <div className="flex items-baseline gap-1">
-                      <span className={cn("text-2xl font-black", selectedStudentForDetails.avgScore >= 80 ? "text-teal" : selectedStudentForDetails.avgScore >= 60 ? "text-amber" : "text-coral")}>
+                      <span className={cn("text-2xl font-black", selectedStudentForDetails.avgScore >= 80 ? "text-teal-700 dark:text-teal" : selectedStudentForDetails.avgScore >= 60 ? "text-amber-800 dark:text-amber" : "text-coral")}>
                         {selectedStudentForDetails.avgScore}
                       </span>
                       <span className="text-[10px] text-muted-foreground font-bold">%</span>
                     </div>
-                    <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                    <div className="w-full bg-black/10 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
                       <div 
                         className={cn("h-full rounded-full", selectedStudentForDetails.avgScore >= 80 ? "bg-teal" : selectedStudentForDetails.avgScore >= 60 ? "bg-amber" : "bg-coral")}
                         style={{ width: `${selectedStudentForDetails.avgScore}%` }}
@@ -650,7 +650,7 @@ export default function AdminStudentsPage() {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-white/3 border border-white/5 rounded-2xl space-y-2 relative overflow-hidden">
+                  <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-2xl space-y-2 relative overflow-hidden">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>Attendance</span>
                       <Percent size={14} className="text-cyan" />
@@ -659,7 +659,7 @@ export default function AdminStudentsPage() {
                       <span className="text-2xl font-black text-cyan">{selectedStudentForDetails.attendancePercent}</span>
                       <span className="text-[10px] text-muted-foreground font-bold">%</span>
                     </div>
-                    <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                    <div className="w-full bg-black/10 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-cyan rounded-full"
                         style={{ width: `${selectedStudentForDetails.attendancePercent}%` }}
@@ -669,12 +669,12 @@ export default function AdminStudentsPage() {
                 </div>
 
                 {/* Class Assignment & Reassignment Matrix */}
-                <div className="p-4 bg-white/3 border border-white/5 rounded-2xl space-y-4">
+                <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-2xl space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Class Allocation</span>
                     <span className={cn(
                       "text-[10px] px-2 py-0.5 rounded-full font-bold",
-                      selectedStudentForDetails.class ? "bg-teal/10 text-teal" : "bg-coral/10 text-coral border border-dashed border-coral/30"
+                      selectedStudentForDetails.class ? "bg-teal/10 text-teal-850 dark:text-teal border border-teal/20 dark:border-teal/30" : "bg-coral/10 text-coral border border-dashed border-coral/30"
                     )}>
                       {selectedStudentForDetails.class ? "Enrolled" : "Pending Assignment"}
                     </span>
@@ -686,9 +686,9 @@ export default function AdminStudentsPage() {
                       <select
                         value={selectedStudentForDetails.class?.id || ""}
                         onChange={(e) => handleReassignClassInDrawer(selectedStudentForDetails.id, e.target.value)}
-                        className="glass-input w-full px-3 py-2 text-xs bg-navy-950 text-teal border-white/10 rounded-xl"
+                        className="glass-input w-full px-3 py-2 text-xs bg-white dark:bg-navy-950 text-teal-700 dark:text-teal border-black/10 dark:border-white/10 rounded-xl"
                       >
-                        <option value="">-- Unassigned (Remove from Class) --</option>
+                        <option value="" className="bg-white dark:bg-navy-950 text-muted-foreground">-- Unassigned (Remove from Class) --</option>
                         {flatClassRooms.map((room) => (
                           <option key={room.id} value={room.id}>
                             {room.name}
@@ -700,7 +700,7 @@ export default function AdminStudentsPage() {
                 </div>
 
                 {/* Parent Contact Details */}
-                <div className="p-4 bg-white/3 border border-white/5 rounded-2xl space-y-3">
+                <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-2xl space-y-3">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Linked Parent / Guardian</span>
                   {selectedStudentForDetails.parent ? (
                     <div className="space-y-2">
@@ -710,7 +710,7 @@ export default function AdminStudentsPage() {
                       </div>
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">Email:</span>
-                        <span className="font-semibold text-teal">{selectedStudentForDetails.parent.email}</span>
+                        <span className="font-semibold text-teal-700 dark:text-teal">{selectedStudentForDetails.parent.email}</span>
                       </div>
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">Phone:</span>
@@ -725,16 +725,16 @@ export default function AdminStudentsPage() {
                 </div>
 
                 {/* Password reset controls */}
-                <div className="p-4 bg-white/3 border border-white/5 rounded-2xl space-y-4">
+                <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-2xl space-y-4">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block flex items-center gap-1.5">
-                    <Lock size={14} className="text-teal" /> Account Access Management
+                    <Lock size={14} className="text-teal-700 dark:text-teal" /> Account Access Management
                   </span>
                   
                   {/* Student Access */}
-                  <div className="space-y-2 pt-2 border-t border-white/5">
+                  <div className="space-y-2 pt-2 border-t border-black/5 dark:border-white/5">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground font-semibold">Student Username (Email)</span>
-                      <span className="font-mono text-[11px] text-teal truncate max-w-[180px]">{selectedStudentForDetails.email}</span>
+                      <span className="font-mono text-[11px] text-teal-700 dark:text-teal truncate max-w-[180px]">{selectedStudentForDetails.email}</span>
                     </div>
                     <div className="flex gap-2 items-center">
                       <input
@@ -757,10 +757,10 @@ export default function AdminStudentsPage() {
 
                   {/* Parent Access */}
                   {selectedStudentForDetails.parent && (
-                    <div className="space-y-2 pt-3 border-t border-white/5">
+                    <div className="space-y-2 pt-3 border-t border-black/5 dark:border-white/5">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground font-semibold">Parent Username (Email)</span>
-                        <span className="font-mono text-[11px] text-teal truncate max-w-[180px]">{selectedStudentForDetails.parent.email}</span>
+                        <span className="font-mono text-[11px] text-teal-700 dark:text-teal truncate max-w-[180px]">{selectedStudentForDetails.parent.email}</span>
                       </div>
                       <div className="flex gap-2 items-center">
                         <input

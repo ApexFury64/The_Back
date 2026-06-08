@@ -32,17 +32,17 @@ export default function ConfirmModal({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="glass-card w-full max-w-md p-6 rounded-2xl relative shadow-2xl border border-white/10"
+          className="glass-card w-full max-w-md p-6 rounded-2xl relative shadow-2xl border border-black/10 dark:border-white/10"
         >
           <button 
             onClick={onClose}
-            className="absolute right-4 top-4 text-muted-foreground hover:text-white transition-colors"
+            className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
           >
             <X size={20} />
           </button>
           
           <div className="flex items-start gap-4 mb-6">
-            <div className={`p-3 rounded-xl flex-shrink-0 ${isDestructive ? 'bg-coral/20 text-coral' : 'bg-teal/20 text-teal'}`}>
+            <div className={`p-3 rounded-xl flex-shrink-0 ${isDestructive ? 'bg-coral/20 text-coral' : 'bg-teal/10 dark:bg-teal/20 text-teal-700 dark:text-teal'}`}>
               <AlertTriangle size={24} />
             </div>
             <div>
@@ -51,10 +51,10 @@ export default function ConfirmModal({
             </div>
           </div>
           
-          <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+          <div className="flex items-center gap-3 pt-4 border-t border-black/5 dark:border-white/10">
             <button 
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-sm font-medium"
             >
               {cancelText}
             </button>

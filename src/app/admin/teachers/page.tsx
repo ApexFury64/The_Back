@@ -238,7 +238,7 @@ export default function AdminTeachersPage() {
   if (loading) {
     return (
       <DashboardLayout role="admin" userName={userName || "Loading..."} schoolName={schoolName || "Loading..."} pageTitle="Academic Workspace" pageSubtitle="Loading...">
-        <div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-teal rounded-full animate-spin border-t-transparent" /></div>
+        <div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-teal-700 dark:border-teal rounded-full animate-spin border-t-transparent" /></div>
       </DashboardLayout>
     );
   }
@@ -255,15 +255,15 @@ export default function AdminTeachersPage() {
 
       <div className="grid lg:grid-cols-12 gap-6 items-start">
         {/* LEFT DIRECTORY TREE LIST (40% width / 5 cols) */}
-        <div className="lg:col-span-4 bg-black/20 border border-white/5 rounded-2xl flex flex-col overflow-hidden max-h-[75vh]">
-          <div className="p-4 border-b border-white/5 bg-white/3 space-y-3">
+        <div className="lg:col-span-4 bg-black/5 dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-2xl flex flex-col overflow-hidden max-h-[75vh]">
+          <div className="p-4 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/3 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                <BookOpen size={14} className="text-teal" /> Faculty Directory
+                <BookOpen size={14} className="text-teal-700 dark:text-teal" /> Faculty Directory
               </h3>
               <button 
                 onClick={() => setIsAddModalOpen(true)}
-                className="text-[10px] bg-teal/10 hover:bg-teal/20 text-teal px-2.5 py-1.5 rounded-xl border border-teal/20 transition-all flex items-center gap-1 font-semibold"
+                className="text-[10px] bg-teal/10 dark:bg-teal/20 hover:bg-teal/20 dark:hover:bg-teal/30 text-teal-700 dark:text-teal px-2.5 py-1.5 rounded-xl border border-teal/20 dark:border-teal/30 transition-all flex items-center gap-1 font-semibold"
               >
                 <Plus size={12}/> Add Teacher
               </button>
@@ -275,7 +275,7 @@ export default function AdminTeachersPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search name or subject..." 
-                className="glass-input pl-9 pr-3 py-1.5 w-full text-xs rounded-xl" 
+                className="glass-input pl-9 pr-3 py-1.5 w-full text-xs rounded-xl border-black/10 dark:border-white/10" 
               />
             </div>
           </div>
@@ -296,17 +296,17 @@ export default function AdminTeachersPage() {
                     className={cn(
                       "w-full p-3 rounded-xl border text-left transition-all duration-200 flex items-center gap-3 relative overflow-hidden group",
                       isActive
-                        ? "bg-teal/10 border-teal/30 text-teal"
-                        : "bg-white/3 border-white/5 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                        ? "bg-teal/10 dark:bg-teal/20 border-teal/30 dark:border-teal/40 text-teal-700 dark:text-teal font-semibold shadow-inner"
+                        : "bg-black/5 dark:bg-white/3 border-black/5 dark:border-white/5 text-muted-foreground hover:bg-black/10 dark:hover:bg-white/5 hover:text-foreground"
                     )}
                   >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-xs font-bold text-teal flex-shrink-0 border border-teal/10">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-xs font-bold text-teal-700 dark:text-teal flex-shrink-0 border border-teal/10 dark:border-teal/25">
                       {teacher.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold truncate text-foreground">{teacher.name}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px] bg-white/10 text-teal/80 px-1.5 py-0.2 rounded-md font-medium border border-teal/10 uppercase tracking-tight">
+                        <span className="text-[10px] bg-teal/5 dark:bg-white/10 text-teal-700 dark:text-teal/80 px-1.5 py-0.5 rounded-md font-semibold border border-teal/10 dark:border-teal/20 uppercase tracking-tight">
                           {teacher.subjects}
                         </span>
                         {teacher.classes !== "None" && (
@@ -317,7 +317,7 @@ export default function AdminTeachersPage() {
                       </div>
                     </div>
                     {isActive && (
-                      <div className="absolute top-0 right-0 w-2 h-2 rounded-bl bg-teal" />
+                      <div className="absolute top-0 right-0 w-2 h-2 rounded-bl bg-teal-600 dark:bg-teal" />
                     )}
                   </button>
                 );
@@ -327,19 +327,19 @@ export default function AdminTeachersPage() {
         </div>
 
         {/* RIGHT DETAIL WORKSPACE CARD (60% width / 8 cols) */}
-        <div className="lg:col-span-8 bg-black/10 border border-white/5 rounded-2xl flex flex-col overflow-hidden min-h-[50vh]">
+        <div className="lg:col-span-8 bg-black/5 dark:bg-black/10 border border-black/5 dark:border-white/5 rounded-2xl flex flex-col overflow-hidden min-h-[50vh]">
           {activeTeacher ? (
             <>
               {/* Header profile cards */}
-              <div className="p-5 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/3">
+              <div className="p-5 border-b border-black/5 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-black/[0.02] dark:bg-white/3">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-base font-bold text-teal border border-teal/30 shadow-inner">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-base font-bold text-teal-700 dark:text-teal border border-teal/30 dark:border-teal/40 shadow-inner">
                     {activeTeacher.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-foreground">{activeTeacher.name}</h2>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] bg-teal/10 border border-teal/20 text-teal px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                      <span className="text-[10px] bg-teal/10 dark:bg-teal/20 border border-teal/20 dark:border-teal/30 text-teal-700 dark:text-teal px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
                         {activeTeacher.subjects} SPECIALIST
                       </span>
                       <span className="text-[10px] text-muted-foreground font-mono">ID: {activeTeacher.employeeId}</span>
@@ -369,23 +369,23 @@ export default function AdminTeachersPage() {
               <div className="p-5 space-y-6">
                 {/* Contact grid */}
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-white/3 border border-white/5 rounded-xl space-y-2.5">
+                  <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-xl space-y-2.5">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Official Contact</span>
                     
                     <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-                      <Mail size={14} className="text-teal shrink-0" />
+                      <Mail size={14} className="text-teal-700 dark:text-teal shrink-0" />
                       <a href={`mailto:${activeTeacher.email}`} className="text-foreground hover:underline truncate">{activeTeacher.email}</a>
                     </div>
                     <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-                      <Phone size={14} className="text-teal shrink-0" />
+                      <Phone size={14} className="text-teal-700 dark:text-teal shrink-0" />
                       <span className="text-foreground">{activeTeacher.phone}</span>
                     </div>
                   </div>
 
                   {/* Password Reset Section */}
-                  <div className="p-4 bg-white/3 border border-white/5 rounded-xl space-y-3.5">
+                  <div className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-xl space-y-3.5">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block flex items-center gap-1.5">
-                      <Lock size={12} className="text-teal" /> Reset Password
+                      <Lock size={12} className="text-teal-700 dark:text-teal" /> Reset Password
                     </span>
                     <div className="flex gap-2">
                       <input
@@ -393,7 +393,7 @@ export default function AdminTeachersPage() {
                         placeholder="Enter new password"
                         value={teacherPasswordResetVal}
                         onChange={(e) => setTeacherPasswordResetVal(e.target.value)}
-                        className="glass-input flex-1 px-3 py-1.5 text-xs rounded-xl"
+                        className="glass-input flex-1 px-3 py-1.5 text-xs rounded-xl border-black/10 dark:border-white/10"
                       />
                       <button
                         type="button"
@@ -410,20 +410,20 @@ export default function AdminTeachersPage() {
                 {/* Matrix Active Teaching Assignments */}
                 <div className="space-y-3.5">
                   <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2 pl-1">
-                    <UserCheck size={14} className="text-teal" /> Active Teaching Assignment Matrix
+                    <UserCheck size={14} className="text-teal-700 dark:text-teal" /> Active Teaching Assignment Matrix
                   </h3>
 
-                  <div className="glass-card-static rounded-xl overflow-hidden border border-white/5">
+                  <div className="glass-card-static rounded-xl overflow-hidden border border-black/5 dark:border-white/5">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-white/5 border-b border-white/5">
+                        <tr className="bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/5">
                           <th className="py-2.5 px-3 text-[10px] font-bold text-muted-foreground uppercase">Classroom Section</th>
                           <th className="py-2.5 px-3 text-[10px] font-bold text-muted-foreground uppercase">Assigned Subject</th>
                           <th className="py-2.5 px-3 text-[10px] font-bold text-muted-foreground uppercase">Subject Code</th>
                           <th className="py-2.5 px-3 text-[10px] font-bold text-muted-foreground uppercase text-right">Role Badge</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5">
+                      <tbody className="divide-y divide-black/5 dark:divide-white/5">
                         {activeAssignments.length === 0 ? (
                           <tr>
                             <td colSpan={4} className="py-8 text-center text-muted-foreground italic">
@@ -432,7 +432,7 @@ export default function AdminTeachersPage() {
                           </tr>
                         ) : (
                           activeAssignments.map((assign, index) => (
-                            <tr key={index} className="hover:bg-white/3 transition-colors">
+                            <tr key={index} className="hover:bg-black/5 dark:hover:bg-white/3 transition-colors">
                               <td className="py-2.5 px-3 font-semibold text-foreground">
                                 Grade {assign.standard} - Section {assign.sectionName}
                               </td>
@@ -447,11 +447,11 @@ export default function AdminTeachersPage() {
                               </td>
                               <td className="py-2.5 px-3 text-right">
                                 {assign.isClassTeacher ? (
-                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-teal/15 text-teal border border-teal/20">
+                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-teal/10 dark:bg-teal/20 text-teal-700 dark:text-teal border border-teal/20 dark:border-teal/30">
                                     Class Teacher
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-white/10 text-muted-foreground">
+                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-black/5 dark:bg-white/10 text-muted-foreground border border-black/5 dark:border-transparent">
                                     Subject Faculty
                                   </span>
                                 )}
@@ -477,7 +477,7 @@ export default function AdminTeachersPage() {
       {/* ADD TEACHER MODAL */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative border border-white/10">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative border border-black/10 dark:border-white/10">
             <h3 className="text-xl font-bold mb-4">Add New Teacher</h3>
             <form onSubmit={handleAddTeacher} className="space-y-4">
               <div>
@@ -486,7 +486,7 @@ export default function AdminTeachersPage() {
                   type="text" 
                   value={newTeacher.name} 
                   onChange={e => setNewTeacher({...newTeacher, name: e.target.value})} 
-                  className="glass-input w-full px-4 py-2 text-sm" 
+                  className="glass-input w-full px-4 py-2 text-sm border-black/10 dark:border-white/10" 
                   placeholder="e.g. Rachel Green"
                   required 
                 />
@@ -497,7 +497,7 @@ export default function AdminTeachersPage() {
                   type="email" 
                   value={newTeacher.email} 
                   onChange={e => setNewTeacher({...newTeacher, email: e.target.value})} 
-                  className="glass-input w-full px-4 py-2 text-sm" 
+                  className="glass-input w-full px-4 py-2 text-sm border-black/10 dark:border-white/10" 
                   placeholder="e.g. rachel@school.edu"
                   required 
                 />
@@ -508,7 +508,7 @@ export default function AdminTeachersPage() {
                   type="password" 
                   value={newTeacher.password} 
                   onChange={e => setNewTeacher({...newTeacher, password: e.target.value})} 
-                  className="glass-input w-full px-4 py-2 text-sm" 
+                  className="glass-input w-full px-4 py-2 text-sm border-black/10 dark:border-white/10" 
                   placeholder="Min 6 characters"
                   required 
                   minLength={6}
@@ -521,7 +521,7 @@ export default function AdminTeachersPage() {
                     type="tel" 
                     value={newTeacher.phone} 
                     onChange={e => setNewTeacher({...newTeacher, phone: e.target.value})} 
-                    className="glass-input w-full px-4 py-2 text-sm" 
+                    className="glass-input w-full px-4 py-2 text-sm border-black/10 dark:border-white/10" 
                     placeholder="e.g. +123456789"
                   />
                 </div>
@@ -531,7 +531,7 @@ export default function AdminTeachersPage() {
                     type="text" 
                     value={newTeacher.employeeId} 
                     onChange={e => setNewTeacher({...newTeacher, employeeId: e.target.value})} 
-                    className="glass-input w-full px-4 py-2 text-sm" 
+                    className="glass-input w-full px-4 py-2 text-sm border-black/10 dark:border-white/10" 
                     placeholder="e.g. EMP-202"
                   />
                 </div>
@@ -543,14 +543,14 @@ export default function AdminTeachersPage() {
                   value={newTeacher.primarySubject} 
                   onChange={e => setNewTeacher({...newTeacher, primarySubject: e.target.value})} 
                   placeholder="e.g. Mathematics"
-                  className="glass-input w-full px-4 py-2 text-sm" 
+                  className="glass-input w-full px-4 py-2 text-sm border-black/10 dark:border-white/10" 
                 />
               </div>
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-6">
+              <div className="flex items-center gap-3 pt-4 border-t border-black/5 dark:border-white/10 mt-6">
                 <button 
                   type="button" 
                   onClick={() => setIsAddModalOpen(false)}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </button>
@@ -570,7 +570,7 @@ export default function AdminTeachersPage() {
       {/* EDIT TEACHER MODAL */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative border border-white/10">
+          <div className="glass-card w-full max-w-md p-6 rounded-2xl relative border border-black/10 dark:border-white/10">
             <h3 className="text-xl font-bold mb-4">Edit Teacher Details</h3>
             <form onSubmit={handleEditTeacher} className="space-y-4">
               <div>
@@ -579,7 +579,7 @@ export default function AdminTeachersPage() {
                   type="text" 
                   value={editingTeacher.name} 
                   onChange={e => setEditingTeacher({...editingTeacher, name: e.target.value})} 
-                  className="glass-input w-full px-4 py-2 text-sm" 
+                  className="glass-input w-full px-4 py-2 text-sm border-black/10 dark:border-white/10" 
                   required 
                 />
               </div>
@@ -589,7 +589,7 @@ export default function AdminTeachersPage() {
                   type="email" 
                   value={editingTeacher.email} 
                   onChange={e => setEditingTeacher({...editingTeacher, email: e.target.value})} 
-                  className="glass-input w-full px-4 py-2 text-sm" 
+                  className="glass-input w-full px-4 py-2 text-sm border-black/10 dark:border-white/10" 
                   required 
                 />
               </div>
@@ -599,7 +599,7 @@ export default function AdminTeachersPage() {
                   type="password" 
                   value={editingTeacher.password} 
                   onChange={e => setEditingTeacher({...editingTeacher, password: e.target.value})} 
-                  className="glass-input w-full px-4 py-2 text-sm" 
+                  className="glass-input w-full px-4 py-2 text-sm border-black/10 dark:border-white/10" 
                   placeholder="Enter new password"
                   minLength={6}
                 />
@@ -611,7 +611,7 @@ export default function AdminTeachersPage() {
                     type="tel" 
                     value={editingTeacher.phone} 
                     onChange={e => setEditingTeacher({...editingTeacher, phone: e.target.value})} 
-                    className="glass-input w-full px-4 py-2 text-sm" 
+                    className="glass-input w-full px-4 py-2 text-sm border-black/10 dark:border-white/10" 
                   />
                 </div>
                 <div>
@@ -620,7 +620,7 @@ export default function AdminTeachersPage() {
                     type="text" 
                     value={editingTeacher.employeeId} 
                     onChange={e => setEditingTeacher({...editingTeacher, employeeId: e.target.value})} 
-                    className="glass-input w-full px-4 py-2 text-sm" 
+                    className="glass-input w-full px-4 py-2 text-sm border-black/10 dark:border-white/10" 
                   />
                 </div>
               </div>
@@ -631,14 +631,14 @@ export default function AdminTeachersPage() {
                   value={editingTeacher.primarySubject} 
                   onChange={e => setEditingTeacher({...editingTeacher, primarySubject: e.target.value})} 
                   placeholder="e.g. Mathematics"
-                  className="glass-input w-full px-4 py-2 text-sm" 
+                  className="glass-input w-full px-4 py-2 text-sm border-black/10 dark:border-white/10" 
                 />
               </div>
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-6">
+              <div className="flex items-center gap-3 pt-4 border-t border-black/5 dark:border-white/10 mt-6">
                 <button 
                   type="button" 
                   onClick={() => setIsEditModalOpen(false)}
-                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </button>

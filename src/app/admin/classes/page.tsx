@@ -331,10 +331,10 @@ export default function AdminClassesPage() {
           <select
             value={selectedGradeFilter}
             onChange={(e) => setSelectedGradeFilter(e.target.value)}
-            className="glass-input px-2.5 py-1 text-xs bg-navy-950 text-teal font-medium border border-white/10 rounded-xl"
+            className="glass-input px-2.5 py-1 text-xs bg-white dark:bg-navy-950 text-teal-700 dark:text-teal font-medium border border-black/10 dark:border-white/10 rounded-xl"
           >
             {grades.map(grade => (
-              <option key={grade} value={grade} className="bg-navy-950 text-white">
+              <option key={grade} value={grade} className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">
                 {grade === "All" ? "All Grades" : `Grade ${grade}`}
               </option>
             ))}
@@ -344,14 +344,14 @@ export default function AdminClassesPage() {
 
       <div className="grid lg:grid-cols-12 gap-6 items-start">
         {/* Left Tree Selection Sidebar (33% width / 4 cols) */}
-        <div className="lg:col-span-4 bg-black/20 border border-white/5 rounded-2xl flex flex-col overflow-hidden max-h-[70vh]">
-          <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/3">
+        <div className="lg:col-span-4 bg-black/5 dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-2xl flex flex-col overflow-hidden max-h-[70vh]">
+          <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/3">
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-              <School size={14} className="text-teal" /> Class Structure
+              <School size={14} className="text-teal-700 dark:text-teal" /> Class Structure
             </h3>
             <button 
               onClick={() => setIsAddClassModalOpen(true)}
-              className="text-[10px] bg-teal/10 hover:bg-teal/20 text-teal px-2 py-1 rounded-md border border-teal/20 transition-all flex items-center gap-1 font-semibold"
+              className="text-[10px] bg-teal/10 dark:bg-teal/20 hover:bg-teal/20 text-teal-700 dark:text-teal px-2 py-1 rounded-md border border-teal/20 transition-all flex items-center gap-1 font-semibold"
             >
               <Plus size={10}/> Create Class
             </button>
@@ -383,14 +383,14 @@ export default function AdminClassesPage() {
                             className={cn(
                               "p-3 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between h-20 group relative overflow-hidden",
                               isActive
-                                ? "bg-teal/10 border-teal/30 text-teal"
-                                : "bg-white/3 border-white/5 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                                ? "bg-teal/10 dark:bg-teal/20 border-teal/30 text-teal-700 dark:text-teal font-bold"
+                                : "bg-black/5 dark:bg-white/3 border-black/5 dark:border-white/5 text-muted-foreground hover:bg-black/10 dark:hover:bg-white/5 hover:text-foreground"
                             )}
                           >
                             <span className="text-xs font-bold block">Section {sec.name}</span>
                             <span className="text-[10px] text-muted-foreground/80 mt-1">{sec.students?.length || 0} students</span>
                             {isActive && (
-                              <div className="absolute top-0 right-0 w-2 h-2 rounded-bl-lg bg-teal" />
+                              <div className="absolute top-0 right-0 w-2 h-2 rounded-bl-lg bg-teal-700 dark:bg-teal" />
                             )}
                           </button>
                         );
@@ -403,18 +403,18 @@ export default function AdminClassesPage() {
         </div>
 
         {/* Right Detail Workspace Panel (67% width / 8 cols) */}
-        <div className="lg:col-span-8 bg-black/10 border border-white/5 rounded-2xl flex flex-col overflow-hidden min-h-[50vh]">
+        <div className="lg:col-span-8 bg-black/[0.03] dark:bg-black/10 border border-black/5 dark:border-white/5 rounded-2xl flex flex-col overflow-hidden min-h-[50vh]">
           {activeSection ? (
             <>
               {/* Header Details */}
-              <div className="p-5 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/3">
+              <div className="p-5 border-b border-black/5 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-black/[0.02] dark:bg-white/3">
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-bold text-foreground">{activeSection.className} - {activeSection.name}</h2>
-                    <span className="text-[10px] bg-teal/10 border border-teal/20 text-teal px-2 py-0.5 rounded-full font-semibold">Grade {activeSection.classGrade}</span>
+                    <span className="text-[10px] bg-teal/10 dark:bg-teal/20 border border-teal/20 dark:border-teal/30 text-teal-700 dark:text-teal px-2 py-0.5 rounded-full font-semibold">Grade {activeSection.classGrade}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Class Teacher: <span className="font-semibold text-teal">{activeSection.classTeacher?.name || "Unassigned"}</span>
+                    Class Teacher: <span className="font-semibold text-teal-700 dark:text-teal">{activeSection.classTeacher?.name || "Unassigned"}</span>
                   </p>
                 </div>
                 
@@ -443,16 +443,16 @@ export default function AdminClassesPage() {
                 
                 {/* Column 1: Curriculum / Subject Teacher Assignment */}
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                  <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-2">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                      <BookOpen size={14} className="text-teal" /> Subjects & Teachers
+                      <BookOpen size={14} className="text-teal-700 dark:text-teal" /> Subjects & Teachers
                     </h3>
                     <button
                       onClick={() => {
                         setNewSubject(prev => ({ ...prev, standard: activeSection.classGrade.toString() }));
                         setIsCreateSubjectModalOpen(true);
                       }}
-                      className="text-[10px] text-teal hover:underline flex items-center gap-0.5"
+                      className="text-[10px] text-teal-700 dark:text-teal hover:underline flex items-center gap-0.5 font-semibold"
                     >
                       <Plus size={10} /> Add Subject
                     </button>
@@ -475,14 +475,14 @@ export default function AdminClassesPage() {
                             <div className="opacity-0 group-hover/sub:opacity-100 flex items-center gap-0.5 transition-opacity">
                               <button
                                 onClick={() => handleOpenEditSubjectModal(ss.subject)}
-                                className="p-1 rounded text-muted-foreground hover:bg-white/10 hover:text-teal transition-all"
+                                className="p-1 rounded text-muted-foreground hover:bg-black/10 dark:hover:bg-white/10 hover:text-teal-700 dark:hover:text-teal transition-all"
                                 title="Edit Subject"
                               >
                                 <Edit size={12} />
                               </button>
                               <button
                                 onClick={() => handleDeleteSubject(ss.subject.id, ss.subject.name)}
-                                className="p-1 rounded text-muted-foreground hover:bg-white/10 hover:text-coral transition-all"
+                                className="p-1 rounded text-muted-foreground hover:bg-black/10 dark:hover:bg-white/10 hover:text-coral transition-all"
                                 title="Delete Subject"
                               >
                                 <Trash2 size={12} />
@@ -492,11 +492,11 @@ export default function AdminClassesPage() {
                             <select
                               value={ss.teacher.id}
                               onChange={(e) => handleUpdateSubjectTeacher(activeSection.id, ss.subject.id, e.target.value)}
-                              className="bg-black/20 text-teal border border-white/5 rounded-lg focus:outline-none focus:ring-0 max-w-[120px] p-1 text-[11px] cursor-pointer hover:border-white/10 font-medium"
+                              className="bg-black/5 dark:bg-black/25 text-teal-700 dark:text-teal border border-black/10 dark:border-white/5 rounded-lg focus:outline-none focus:ring-0 max-w-[120px] p-1 text-[11px] cursor-pointer hover:border-black/20 dark:hover:border-white/10 font-semibold"
                             >
-                              <option value="unassigned" className="bg-navy-950 text-muted-foreground">Unassigned</option>
+                              <option value="unassigned" className="bg-white dark:bg-navy-950 text-muted-foreground">Unassigned</option>
                               {teachers.map(t => (
-                                <option key={t.id} value={t.id} className="bg-navy-950 text-white">
+                                <option key={t.id} value={t.id} className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">
                                   {t.name}
                                 </option>
                               ))}
@@ -514,16 +514,16 @@ export default function AdminClassesPage() {
 
                 {/* Column 2: Enrolled Students List */}
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                  <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-2">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                      <Users size={14} className="text-teal" /> Enrolled Students ({activeSection.students?.length || 0})
+                      <Users size={14} className="text-teal-700 dark:text-teal" /> Enrolled Students ({activeSection.students?.length || 0})
                     </h3>
                     <button
                       onClick={() => {
                         setAddStudentsData({ sectionId: activeSection.id, sectionName: activeSection.name, className: activeSection.className, selectedStudentIds: [] });
                         setIsAddStudentsModalOpen(true);
                       }}
-                      className="text-[10px] text-teal hover:underline flex items-center gap-0.5"
+                      className="text-[10px] text-teal-700 dark:text-teal hover:underline flex items-center gap-0.5 font-semibold"
                     >
                       <Plus size={10} /> Add Students
                     </button>
@@ -532,9 +532,9 @@ export default function AdminClassesPage() {
                   <div className="space-y-2 max-h-80 overflow-y-auto pr-1 no-scrollbar">
                     {activeSection.students && activeSection.students.length > 0 ? (
                       activeSection.students.map((student: any) => (
-                        <div key={student.id} className="flex items-center justify-between p-2.5 bg-white/3 border border-white/5 rounded-xl hover:border-white/10 transition-all">
+                        <div key={student.id} className="flex items-center justify-between p-2.5 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-xl hover:border-black/15 dark:hover:border-white/10 transition-all">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-[10px] font-bold text-teal flex-shrink-0">
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal/20 to-cyan/20 flex items-center justify-center text-[10px] font-bold text-teal-700 dark:text-teal flex-shrink-0 border border-teal/10 dark:border-teal/20">
                               {(student.name || "Unknown").split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
                             </div>
                             <div>
