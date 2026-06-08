@@ -441,8 +441,19 @@ export default function TeacherSyllabusPage() {
               <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                 {(() => {
                   const missingEbookCount = selectedSubject.topics?.filter((t: any) => !t.ebookHtml).length || 0;
+                  
+                  // Group topics by unitTitle dynamically
+                  const topicsByUnit: Record<string, any[]> = {};
+                  selectedSubject.topics?.forEach((topic: any) => {
+                    const unitName = topic.unitTitle || 'General Units';
+                    if (!topicsByUnit[unitName]) {
+                      topicsByUnit[unitName] = [];
+                    }
+                    topicsByUnit[unitName].push(topic);
+                  });
+
                   return (
-                    <>
+                    <div className="space-y-6">
                       {missingEbookCount > 0 && (
                         <div className="mb-4 p-4 rounded-xl border border-teal/20 bg-teal/5 text-teal-800 dark:text-teal-300 flex items-start gap-3 shrink-0">
                           <div className="w-8 h-8 rounded-lg bg-teal/15 flex items-center justify-center shrink-0 text-teal mt-0.5">
@@ -457,97 +468,101 @@ export default function TeacherSyllabusPage() {
                         </div>
                       )}
 
-                      {selectedSubject.topics?.map((topic: any, idx: number) => (
-                        <div
-                          key={topic.id}
-                          className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-teal/20 transition-all duration-200 group"
-                        >
-                          <div className="flex items-start gap-4">
-                            <div className="w-8 h-8 rounded-lg bg-teal/15 text-teal flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-                              {topic.order || (idx + 1)}
-                            </div>
-                            <div>
-                              {topic.unitTitle && (
-                                <div className="mb-1">
-                                  <span className="text-[9px] uppercase font-bold text-teal-700 dark:text-teal bg-teal/10 px-1.5 py-0.5 rounded tracking-wider">
-                                    {topic.unitTitle}
-                                  </span>
-                                </div>
-                              )}
-                              <h4 className="font-semibold text-sm text-navy-900 dark:text-white">{topic.title}</h4>
-                              <p className="text-xs text-muted-foreground mt-0.5">{topic.description || "No description provided."}</p>
-                              
-                              {/* Status Badges */}
-                              <div className="flex flex-wrap items-center gap-2 mt-2">
-                                {topic.ebookHtml ? (
-                                  <span className="text-[10px] text-teal-700 dark:text-teal bg-teal/10 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 border border-teal/20">
-                                    <CheckCircle size={10} /> eBook Active
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] text-amber-700 dark:text-amber bg-amber-500/10 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 border border-amber-500/10">
-                                    <HelpCircle size={10} /> Needs eBook
-                                  </span>
-                                )}
-                                {topic.ebookVideoUrl && (
-                                  <span className="text-[10px] text-indigo-700 dark:text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 border border-indigo-500/10">
-                                    <PlayCircle size={10} /> Video Active
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
+                      {Object.entries(topicsByUnit).map(([unitName, unitTopics]) => (
+                        <div key={unitName} className="space-y-3">
+                          {/* Unit Title Header */}
+                          <h4 className="text-xs font-bold text-teal dark:text-teal/90 uppercase tracking-wider pl-2 border-l-2 border-teal/50 mt-6 first:mt-0">
+                            {unitName}
+                          </h4>
                           
-                          {/* Topic Actions */}
-                          <div className="flex items-center gap-3 self-end sm:self-auto">
-                            {/* Direct Upload/Replace HTML button */}
-                            <div className="shrink-0">
-                              <label className={cn(
-                                "cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all shadow-sm",
-                                uploadingTopicId === topic.id
-                                  ? "bg-black/10 border-black/10 dark:bg-white/10 dark:border-white/10 text-muted-foreground animate-pulse cursor-not-allowed"
-                                  : topic.ebookHtml
-                                  ? "bg-white/5 hover:bg-white/10 border-white/10 text-slate-200"
-                                  : "bg-teal border-none text-navy-900 hover:opacity-90 font-bold"
-                              )}>
-                                <Upload size={12} />
-                                {uploadingTopicId === topic.id ? "Uploading..." : topic.ebookHtml ? "Replace HTML" : "Upload HTML"}
-                                <input
-                                  type="file"
-                                  accept=".html,.htm"
-                                  onChange={(e) => handleDirectEbookUpload(topic.id, e)}
-                                  disabled={uploadingTopicId === topic.id}
-                                  className="hidden"
-                                />
-                              </label>
-                            </div>
+                          <div className="space-y-2">
+                            {unitTopics.map((topic: any, idx: number) => (
+                              <div
+                                key={topic.id}
+                                className="p-4 bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-teal/20 transition-all duration-200 group"
+                              >
+                                <div className="flex items-start gap-4">
+                                  <div className="w-8 h-8 rounded-lg bg-teal/15 text-teal flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                                    {topic.order || (idx + 1)}
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold text-sm text-navy-900 dark:text-white">{topic.title}</h4>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{topic.description || "No description provided."}</p>
+                                    
+                                    {/* Status Badges */}
+                                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                                      {topic.ebookHtml ? (
+                                        <span className="text-[10px] text-teal-700 dark:text-teal bg-teal/10 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 border border-teal/20">
+                                          <CheckCircle size={10} /> eBook Active
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] text-amber-700 dark:text-amber bg-amber-500/10 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 border border-amber-500/10">
+                                          <HelpCircle size={10} /> Needs eBook
+                                        </span>
+                                      )}
+                                      {topic.ebookVideoUrl && (
+                                        <span className="text-[10px] text-indigo-700 dark:text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 border border-indigo-500/10">
+                                          <PlayCircle size={10} /> Video Active
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Topic Actions */}
+                                <div className="flex items-center gap-3 self-end sm:self-auto">
+                                  {/* Direct Upload/Replace HTML button */}
+                                  <div className="shrink-0">
+                                    <label className={cn(
+                                      "cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all shadow-sm",
+                                      uploadingTopicId === topic.id
+                                        ? "bg-black/10 border-black/10 dark:bg-white/10 dark:border-white/10 text-muted-foreground animate-pulse cursor-not-allowed"
+                                        : topic.ebookHtml
+                                        ? "bg-white/5 hover:bg-white/10 border-white/10 text-slate-200"
+                                        : "bg-teal border-none text-navy-900 hover:opacity-90 font-bold"
+                                    )}>
+                                      <Upload size={12} />
+                                      {uploadingTopicId === topic.id ? "Uploading..." : topic.ebookHtml ? "Replace HTML" : "Upload HTML"}
+                                      <input
+                                        type="file"
+                                        accept=".html,.htm"
+                                        onChange={(e) => handleDirectEbookUpload(topic.id, e)}
+                                        disabled={uploadingTopicId === topic.id}
+                                        className="hidden"
+                                      />
+                                    </label>
+                                  </div>
 
-                            <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => {
-                                  setSelectedTopicForEbook(topic);
-                                  setEbookContent({
-                                    ebookHtml: topic.ebookHtml || "",
-                                    ebookVideoUrl: topic.ebookVideoUrl || ""
-                                  });
-                                  setIsEbookModalOpen(true);
-                                }}
-                                className="p-2 rounded-lg hover:bg-teal/15 text-muted-foreground hover:text-teal transition-colors"
-                                title="Manage eBook Content"
-                              >
-                                <BookOpen size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteTopic(topic.id)}
-                                className="p-2 rounded-lg hover:bg-coral/10 text-muted-foreground hover:text-coral transition-colors"
-                                title="Delete Topic"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
+                                  <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                      onClick={() => {
+                                        setSelectedTopicForEbook(topic);
+                                        setEbookContent({
+                                          ebookHtml: topic.ebookHtml || "",
+                                          ebookVideoUrl: topic.ebookVideoUrl || ""
+                                        });
+                                        setIsEbookModalOpen(true);
+                                      }}
+                                      className="p-2 rounded-lg hover:bg-teal/15 text-muted-foreground hover:text-teal transition-colors"
+                                      title="Manage eBook Content"
+                                    >
+                                      <BookOpen size={16} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteTopic(topic.id)}
+                                      className="p-2 rounded-lg hover:bg-coral/10 text-muted-foreground hover:text-coral transition-colors"
+                                      title="Delete Topic"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       ))}
-                    </>
+                    </div>
                   );
                 })()}
 
