@@ -131,24 +131,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Demo Credentials Box */}
-          <div className="mb-6 p-3 rounded-xl bg-teal/5 border border-teal/10 text-xs">
-            <p className="font-semibold text-teal mb-1">Demo Credentials:</p>
-            {selectedRole === "parent" ? (
-              <p className="text-muted-foreground">Phone (Email): <b>parent@dps.edu</b><br/>OTP/Pass: <b>demo123</b></p>
-            ) : selectedRole === "student" ? (
-              <p className="text-muted-foreground">ID (Email): <b>student@dps.edu</b><br/>Pass: <b>demo123</b></p>
-            ) : selectedRole === "teacher" ? (
-              <p className="text-muted-foreground">Email: <b>teacher@dps.edu</b><br/>Pass: <b>demo123</b></p>
-            ) : selectedRole === "admin" ? (
-              <p className="text-muted-foreground">Email: <b>admin@dps-hyd.edu</b><br/>Pass: <b>demo123</b></p>
-            ) : (
-              <p className="text-muted-foreground">Email: <b>super@techwing.com</b><br/>Pass: <b>demo123</b></p>
-            )}
-          </div>
           {error && <p className="text-coral text-xs mb-2">{error}</p>}
 
-          <form ref={formRef} onSubmit={handleLogin} className="space-y-4">
+          <form ref={formRef} onSubmit={handleLogin} className="space-y-4" autoComplete="off">
             {selectedRole === "parent" ? (
               <>
                 {/* Parent: Email (Originally Phone) + Password (OTP) */}
@@ -156,13 +141,13 @@ export default function LoginPage() {
                   <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Email / Phone</label>
                   <div className="relative">
                     <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input type="text" name="email" defaultValue="parent@dps.edu" className="glass-input w-full pl-10 pr-4 py-2.5 text-sm" required />
+                    <input type="text" name="email" autoComplete="off" placeholder="Enter your email or phone" className="glass-input w-full pl-10 pr-4 py-2.5 text-sm" required />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium mb-1.5 block">OTP / Password</label>
                   <div className="flex gap-2">
-                    <input type={showPassword ? "text" : "password"} name="password" defaultValue="demo123" className="glass-input w-full py-2.5 text-sm px-4" required />
+                    <input type={showPassword ? "text" : "password"} name="password" autoComplete="new-password" placeholder="Enter your password" className="glass-input w-full py-2.5 text-sm px-4" required />
                   </div>
                 </div>
               </>
@@ -173,13 +158,13 @@ export default function LoginPage() {
                   <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Student ID (Email)</label>
                   <div className="relative">
                     <KeyRound size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input type="text" name="email" defaultValue="student@dps.edu" className="glass-input w-full pl-10 pr-4 py-2.5 text-sm" required />
+                    <input type="text" name="email" autoComplete="off" placeholder="Enter your student email" className="glass-input w-full pl-10 pr-4 py-2.5 text-sm" required />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Password</label>
                   <div className="relative">
-                    <input type={showPassword ? "text" : "password"} name="password" defaultValue="demo123" className="glass-input w-full pl-4 pr-10 py-2.5 text-sm" required />
+                    <input type={showPassword ? "text" : "password"} name="password" autoComplete="new-password" placeholder="Enter your password" className="glass-input w-full pl-4 pr-10 py-2.5 text-sm" required />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -193,16 +178,13 @@ export default function LoginPage() {
                   <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Email Address</label>
                   <div className="relative">
                     <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input type="email" name="email" defaultValue={
-                      selectedRole === "teacher" ? "teacher@dps.edu" :
-                      selectedRole === "admin" ? "admin@dps-hyd.edu" : "super@techwing.com"
-                    } className="glass-input w-full pl-10 pr-4 py-2.5 text-sm" required />
+                    <input type="email" name="email" autoComplete="off" placeholder="Enter your email address" className="glass-input w-full pl-10 pr-4 py-2.5 text-sm" required />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Password</label>
                   <div className="relative">
-                    <input type={showPassword ? "text" : "password"} name="password" defaultValue="demo123" className="glass-input w-full pl-4 pr-10 py-2.5 text-sm" required />
+                    <input type={showPassword ? "text" : "password"} name="password" autoComplete="new-password" placeholder="Enter your password" className="glass-input w-full pl-4 pr-10 py-2.5 text-sm" required />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
