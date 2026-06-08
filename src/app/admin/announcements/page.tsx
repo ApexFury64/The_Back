@@ -140,7 +140,6 @@ export default function AdminAnnouncementsPage() {
                 <option value="low">Low Priority</option>
                 <option value="medium">Medium Priority</option>
                 <option value="high">High Priority</option>
-                <option value="urgent">Urgent</option>
               </select>
               <button type="submit" className="glass-button px-6 py-2 flex items-center gap-2 bg-teal text-navy-900 border-none font-semibold">
                 <Send size={16} /> Broadcast
