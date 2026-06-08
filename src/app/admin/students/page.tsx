@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { 
   Search, Plus, Download, Filter, ChevronDown, ChevronRight, GraduationCap,
   X, Mail, Phone, Calendar, Award, Activity, UserCheck, UserX, Lock, ShieldAlert,
-  Percent, ArrowRight
+  Percent, ArrowRight, Trash2
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { cn } from "@/lib/utils";
@@ -97,6 +97,29 @@ export default function AdminStudentsPage() {
     } finally {
       if (isParent) setIsResettingParent(false);
       else setIsResettingStudent(false);
+    }
+  };
+
+  const handleDeleteStudent = async (studentId: string, studentName: string) => {
+    if (!window.confirm(`⚠️ Permanently delete "${studentName}"?\n\nThis will also delete their linked parent account. This action CANNOT be undone.`)) return;
+    try {
+      const res = await fetch('/api/admin/students/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId })
+      });
+      if (res.ok) {
+        toast.success(`${studentName} has been permanently deleted.`);
+        setSelectedStudentForDetails(null);
+        setStudentPasswordResetVal('');
+        setParentPasswordResetVal('');
+        fetchStudents();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || 'Failed to delete student');
+      }
+    } catch (err) {
+      toast.error('Network error');
     }
   };
 
@@ -889,7 +912,14 @@ export default function AdminStudentsPage() {
               </div>
 
               {/* Bottom drawer controls */}
-              <div className="p-4 bg-black/[0.02] dark:bg-white/3 border-t border-black/5 dark:border-white/5 flex items-center justify-end gap-3 shrink-0">
+              <div className="p-4 bg-black/[0.02] dark:bg-white/3 border-t border-black/5 dark:border-white/5 flex items-center gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteStudent(selectedStudentForDetails.id, selectedStudentForDetails.name)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-coral/10 border border-coral/20 text-coral hover:bg-coral/20 transition-all text-xs font-bold shrink-0"
+                >
+                  <Trash2 size={13} /> Delete Student
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -897,7 +927,7 @@ export default function AdminStudentsPage() {
                     setStudentPasswordResetVal("");
                     setParentPasswordResetVal("");
                   }}
-                  className="w-full glass-button-secondary py-2 text-xs font-semibold rounded-xl"
+                  className="flex-1 glass-button-secondary py-2 text-xs font-semibold rounded-xl"
                 >
                   Close Profile Workspace
                 </button>

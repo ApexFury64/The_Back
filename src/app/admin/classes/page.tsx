@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Plus, Users, BookOpen, UserPlus, BookCopy, ChevronDown, Check, Trash2, Filter, Edit, School } from "lucide-react";
+import { Plus, Users, BookOpen, UserPlus, BookCopy, ChevronDown, Check, Trash2, Filter, Edit, School, UserX } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import AcademicNavigationTabs from "@/components/ui/AcademicNavigationTabs";
@@ -127,6 +127,25 @@ export default function AdminClassesPage() {
     setIsSubmitting(false);
   };
 
+  const handleDeleteStudentFromClass = async (studentId: string, studentName: string) => {
+    if (!window.confirm(`⚠️ Permanently delete "${studentName}" from the system?\n\nThis will also delete their linked parent account. This action CANNOT be undone.`)) return;
+    try {
+      const res = await fetch('/api/admin/students/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId })
+      });
+      if (res.ok) {
+        toast.success(`${studentName} has been permanently deleted.`);
+        fetchData();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || 'Failed to delete student');
+      }
+    } catch (err) {
+      toast.error('Network error');
+    }
+  };
 
   const handleCreateSubject = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -543,31 +562,40 @@ export default function AdminClassesPage() {
                             </div>
                           </div>
                           
-                          <button
-                            onClick={async () => {
-                              if (window.confirm(`Are you sure you want to unassign ${student.name} from this class section?`)) {
-                                try {
-                                  const res = await fetch('/api/admin/sections/remove-student', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ studentId: student.id })
-                                  });
-                                  if (res.ok) {
-                                    toast.success("Student removed from section");
-                                    fetchData();
-                                  } else {
-                                    toast.error("Failed to remove student");
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={async () => {
+                                if (window.confirm(`Remove ${student.name} from this class section (won't delete account)?`)) {
+                                  try {
+                                    const res = await fetch('/api/admin/sections/remove-student', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ studentId: student.id })
+                                    });
+                                    if (res.ok) {
+                                      toast.success("Student removed from section");
+                                      fetchData();
+                                    } else {
+                                      toast.error("Failed to remove student");
+                                    }
+                                  } catch (err) {
+                                    toast.error("Network error");
                                   }
-                                } catch (err) {
-                                  toast.error("Network error");
                                 }
-                              }
-                            }}
-                            className="p-1 rounded text-muted-foreground hover:bg-white/10 hover:text-coral transition-all"
-                            title="Remove student from class"
-                          >
-                            <Trash2 size={12} />
-                          </button>
+                              }}
+                              className="p-1.5 rounded-lg text-muted-foreground hover:bg-amber/10 hover:text-amber-600 dark:hover:text-amber transition-all"
+                              title="Unassign from class (keeps account)"
+                            >
+                              <UserX size={12} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteStudentFromClass(student.id, student.name)}
+                              className="p-1.5 rounded-lg text-muted-foreground hover:bg-coral/10 hover:text-coral transition-all"
+                              title="Permanently delete student from system"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
                         </div>
                       ))
                     ) : (
