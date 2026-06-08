@@ -65,20 +65,28 @@ export default function TeacherSyllabusPage() {
   };
 
   const downloadTemplate = () => {
-    const csvContent = 'unitTitle,title,description,order,icon,ebookHtml,ebookVideoUrl\n' +
-      '"Algebra & Equations","Introduction to Algebra","Basic equations and graphing",1,"Sparkles","<h3>1. What is Algebra?</h3><p>Algebra is a branch of mathematics dealing with symbols and the rules for manipulating those symbols. In its simplest form, algebra involves solving equations where variables stand in for unknown values.</p><h4>Key Concepts</h4><ul><li><b>Variables:</b> Letters like x or y used to represent numbers.</li><li><b>Coefficients:</b> The numbers multiplying the variables.</li></ul>","https://www.youtube.com/watch?v=NybHckSEQBI"\n' +
-      '"Algebra & Equations","Linear Functions","Slopes and intercepts",2,"BookOpen","<h3>Linear Equations & Graphs</h3><p>A linear equation is an equation for a straight line. The standard form is y = mx + c, where m is the slope of the line and c is the y-intercept (the point where the line crosses the y-axis).</p>","https://www.youtube.com/watch?v=9_C8pY4c2rc"\n' +
-      '"Quadratic Equations","Quadratic Equations","Solving formulas",3,"FileText","<h3>Quadratic Formula</h3><p>A quadratic equation is a second-order polynomial equation in a single variable. The general form is ax² + bx + c = 0. We can solve for x using the quadratic formula: x = (-b ± √(b² - 4ac)) / 2a.</p>","https://www.youtube.com/watch?v=i7idZhlqkyw"\n';
+    const csvContent = 'unitTitle,title,description,order,icon\n' +
+      '"Chapter 1: Rational Numbers","Introduction","Introduction to rational numbers.",1,"BookOpen"\n' +
+      '"Chapter 1: Rational Numbers","Properties of Rational Numbers","Properties like closure, commutativity, and associativity.",2,"Sparkles"\n' +
+      '"Chapter 1: Rational Numbers","Representation of Rational Numbers on the Number Line","How to represent rational numbers on a number line.",3,"Ruler"\n' +
+      '"Chapter 1: Rational Numbers","Rational Number between Two Rational Numbers","Finding rational numbers between any two given rational numbers.",4,"Scale"\n' +
+      '"Chapter 2: Linear Equations in One Variable","Introduction","Introduction to linear equations in one variable.",1,"BookOpen"\n' +
+      '"Chapter 2: Linear Equations in One Variable","Solving Equations which have Linear Expressions on one Side and Numbers on the other Side","Solving simple linear equations with numbers on one side.",2,"Equal"\n' +
+      '"Chapter 2: Linear Equations in One Variable","Some Applications","Practical application and word problems for linear equations.",3,"Target"\n' +
+      '"Chapter 2: Linear Equations in One Variable","Solving Equations having the Variable on both sides","Solving equations where the variable appears on both sides.",4,"Variable"\n' +
+      '"Chapter 2: Linear Equations in One Variable","Some More Applications","Advanced application and complex word problems.",5,"Target"\n' +
+      '"Chapter 2: Linear Equations in One Variable","Reducing Equations to Simpler Form","Reducing complex linear equations to simpler forms.",6,"Divide"\n' +
+      '"Chapter 2: Linear Equations in One Variable","Equations Reducible to the Linear Form","Solving equations that can be reduced to linear form.",7,"Split"\n';
       
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", "syllabus_ebooks_template.csv");
+    link.setAttribute("download", "syllabus_template.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("eBook-enabled syllabus template downloaded successfully!");
+    toast.success("Syllabus import template downloaded successfully!");
   };
 
   const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -491,27 +499,27 @@ export default function TeacherSyllabusPage() {
                           
                           {/* Topic Actions */}
                           <div className="flex items-center gap-3 self-end sm:self-auto">
-                            {/* Direct Upload HTML button if eBook is missing */}
-                            {!topic.ebookHtml && (
-                              <div className="shrink-0">
-                                <label className={cn(
-                                  "cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all shadow-sm",
-                                  uploadingTopicId === topic.id
-                                    ? "bg-black/10 border-black/10 dark:bg-white/10 dark:border-white/10 text-muted-foreground animate-pulse cursor-not-allowed"
-                                    : "bg-teal border-none text-navy-900 hover:opacity-90 font-bold"
-                                )}>
-                                  <Upload size={12} />
-                                  {uploadingTopicId === topic.id ? "Uploading..." : "Upload HTML"}
-                                  <input
-                                    type="file"
-                                    accept=".html,.htm"
-                                    onChange={(e) => handleDirectEbookUpload(topic.id, e)}
-                                    disabled={uploadingTopicId === topic.id}
-                                    className="hidden"
-                                  />
-                                </label>
-                              </div>
-                            )}
+                            {/* Direct Upload/Replace HTML button */}
+                            <div className="shrink-0">
+                              <label className={cn(
+                                "cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all shadow-sm",
+                                uploadingTopicId === topic.id
+                                  ? "bg-black/10 border-black/10 dark:bg-white/10 dark:border-white/10 text-muted-foreground animate-pulse cursor-not-allowed"
+                                  : topic.ebookHtml
+                                  ? "bg-white/5 hover:bg-white/10 border-white/10 text-slate-200"
+                                  : "bg-teal border-none text-navy-900 hover:opacity-90 font-bold"
+                              )}>
+                                <Upload size={12} />
+                                {uploadingTopicId === topic.id ? "Uploading..." : topic.ebookHtml ? "Replace HTML" : "Upload HTML"}
+                                <input
+                                  type="file"
+                                  accept=".html,.htm"
+                                  onChange={(e) => handleDirectEbookUpload(topic.id, e)}
+                                  disabled={uploadingTopicId === topic.id}
+                                  className="hidden"
+                                />
+                              </label>
+                            </div>
 
                             <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
                               <button
