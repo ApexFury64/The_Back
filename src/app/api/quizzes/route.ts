@@ -7,6 +7,8 @@ export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     const schoolId = (session?.user as any)?.schoolId;
+    const userId = (session?.user as any)?.id;
+    const userRole = (session?.user as any)?.role;
 
     if (!session || !schoolId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -17,16 +19,29 @@ export async function GET(request: Request) {
       include: {
         _count: {
           select: { questions: true }
-        }
-      }
+        },
+        // Include attempts filtered to the current student (if student)
+        attempts: userRole === 'STUDENT' && userId
+          ? { where: { studentId: userId }, select: { id: true, score: true, createdAt: true } }
+          : false,
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
+    // Shape the response to match what both teacher and student frontends expect
     const quizzes = dbQuizzes.map((q: any) => ({
       id: q.id,
       title: q.title,
-      subject: 'General', // TODO: Add subjectId to Quiz schema
+      subject: { name: 'General' }, // TODO: Add subjectId to Quiz schema
       duration: q.duration,
-      questions: q._count.questions
+      timeLimit: q.duration,
+      _count: { questions: q._count.questions },
+      questions: q._count.questions,
+      attempts: q.attempts || [],
+      class: null,
+      difficulty: 'Medium',
+      due: null,
+      createdAt: q.createdAt,
     }));
 
     return NextResponse.json(quizzes);

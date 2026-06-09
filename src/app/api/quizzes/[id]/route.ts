@@ -32,10 +32,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({
       id: quiz.id,
       title: quiz.title,
-      subject: 'General', // TODO: Add subjectId to Quiz schema
+      subject: { name: 'General' }, // TODO: Add subjectId to Quiz schema
       duration: quiz.duration,
       questions: quiz.questions.map((q: any) => ({
         id: q.id,
+        text: q.question,   // Map DB 'question' field to 'text' for frontend
         question: q.question,
         options: JSON.parse(q.options),
         ...(isStudent ? {} : { answer: q.answer }) // Hide answer from students

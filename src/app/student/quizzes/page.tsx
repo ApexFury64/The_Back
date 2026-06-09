@@ -30,16 +30,19 @@ export default function StudentQuizzesPage() {
   const [quizSuccess, setQuizSuccess] = useState<any | null>(null); // Contains score info
 
   // Fetch initial data
-  const { data: quizzes = [], isLoading: loading, refetch } = useQuery<any[]>({
+  const { data: rawQuizzes, isLoading: loading, isError, refetch } = useQuery<any[]>({
     queryKey: ['studentQuizzes', userEmail],
     queryFn: async () => {
       const res = await fetch(`/api/quizzes`);
-      if (!res.ok) throw new Error('Unauthorized');
+      if (!res.ok) throw new Error('Failed to load quizzes');
       const data = await res.json();
       return Array.isArray(data) ? data : [];
     },
-    refetchInterval: 10000,
+    refetchInterval: 30000,
+    retry: 2,
   });
+
+  const quizzes = rawQuizzes ?? [];
 
   const handleStartQuiz = async (quiz: any) => {
     setActiveQuiz(quiz);
@@ -104,22 +107,46 @@ export default function StudentQuizzesPage() {
     }
   };
 
-  const classes = ["All", ...Array.from(new Set(quizzes.map(q => q.class || 'Other'))).sort((a: any, b: any) => b.toString().localeCompare(a.toString()))];
-  const filteredByClass = selectedStandard === "All" ? quizzes : quizzes.filter(q => (q.class || 'Other') === selectedStandard);
+  const classes = ["All", ...Array.from(new Set(quizzes.map((q: any) => q.class || 'All Classes'))).sort((a: any, b: any) => b.toString().localeCompare(a.toString()))];
+  const filteredByClass = selectedStandard === "All" ? quizzes : quizzes.filter((q: any) => (q.class || 'All Classes') === selectedStandard);
 
-  const subjects = ["All", ...Array.from(new Set(filteredByClass.map(q => q.subject?.name).filter(Boolean)))];
-  const filteredQuizzes = activeSubject === "All" ? filteredByClass : filteredByClass.filter(q => q.subject?.name === activeSubject);
+  const subjectNames = Array.from(new Set(
+    filteredByClass.map((q: any) => {
+      const subj = q.subject;
+      if (!subj) return null;
+      return typeof subj === 'string' ? subj : (subj?.name ?? null);
+    }).filter(Boolean)
+  )) as string[];
+  const subjects = ["All", ...subjectNames];
   
-  // A quiz is pending if it has 0 attempts (or we can just check attempts array)
-  // Since we didn't pass userId in GET /api/quizzes, attempts will be empty for all quizzes unless we change that.
-  // Actually, we did pass userId? No, we didn't. 
-  // For now, if a quiz has attempts, we'll consider it completed.
-  const pending = filteredQuizzes.filter(q => !q.attempts || q.attempts.length === 0);
-  const completed = filteredQuizzes.filter(q => q.attempts && q.attempts.length > 0);
+  const getSubjectName = (q: any): string => {
+    const subj = q.subject;
+    if (!subj) return 'General';
+    return typeof subj === 'string' ? subj : (subj?.name ?? 'General');
+  };
+
+  const filteredQuizzes = activeSubject === "All" 
+    ? filteredByClass 
+    : filteredByClass.filter((q: any) => getSubjectName(q) === activeSubject);
+  
+  // Quizzes with no attempts = pending; with attempts = completed
+  const pending = filteredQuizzes.filter((q: any) => !q.attempts || q.attempts.length === 0);
+  const completed = filteredQuizzes.filter((q: any) => q.attempts && q.attempts.length > 0);
 
   if (loading) return (
-    <DashboardLayout role="student" userName={userName || "Student"} schoolName={schoolName || "AI Tutor"} pageTitle="AI Quizzes" pageSubtitle="Loading...">
+    <DashboardLayout role="student" userName={userName || "Student"} schoolName={schoolName || "AI Tutor"} pageTitle="AI Quizzes" pageSubtitle="Loading your quizzes...">
       <div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-teal rounded-full animate-spin border-t-transparent" /></div>
+    </DashboardLayout>
+  );
+
+  if (isError) return (
+    <DashboardLayout role="student" userName={userName || "Student"} schoolName={schoolName || "AI Tutor"} pageTitle="AI Quizzes" pageSubtitle="">
+      <div className="flex flex-col items-center justify-center p-20 gap-4 text-center">
+        <div className="w-16 h-16 rounded-full bg-coral/10 flex items-center justify-center"><AlertCircle size={32} className="text-coral" /></div>
+        <h3 className="text-xl font-bold">Could not load quizzes</h3>
+        <p className="text-muted-foreground max-w-sm">There was a problem fetching your quizzes. Please try again.</p>
+        <button onClick={() => refetch()} className="glass-button px-6 py-2.5">Try Again</button>
+      </div>
     </DashboardLayout>
   );
 
@@ -197,7 +224,7 @@ export default function StudentQuizzesPage() {
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-[10px] uppercase tracking-wider font-bold text-red-700 dark:text-coral bg-red-50 dark:bg-coral/10 px-2 py-0.5 rounded-full">
-                            {quiz.subject?.name}
+                            {getSubjectName(quiz)}
                           </span>
                           <span className="text-[10px] font-medium text-navy-900/70 dark:text-muted-foreground flex items-center gap-1">
                             <Clock size={12} /> Due {quiz.due || 'Soon'}
@@ -270,9 +297,9 @@ export default function StudentQuizzesPage() {
                               className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                             >
                               <td className="px-6 py-4 font-medium text-navy-900 dark:text-white">{quiz.title}</td>
-                              <td className="px-6 py-4">
-                                <span className="text-[10px] bg-black/5 dark:bg-white/10 text-navy-900/70 dark:text-muted-foreground px-2 py-1 rounded-md">{quiz.subject?.name}</span>
-                              </td>
+                               <td className="px-6 py-4">
+                                 <span className="text-[10px] bg-black/5 dark:bg-white/10 text-navy-900/70 dark:text-muted-foreground px-2 py-1 rounded-md">{getSubjectName(quiz)}</span>
+                               </td>
                               <td className="px-6 py-4 text-navy-900/70 dark:text-muted-foreground">{quiz._count?.questions}</td>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-2">
