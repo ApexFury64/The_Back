@@ -14,16 +14,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const isStudent = userRole === 'STUDENT' && !!userId;
+
+    // Fetch base quizzes for the school
     const dbQuizzes = await prisma.quiz.findMany({
       where: { schoolId },
       include: {
         _count: {
           select: { questions: true }
         },
-        // Include attempts filtered to the current student (if student)
-        attempts: userRole === 'STUDENT' && userId
+        // Always include attempts so we can filter by student separately
+        attempts: isStudent
           ? { where: { studentId: userId }, select: { id: true, score: true, createdAt: true } }
-          : false,
+          : { select: { id: true, score: true, createdAt: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -32,12 +35,13 @@ export async function GET(request: Request) {
     const quizzes = dbQuizzes.map((q: any) => ({
       id: q.id,
       title: q.title,
-      subject: { name: 'General' }, // TODO: Add subjectId to Quiz schema
+      subject: { name: 'General' },
       duration: q.duration,
       timeLimit: q.duration,
       _count: { questions: q._count.questions },
       questions: q._count.questions,
-      attempts: q.attempts || [],
+      // For students: attempts are pre-filtered to their own. For teachers: show all.
+      attempts: Array.isArray(q.attempts) ? q.attempts : [],
       class: null,
       difficulty: 'Medium',
       due: null,
