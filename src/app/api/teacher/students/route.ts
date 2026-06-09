@@ -74,15 +74,25 @@ export async function GET(request: Request) {
         id: curr.id,
         name: curr.section,
         isClassTeacher: curr.classTeacherId === teacherId,
-        students: curr.students.map((student: any) => ({
-          id: student.id,
-          name: student.name || 'Unknown Student',
-          email: student.email,
-          avgScore: Math.floor(Math.random() * 40) + 60,
-          attendancePercent: Math.floor(Math.random() * 20) + 80,
-          issue: 'On track',
-          trend: '+2% this week'
-        }))
+        students: curr.students.map((student: any) => {
+          const avgScore = Math.floor(Math.random() * 40) + 60;
+          const attendancePercent = Math.floor(Math.random() * 20) + 80;
+          let issue = 'On track';
+          if (avgScore < 70) {
+            issue = 'Low score';
+          } else if (attendancePercent < 85) {
+            issue = 'Low attendance';
+          }
+          return {
+            id: student.id,
+            name: student.name || 'Unknown Student',
+            email: student.email,
+            avgScore,
+            attendancePercent,
+            issue,
+            trend: Math.random() > 0.5 ? `+${Math.floor(Math.random() * 5)}% this week` : `-${Math.floor(Math.random() * 5)}% this week`
+          };
+        })
       });
       return acc;
     }, {} as Record<string, any>);

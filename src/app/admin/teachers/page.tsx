@@ -228,8 +228,8 @@ export default function AdminTeachersPage() {
 
   // Filter teachers list by search input
   const filteredTeachers = teachers.filter((t) => 
-    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.subjects?.toLowerCase().includes(searchQuery.toLowerCase())
+    (t.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (t.subjects || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const activeTeacher = teachers.find(t => t.id === activeTeacherId);

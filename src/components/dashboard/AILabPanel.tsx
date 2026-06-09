@@ -79,6 +79,17 @@ interface AILabPanelProps {
   onClose: () => void;
 }
 
+function getNormalizedSubjectName(subjectName: string): string {
+  const normalized = (subjectName || "").toLowerCase().trim();
+  if (normalized.includes("math")) return "Mathematics";
+  if (normalized.includes("science") || normalized.includes("physics") || normalized.includes("chemistry") || normalized.includes("biology")) return "Science";
+  if (normalized.includes("english")) return "English";
+  if (normalized.includes("history")) return "History";
+  if (normalized.includes("geography")) return "Geography";
+  if (normalized.includes("computer") || normalized.includes("coding")) return "Computer Science";
+  return subjectName;
+}
+
 export default function AILabPanel({
   onAssetSelect,
   activeSubject,
@@ -92,7 +103,8 @@ export default function AILabPanel({
     filtered = filtered.filter(a => a.standard === activeStandard);
   }
   if (activeSubject) {
-    filtered = filtered.filter(a => a.subject === activeSubject);
+    const normActive = getNormalizedSubjectName(activeSubject);
+    filtered = filtered.filter(a => getNormalizedSubjectName(a.subject) === normActive);
   }
   const grouped = groupAssetsBySubject(filtered);
 
@@ -102,7 +114,7 @@ export default function AILabPanel({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-navy-950/40">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
         <div className="flex items-center gap-2">
@@ -110,7 +122,7 @@ export default function AILabPanel({
             <Beaker size={16} className="text-purple-400" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-navy-900 dark:text-white">AI Lab</h3>
+            <h3 className="text-sm font-bold text-foreground">AI Lab</h3>
             <p className="text-[10px] text-muted-foreground">
               {activeSubject ? activeSubject : 'Select a subject'}
             </p>
@@ -142,7 +154,7 @@ export default function AILabPanel({
             {Object.entries(grouped).map(([subject, assets], groupIndex) => (
               <div key={subject}>
                 <h4
-                  className="text-[11px] font-bold uppercase tracking-wider mb-3 pl-2 border-l-2 text-navy-900 dark:text-white/90"
+                  className="text-[11px] font-bold uppercase tracking-wider mb-3 pl-2 border-l-2 text-foreground/90"
                   style={{ borderColor: assets[0]?.color }}
                 >
                   {subject}
@@ -193,7 +205,7 @@ export default function AILabPanel({
                         </div>
 
                         {/* Title */}
-                        <span className="text-xs font-medium text-navy-900 dark:text-white/70 group-hover:text-teal transition-colors text-center leading-tight">
+                        <span className="text-xs font-medium text-slate-300 group-hover:text-teal transition-colors text-center leading-tight">
                           {asset.title}
                         </span>
 

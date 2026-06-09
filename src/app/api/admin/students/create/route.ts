@@ -9,11 +9,11 @@ const createStudentSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   classId: z.string().min(2),
-  studentPassword: z.string().min(6).optional().or(z.literal('')),
-  parentName: z.string().optional().or(z.literal('')),
-  parentEmail: z.string().email().optional().or(z.literal('')),
-  parentPhone: z.string().optional().or(z.literal('')),
-  parentPassword: z.string().min(6).optional().or(z.literal('')),
+  studentPassword: z.preprocess((val) => (val === '' || val === null || val === undefined) ? undefined : val, z.string().min(6).optional()),
+  parentName: z.preprocess((val) => (val === '' || val === null || val === undefined) ? undefined : val, z.string().optional()),
+  parentEmail: z.preprocess((val) => (val === '' || val === null || val === undefined) ? undefined : val, z.string().email().optional()),
+  parentPhone: z.preprocess((val) => (val === '' || val === null || val === undefined) ? undefined : val, z.string().optional()),
+  parentPassword: z.preprocess((val) => (val === '' || val === null || val === undefined) ? undefined : val, z.string().min(6).optional()),
 });
 
 export async function POST(request: Request) {

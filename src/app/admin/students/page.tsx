@@ -315,9 +315,9 @@ export default function AdminStudentsPage() {
   const filteredStudents = students.filter((student) => {
     // Search filter
     const matchesSearch = 
-      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.id.toLowerCase().includes(searchQuery.toLowerCase());
+      (student.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (student.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (student.id || "").toLowerCase().includes(searchQuery.toLowerCase());
       
     // Grade filter
     const matchesGrade = selectedGrade === "All" || (student.class && student.class.standard.toString() === selectedGrade);

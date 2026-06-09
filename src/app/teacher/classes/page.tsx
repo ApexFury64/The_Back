@@ -14,6 +14,8 @@ export default function TeacherClassesPage() {
   const [loading, setLoading] = useState(true);
   const [expandedClasses, setExpandedClasses] = useState<Record<string, boolean>>({});
   
+  const [statusFilter, setStatusFilter] = useState("All");
+  
   const userName = useAppStore(s => s.userName);
   const schoolName = useAppStore(s => s.schoolName);
 
@@ -54,9 +56,20 @@ export default function TeacherClassesPage() {
             className="glass-input pl-10 pr-4 py-2 w-full text-sm" 
           />
         </div>
-        <button className="glass-button-secondary px-3 py-2 flex items-center gap-2 text-sm w-full sm:w-auto justify-center">
-          <Filter size={16} /> Filter by Status
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Filter size={16} className="text-muted-foreground flex-shrink-0" />
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="glass-input px-3 py-2 text-sm bg-white dark:bg-navy-950 text-teal border-black/10 dark:border-white/10 rounded-xl"
+          >
+            <option value="All" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">All Statuses</option>
+            <option value="On track" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">On track</option>
+            <option value="Low score" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">Low score</option>
+            <option value="Low attendance" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">Low attendance</option>
+            <option value="Needs Help" className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white">Needs Attention (Low score/attendance)</option>
+          </select>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -68,17 +81,36 @@ export default function TeacherClassesPage() {
           classes.map((cls) => {
             const isExpanded = !!expandedClasses[cls.id];
             
-            const filteredSections = cls.sections.map((sec: any) => ({
-              ...sec,
-              students: sec.students.filter((s: any) => 
-                s.name.toLowerCase().includes(searchQuery.toLowerCase())
-              )
-            })).filter((sec: any) => sec.students.length > 0);
+            const filteredSections = cls.sections.map((sec: any) => {
+              const matchedStudents = sec.students.filter((s: any) => {
+                const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase());
+                
+                let matchesStatus = true;
+                if (statusFilter === "On track") {
+                  matchesStatus = s.issue === "On track";
+                } else if (statusFilter === "Low score") {
+                  matchesStatus = s.issue === "Low score";
+                } else if (statusFilter === "Low attendance") {
+                  matchesStatus = s.issue === "Low attendance";
+                } else if (statusFilter === "Needs Help") {
+                  matchesStatus = s.issue !== "On track";
+                }
+                
+                return matchesSearch && matchesStatus;
+              });
+              
+              return {
+                ...sec,
+                students: matchedStudents
+              };
+            }).filter((sec: any) => sec.students.length > 0);
 
-            if (searchQuery && filteredSections.length === 0) return null;
+            const hasActiveFilter = searchQuery !== "" || statusFilter !== "All";
+
+            if (hasActiveFilter && filteredSections.length === 0) return null;
             
             const totalStudents = cls.sections.reduce((sum: number, sec: any) => sum + sec.students.length, 0);
-            const displaySections = searchQuery ? filteredSections : cls.sections;
+            const displaySections = hasActiveFilter ? filteredSections : cls.sections;
 
             return (
               <div key={cls.id} className="glass-card-static rounded-2xl overflow-hidden transition-all duration-300">

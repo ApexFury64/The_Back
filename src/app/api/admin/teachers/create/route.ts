@@ -9,9 +9,9 @@ const createTeacherSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(6),
-  phone: z.string().optional(),
-  employeeId: z.string().optional(),
-  primarySubject: z.string().optional(),
+  phone: z.preprocess((val) => (val === '' || val === null || val === undefined) ? undefined : val, z.string().optional()),
+  employeeId: z.preprocess((val) => (val === '' || val === null || val === undefined) ? undefined : val, z.string().optional()),
+  primarySubject: z.preprocess((val) => (val === '' || val === null || val === undefined) ? undefined : val, z.string().optional()),
 });
 
 export async function POST(request: Request) {
