@@ -15,35 +15,58 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     const quiz = await prisma.quiz.findUnique({
       where: { id },
-      include: {
-        questions: true
-      }
+      include: { questions: true }
     });
 
     if (!quiz || quiz.schoolId !== schoolId) {
       return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
     }
 
-    // Format the response to match the frontend expectations
-    // Usually, we don't send the answer to the frontend unless it's an admin/teacher!
     const userRole = (session.user as any).role;
     const isStudent = userRole === 'STUDENT';
 
     return NextResponse.json({
       id: quiz.id,
       title: quiz.title,
-      subject: { name: 'General' }, // TODO: Add subjectId to Quiz schema
+      subject: { name: 'General' },
       duration: quiz.duration,
       questions: quiz.questions.map((q: any) => ({
         id: q.id,
-        text: q.question,   // Map DB 'question' field to 'text' for frontend
-        question: q.question,
+        text: q.question,     // 'text' field for student modal
+        question: q.question, // 'question' field for teacher view
         options: JSON.parse(q.options),
-        ...(isStudent ? {} : { answer: q.answer }) // Hide answer from students
+        ...(isStudent ? {} : { answer: q.answer }) // hide answers from students
       }))
     });
   } catch (error: any) {
     console.error('Error fetching quiz:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
+    const schoolId = (session?.user as any)?.schoolId;
+    const userRole = (session?.user as any)?.role;
+
+    if (!session || !schoolId || !['TEACHER', 'SCHOOLADMIN'].includes(userRole)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const quiz = await prisma.quiz.findUnique({ where: { id } });
+
+    if (!quiz || quiz.schoolId !== schoolId) {
+      return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
+    }
+
+    // Cascade delete — questions and attempts deleted automatically via schema
+    await prisma.quiz.delete({ where: { id } });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Error deleting quiz:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
