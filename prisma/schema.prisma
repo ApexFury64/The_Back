@@ -316,6 +316,9 @@ model LiveClass {
   endTime   DateTime
   meetingUrl String
   
+  className   String?
+  subjectName String?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
