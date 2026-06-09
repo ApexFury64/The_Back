@@ -54,6 +54,7 @@ const sidebarConfig: Record<UserRole, { title: string; items: SidebarItem[] }> =
       { label: "My Classes", icon: <School size={20} />, href: "/teacher/classes" },
       { label: "Materials", icon: <Upload size={20} />, href: "/teacher/materials" },
       { label: "Assignments", icon: <ClipboardList size={20} />, href: "/teacher/assignments", badge: 5 },
+      { label: "Quizzes", icon: <Brain size={20} />, href: "/teacher/quizzes", badge: "Quiz" },
       { label: "AI Tools", icon: <Sparkles size={20} />, href: "/teacher/ai-tools", badge: "AI" },
       { label: "Live Classes", icon: <Video size={20} />, href: "/teacher/live-classes" },
       { label: "Syllabus", icon: <BookOpen size={20} />, href: "/teacher/syllabus" },

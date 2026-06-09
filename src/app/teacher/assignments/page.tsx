@@ -285,6 +285,13 @@ export default function TeacherAssignmentsPage() {
                   value={newAssignment.dueDate}
                   min={new Date().toISOString().split('T')[0]}
                   onChange={e => setNewAssignment({...newAssignment, dueDate: e.target.value})}
+                  onClick={(e) => {
+                    try {
+                      e.currentTarget.showPicker();
+                    } catch (err) {
+                      console.error("showPicker not supported", err);
+                    }
+                  }}
                   style={{ colorScheme: 'dark' }}
                   className="glass-input w-full px-4 py-2.5 text-sm text-foreground bg-white/5 border border-white/10 rounded-xl cursor-pointer" 
                   required

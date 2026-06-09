@@ -6,10 +6,12 @@ import { useAppStore } from "@/lib/store";
 import { 
   User, Mail, ArrowLeft, BrainCircuit, Activity, 
   FileText, CheckCircle2, TrendingUp, TrendingDown,
-  Calendar, Award
+  Calendar, Award, X, Send
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 export default function StudentProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params);
@@ -19,6 +21,52 @@ export default function StudentProfilePage({ params }: { params: Promise<{ id: s
   
   const userName = useAppStore(s => s.userName);
   const schoolName = useAppStore(s => s.schoolName);
+
+  // Message Student states
+  const [isMsgModalOpen, setIsMsgModalOpen] = useState(false);
+  const [msgContent, setMsgContent] = useState("");
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [loadingChat, setLoadingChat] = useState(false);
+  const [sendingMsg, setSendingMsg] = useState(false);
+
+  const fetchChatMessages = async () => {
+    setLoadingChat(true);
+    try {
+      const res = await fetch(`/api/messages?withUserId=${id}`);
+      const d = await res.json();
+      if (d.messages) {
+        setChatMessages(d.messages);
+      }
+    } catch (e) {
+      console.error("Failed to fetch chat history", e);
+    }
+    setLoadingChat(false);
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!msgContent.trim()) return;
+    setSendingMsg(true);
+    try {
+      const res = await fetch(`/api/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ receiverId: id, content: msgContent })
+      });
+      if (res.ok) {
+        setMsgContent("");
+        toast.success("Message sent successfully");
+        fetchChatMessages();
+      } else {
+        const d = await res.json();
+        toast.error(d.error || "Failed to send message");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    }
+    setSendingMsg(false);
+  };
 
   useEffect(() => {
     fetch(`/api/teacher/students/${id}`)
@@ -72,7 +120,13 @@ export default function StudentProfilePage({ params }: { params: Promise<{ id: s
                 <CheckCircle2 size={16} /> Status: On Track
               </div>
             )}
-            <button className="glass-button px-4 py-2 text-sm flex items-center gap-2 justify-center">
+            <button 
+              onClick={() => {
+                setIsMsgModalOpen(true);
+                fetchChatMessages();
+              }}
+              className="glass-button px-4 py-2 text-sm flex items-center gap-2 justify-center"
+            >
               <Mail size={16} /> Message Student
             </button>
           </div>
@@ -276,6 +330,88 @@ export default function StudentProfilePage({ params }: { params: Promise<{ id: s
         )}
 
       </div>
+
+      {/* MESSAGE STUDENT MODAL */}
+      <AnimatePresence>
+        {isMsgModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-900/80 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-card w-full max-w-lg p-6 rounded-2xl border border-white/10 flex flex-col max-h-[80vh]"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+                <div>
+                  <h3 className="text-lg font-bold">Message {data.name}</h3>
+                  <p className="text-xs text-muted-foreground">Direct chat with student</p>
+                </div>
+                <button 
+                  onClick={() => setIsMsgModalOpen(false)}
+                  className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-muted-foreground hover:text-foreground"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Chat History Area */}
+              <div className="flex-1 overflow-y-auto mb-4 p-3 rounded-xl bg-white/5 border border-white/5 space-y-3 min-h-[200px] max-h-[350px]">
+                {loadingChat ? (
+                  <div className="flex justify-center items-center h-full py-10">
+                    <div className="w-6 h-6 border-2 border-teal rounded-full animate-spin border-t-transparent" />
+                  </div>
+                ) : chatMessages.length === 0 ? (
+                  <div className="text-center py-10 text-xs text-muted-foreground">
+                    No message history. Start the conversation!
+                  </div>
+                ) : (
+                  chatMessages.map((msg) => {
+                    const isMe = msg.senderId !== id;
+                    return (
+                      <div 
+                        key={msg.id} 
+                        className={cn(
+                          "flex flex-col max-w-[80%] rounded-2xl px-4 py-2.5 text-sm",
+                          isMe 
+                            ? "bg-teal text-navy-900 ml-auto rounded-tr-none" 
+                            : "bg-white/10 text-foreground mr-auto rounded-tl-none border border-white/5"
+                        )}
+                      >
+                        <p>{msg.content}</p>
+                        <span className={cn(
+                          "text-[9px] mt-1.5 self-end block",
+                          isMe ? "text-navy-900/60" : "text-muted-foreground"
+                        )}>
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <form onSubmit={handleSendMessage} className="space-y-3">
+                <div className="relative">
+                  <textarea 
+                    value={msgContent}
+                    onChange={e => setMsgContent(e.target.value)}
+                    placeholder="Type your message here..."
+                    className="glass-input w-full px-4 py-2.5 text-sm min-h-[80px] pr-12 resize-none" 
+                    required 
+                  />
+                  <button 
+                    type="submit"
+                    disabled={sendingMsg || !msgContent.trim()}
+                    className="absolute right-3 bottom-3 p-2 rounded-xl bg-teal text-navy-900 hover:bg-teal-dark transition-colors disabled:opacity-50"
+                  >
+                    <Send size={16} />
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 }

@@ -62,7 +62,9 @@ export default function LoginPage() {
       // Note: We might want to use useSession() inside layout to set global state
       // but for now, redirecting will trigger a page reload that initializes it.
 
-      router.push(`/${selectedRole}`);
+      // Clear old store data before redirecting to avoid profile name caching
+      useAppStore.getState().logout();
+      window.location.href = `/${selectedRole}`;
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Connection failed');

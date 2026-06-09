@@ -177,7 +177,15 @@ export default function TeacherLiveClassesPage() {
                     type="date" 
                     value={newClass.date}
                     onChange={e => setNewClass({...newClass, date: e.target.value})}
-                    className="glass-input w-full px-4 py-2 text-sm bg-navy-900 [color-scheme:dark]" 
+                    onClick={(e) => {
+                      try {
+                        e.currentTarget.showPicker();
+                      } catch (err) {
+                        console.error("showPicker not supported", err);
+                      }
+                    }}
+                    style={{ colorScheme: 'dark' }}
+                    className="glass-input w-full px-4 py-2 text-sm text-foreground bg-white/5 border border-white/10 rounded-xl cursor-pointer" 
                     required
                   />
                 </div>
@@ -187,7 +195,15 @@ export default function TeacherLiveClassesPage() {
                     type="time" 
                     value={newClass.startTime}
                     onChange={e => setNewClass({...newClass, startTime: e.target.value})}
-                    className="glass-input w-full px-2 py-2 text-sm bg-navy-900 [color-scheme:dark]" 
+                    onClick={(e) => {
+                      try {
+                        e.currentTarget.showPicker();
+                      } catch (err) {
+                        console.error("showPicker not supported", err);
+                      }
+                    }}
+                    style={{ colorScheme: 'dark' }}
+                    className="glass-input w-full px-2 py-2 text-sm text-foreground bg-white/5 border border-white/10 rounded-xl cursor-pointer" 
                     required
                   />
                 </div>
@@ -197,7 +213,15 @@ export default function TeacherLiveClassesPage() {
                     type="time" 
                     value={newClass.endTime}
                     onChange={e => setNewClass({...newClass, endTime: e.target.value})}
-                    className="glass-input w-full px-2 py-2 text-sm bg-navy-900 [color-scheme:dark]" 
+                    onClick={(e) => {
+                      try {
+                        e.currentTarget.showPicker();
+                      } catch (err) {
+                        console.error("showPicker not supported", err);
+                      }
+                    }}
+                    style={{ colorScheme: 'dark' }}
+                    className="glass-input w-full px-2 py-2 text-sm text-foreground bg-white/5 border border-white/10 rounded-xl cursor-pointer" 
                     required
                   />
                 </div>
